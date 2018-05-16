@@ -8,4 +8,6 @@ linked_list_demo: linked_list_demo.c
 comp_demo: comp_demo.c
     $(CC) $(CFLAGS) $(INCLUDE) comp_demo.c -o comp_demo
     
+array_demo1: array_demo1.c
+    $(CC) $(CFLAGS) $(INCLUDE) array_demo1.c -o array_demo1
     
