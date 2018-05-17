@@ -31,6 +31,7 @@ int main(void) {
     array_int64_append(&a, 5);
     array_int64_append(&a, 3);
     array_int64_append(&a, 1);
+    array_int64_append(&a, 2);
     
     array_float_t b;
     array_float_init(&b);
@@ -41,5 +42,12 @@ int main(void) {
     array_void_init(&c);
     
     printf("%.4f %ld\n", array_float_get(&b,1), array_int64_get(&a,1));
+    
+    array_int64_sort(&a);
+    
+    for (int i = 0; i < array_int64_size(&a); i++) {
+        printf("%ld ", array_int64_get(&a,i));
+    }
+    printf("\n");
     return 0;
 }    

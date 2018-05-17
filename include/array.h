@@ -2,6 +2,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include <comp.h>
+
 #ifndef data_t
 #error "data_t not defined"
 #endif
@@ -20,6 +22,7 @@ typedef struct {
     data_t *data;
     size_t size;
     size_t capacity;
+    int (*comp) (data_t *, data_t *);
 } TYPE;
 
 void GLUE3(array_, prefix, _init) (TYPE *a) {
@@ -27,6 +30,18 @@ void GLUE3(array_, prefix, _init) (TYPE *a) {
     assert(a->data != NULL);
     a->size = 0;
     a->capacity = 1;
+    data_t temp;
+    a->comp = DEFAULT_COMP(temp);
+}
+
+void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t*)) {
+    a->comp = comp;
+}
+
+void GLUE3(array_, prefix, _sort) (TYPE *a) {
+    assert(a->comp != NULL);
+    int (*comp) (const void *, const void *) = (int(*)(const void *, const void *)) a->comp;
+    qsort(a->data, a->size, sizeof(data_t), comp);
 }
 
 data_t GLUE3(array_, prefix, _get) (TYPE *a, size_t idx) {
