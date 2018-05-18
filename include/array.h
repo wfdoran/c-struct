@@ -18,6 +18,10 @@
 
 #define TYPE GLUE3(array_, prefix, _t)
 
+// array_prefix_insert 
+// array_prefix_remove
+// array_prefix_index
+
 typedef struct {
     data_t *data;
     size_t size;
@@ -74,6 +78,22 @@ size_t GLUE3(array_, prefix, _size) (TYPE *a) {
 size_t GLUE3(array_, prefix, _capacity) (TYPE *a) {
     return a->capacity;
 }
+
+void GLUE3(array_, prefix, _free) (TYPE *a) {
+    free(a->data);
+    a->data = NULL;
+    a->size = 0;
+    a->capacity = 0;
+}
+
+void GLUE3(array_, prefix, _copy) (TYPE *src, TYPE *dst) {
+    dst = src;
+    dst->data = malloc(dst->capacity * sizeof(data_t));
+    assert(dst->data != NULL);
+    memcpy(dst->data, src->data, src->size * sizeof(data_t));
+}    
+
+
 
 #undef TYPE
 #undef GLUE
