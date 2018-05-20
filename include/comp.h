@@ -33,10 +33,15 @@ int comp_float(float *a, float *b) {
     return 0;
 }
 
+int comp_str(char **a, char **b) {
+    return strcmp(*a, *b);
+}
+
 #define DEFAULT_COMP(x) _Generic((x), \
     int: &comp_int, \
     int64_t: &comp_int64, \
     float: &comp_float, \
+    char*: comp_str, \
     default: NULL)
     
 #endif
