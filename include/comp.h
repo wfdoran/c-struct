@@ -3,48 +3,36 @@
 
 #include <stdint.h>
 
-int comp_int64(int64_t *a, int64_t *b) {
-    if (*a > *b) { 
-        return 1;
-    }
-    if (*a < *b) {
-        return -1;
-    }
+#define GENERIC_COMP \
+    if (*a > *b) { \
+        return 1;\
+    }\
+    if (*a < *b) {\
+        return -1;\
+    }\
     return 0;    
+    
+int comp_int64(int64_t *a, int64_t *b) {
+    GENERIC_COMP
 }    
 
 int comp_int(int *a, int *b) {
-    if (*a > *b) { 
-        return 1;
-    }
-    if (*a < *b) {
-        return -1;
-    }
-    return 0;
+    GENERIC_COMP
 }
 
 int comp_float(float *a, float *b) {
-    if (*a > *b) {
-        return 1;
-    }
-    if (*a < *b) {
-        return -1;
-    }
-    return 0;
+    GENERIC_COMP
 }
+
+
+int comp_char(char *a, char *b) {
+    GENERIC_COMP
+}
+
+#undef GENERIC_COMP
 
 int comp_str(char **a, char **b) {
     return strcmp(*a, *b);
-}
-
-int comp_char(char *a, char *b) {
-    if (*a > *b) {
-        return 1;
-    }
-    if (*a < *b) {
-        return -1;
-    }
-    return 0;
 }
 
 #define DEFAULT_COMP(x) _Generic((x), \
@@ -54,5 +42,7 @@ int comp_char(char *a, char *b) {
     char: &comp_char, \
     char*: &comp_str, \
     default: NULL)
+    
+
     
 #endif
