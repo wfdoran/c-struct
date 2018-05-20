@@ -14,3 +14,7 @@ array_demo1: array_demo1.c
 array_demo2: array_demo2.c
     $(CC) $(CFLAGS) $(INCLUDE) array_demo2.c -o array_demo2
     
+array_demo3: array_demo3.c
+    $(CC) $(CFLAGS) $(INCLUDE) array_demo3.c -o array_demo3
+    
+    
