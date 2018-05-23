@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <comp.h>
 
@@ -21,6 +22,15 @@
 // array_prefix_insert 
 // array_prefix_remove
 // array_prefix_index
+// array_prefix_popfirst
+// array_prefix_heappush
+// array_prefix_heappop
+// array_prefix_heapify
+// array_prefix_concat
+// array_prefix_merge
+// array_prefix_resize
+// array_prefix_isheap
+// array_prefix_issorted
 
 typedef struct {
     data_t *data;
@@ -51,6 +61,12 @@ void GLUE3(array_, prefix, _sort) (TYPE *a) {
 data_t GLUE3(array_, prefix, _get) (TYPE *a, size_t idx) {
     assert(idx >= 0 && idx < a->size);
     return a->data[idx] ;
+}
+
+data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
+    assert(a->size > 0);
+    a->size--;
+    return a->data[a->size];
 }
 
 void GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
@@ -93,7 +109,71 @@ void GLUE3(array_, prefix, _copy) (TYPE *src, TYPE *dst) {
     memcpy(dst->data, src->data, src->size * sizeof(data_t));
 }    
 
+#define HEAP_PARENT(x) (((x)-1)/2)
+#define HEAP_LEFT_CHILD(x) (2*(x) + 1)
+#define HEAP_RIGHT_CHILD(x) (2*(x) + 2)
 
+void GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
+    assert(a->comp != NULL);
+    GLUE3(array_, prefix, _append)(a, value);
+    size_t pos = a->size - 1;
+    while (pos != 0) {
+        size_t parent = HEAP_PARENT(pos);
+        if (a->comp(&(a->data[pos]), &(a->data[parent])) <= 0) {
+            break;
+        }
+        data_t temp = a->data[parent];
+        a->data[parent] = a->data[pos];
+        a->data[pos] = temp;
+        pos = parent;
+    }        
+}
+
+data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
+    assert(a->size > 0);
+    assert(a->comp != NULL);
+    data_t rv = a->data[0];
+    a->size--;
+    
+    if (a->size > 0) {
+        a->data[0] = a->data[a->size];
+        size_t pos = 0;
+        
+        while (true) {
+            size_t left = HEAP_LEFT_CHILD(pos);
+            size_t right = HEAP_RIGHT_CHILD(pos);
+            
+            if (left >= a->size && right >= a->size) {
+                break;
+            }
+            
+            if (right >= a->size) {
+                if (a->comp(&a->data[left], &a->data[pos]) > 0) {
+                    data_t temp = a->data[pos];
+                    a->data[pos] = a->data[left];
+                    a->data[left] = temp;
+                }
+                break;
+            }
+            
+            if (a->comp(&a->data[pos], &a->data[left]) > 0 && a->comp(&a->data[pos], &a->data[right]) > 0) {
+                break;
+            }
+            
+            size_t swap = a->comp(&a->data[right], &a->data[left]) > 0 ? right : left;
+            data_t temp = a->data[pos];
+            a->data[pos] = a->data[swap];
+            a->data[swap] = temp;
+            pos = swap;
+        }
+        
+    }
+    return rv;
+}    
+
+#undef HEAP_RIGHT_CHILD
+#undef HEAP_LEFT_CHILD
+#undef HEAP_PARENT
 
 #undef TYPE
 #undef GLUE
