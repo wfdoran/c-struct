@@ -14,9 +14,9 @@
     
 int comp_int64(int64_t *a, int64_t *b) {
     GENERIC_COMP
-}    
+}
 
-int comp_int(int *a, int *b) {
+int comp_int32(int32_t *a, int32_t *b) {
     GENERIC_COMP
 }
 
@@ -36,8 +36,8 @@ int comp_str(char **a, char **b) {
 }
 
 #define DEFAULT_COMP(x) _Generic((x), \
-    int: &comp_int, \
     int64_t: &comp_int64, \
+    int32_t: &comp_int32, \
     float: &comp_float, \
     char: &comp_char, \
     char*: &comp_str, \
