@@ -24,6 +24,10 @@ int comp_float(float *a, float *b) {
     GENERIC_COMP
 }
 
+int comp_double(double *a, double *b) {
+    GENERIC_COMP
+}
+
 
 int comp_char(char *a, char *b) {
     GENERIC_COMP
@@ -39,6 +43,7 @@ int comp_str(char **a, char **b) {
     int64_t: &comp_int64, \
     int32_t: &comp_int32, \
     float: &comp_float, \
+    double: &comp_double, \
     char: &comp_char, \
     char*: &comp_str, \
     default: NULL)
