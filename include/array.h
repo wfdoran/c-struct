@@ -23,8 +23,6 @@
 // array_prefix_remove
 // array_prefix_index
 // array_prefix_popfirst
-// array_prefix_heappush
-// array_prefix_heappop
 // array_prefix_heapify
 // array_prefix_concat
 // array_prefix_merge
@@ -169,6 +167,14 @@ data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
         
     }
     return rv;
+}
+
+void GLUE3(array_, prefix, _heapify) (TYPE *a) {
+    size_t size = a->size;
+    a->size = 0;
+    for (size_t i = 0; i < size; i++) {
+        GLUE3(array_, prefix, _heappush) (a, a->data[i]);
+    }
 }    
 
 #undef HEAP_RIGHT_CHILD
