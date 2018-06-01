@@ -29,6 +29,10 @@
 // array_prefix_resize
 // array_prefix_isheap
 // array_prefix_issorted
+// array_prefix_map
+// array_prefix_filter
+// array_prefix_bisect_upper
+// array_prefix_bisect_lower
 
 typedef struct {
     data_t *data;
@@ -54,6 +58,39 @@ void GLUE3(array_, prefix, _sort) (TYPE *a) {
     assert(a->comp != NULL);
     int (*comp) (const void *, const void *) = (int(*)(const void *, const void *)) a->comp;
     qsort(a->data, a->size, sizeof(data_t), comp);
+}
+
+size_t GLUE3(array_, prefix, _bisect) (TYPE *a, data_t v) {
+    size_t lo = -1;
+    size_t hi = a->size;
+    
+    while (hi - lo > 1) {
+        size_t mid = lo + (hi - lo) / 2;
+        int x = a->comp(&a->data[mid], &v);
+        if (x == 0) {
+            return mid;
+        }
+        if (x > 0) {
+            hi = mid;
+        } else {
+            lo = mid;
+        }
+    }
+    return -1;
+}
+
+void GLUE3(array_, prefix, _map) (TYPE *a, data_t(*f)(data_t)) {
+    for (size_t i = 0; i < a->size; i++) {
+        a->data[i] = f(a->data[i]);
+    }
+}
+
+data_t GLUE3(array_, prefix, _fold) (TYPE *a, data_t(*f)(data_t, data_t)) {
+    data_t rv = a->data[0];
+    for (size_t i = 1; i < a->size; i++) {
+        rv = f(rv, a->data[i]);
+    }
+    return rv;
 }
 
 data_t GLUE3(array_, prefix, _get) (TYPE *a, size_t idx) {
