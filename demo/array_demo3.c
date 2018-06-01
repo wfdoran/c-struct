@@ -33,6 +33,8 @@ int main(void) {
     for (int i = 0; i < array_str_size(&a); i++) {
         printf("%s\n", array_str_get(&a, i));
     }
+    
+    printf("%d %d\n", array_str_bisect(&a, "hello"), array_str_bisect(&a, "goodbye"));
         
     return 0;
 }
