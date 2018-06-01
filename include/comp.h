@@ -20,6 +20,10 @@ int comp_int32(int32_t *a, int32_t *b) {
     GENERIC_COMP
 }
 
+int comp_int16(int16_t *a, int16_t *b) {
+    GENERIC_COMP
+}
+
 int comp_float(float *a, float *b) {
     GENERIC_COMP
 }
@@ -42,6 +46,7 @@ int comp_str(char **a, char **b) {
 #define DEFAULT_COMP(x) _Generic((x), \
     int64_t: &comp_int64, \
     int32_t: &comp_int32, \
+    int16_t: &comp_int16, \
     float: &comp_float, \
     double: &comp_double, \
     char: &comp_char, \
