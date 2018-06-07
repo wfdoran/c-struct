@@ -219,5 +219,6 @@ void GLUE3(array_, prefix, _heapify) (TYPE *a) {
 #undef HEAP_PARENT
 
 #undef TYPE
+#undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
