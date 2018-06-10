@@ -25,12 +25,10 @@ int main(void) {
     tree_int32_t t;
     tree_int32_init(&t);
     
-    int count = 0;
     for (int i = 0; i < 10; i++) {
         int32_t val = (rand() >> 3) & 0xf;
-        if (tree_int32_insert(&t, val)) count++;
+        tree_int32_insert(&t, val);
     }
-    printf("count = %d\n", count);
     walk_tree(t.root);
     return 0;
 }

@@ -45,33 +45,23 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t val) {
     return n;
 }
 
-bool GLUE3(tree_, prefix, _insert)(TREE *a, data_t val) {
-    if (a->root == NULL) {
-        a->root = GLUE3(tree_, prefix, _init_node(val));
-        return true;
+NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t val) {
+    if (n == NULL) {
+        return GLUE3(tree_, prefix, _init_node)(val);
     }
-    
-    NODE *cur = a->root;
-    while (true) {
-        int c = a->comp(&val, &(cur->key));
-        if (c == 0) {
-           return false;
-        }
-        if (c < 0) {
-            if (cur->left == NULL) {
-                cur->left = GLUE3(tree_, prefix, _init_node(val));
-                return true;
-            }
-            cur = cur->left;
-        } else {
-            if (cur->right == NULL) {
-                cur->right = GLUE3(tree_, prefix, _init_node(val));
-                return true;
-            }                
-            cur = cur->right;
-        }
+    int c = a->comp(&val, &(n->key));
+    if (c < 0) {
+        n->left = GLUE3(tree_, prefix, _insert_node)(a, n->left, val);        
     }
-}   
+    if (c > 0) {
+        n->right = GLUE3(tree_, prefix, _insert_node)(a, n->right, val);   
+    }
+    return n;
+}
+
+void GLUE3(tree_, prefix, _insert)(TREE *a, data_t val) {
+    a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, val);
+}
 
 #undef NODE
 #undef TREE
