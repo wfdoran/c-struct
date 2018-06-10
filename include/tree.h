@@ -45,22 +45,22 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t val) {
     return n;
 }
 
-NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t val) {
+NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE *n, data_t val) {
     if (n == NULL) {
         return GLUE3(tree_, prefix, _init_node)(val);
     }
-    int c = a->comp(&val, &(n->key));
+    int c = comp(&val, &(n->key));
     if (c < 0) {
-        n->left = GLUE3(tree_, prefix, _insert_node)(a, n->left, val);        
+        n->left = GLUE3(tree_, prefix, _insert_node)(comp, n->left, val);        
     }
     if (c > 0) {
-        n->right = GLUE3(tree_, prefix, _insert_node)(a, n->right, val);   
+        n->right = GLUE3(tree_, prefix, _insert_node)(comp, n->right, val);   
     }
     return n;
 }
 
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t val) {
-    a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, val);
+    a->root = GLUE3(tree_, prefix, _insert_node)(a->comp, a->root, val);
 }
 
 #undef NODE
