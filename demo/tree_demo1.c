@@ -9,13 +9,16 @@
 #undef prefix
 #undef data_t
 
-void walk_tree(tnode_int32_t *n) {
+void walk_tree(tnode_int32_t *n, int depth) {
     if (n->left != NULL) {
-        walk_tree(n->left);
+        walk_tree(n->left, depth+1);
+    }
+    for (int i = 0; i < depth; i++) {
+        printf("  ");
     }
     printf("%d\n", n->key);
     if (n->right != NULL) {
-        walk_tree(n->right);
+        walk_tree(n->right, depth+1);
     }        
 }
 
@@ -30,6 +33,18 @@ int main(void) {
         tree_int32_insert(&t, val);
     }
     printf("Tree Size: %d\n", tree_int32_size(&t));
-    walk_tree(t.root);
+    // walk_tree(t.root, 0);
+    
+    void *state;
+    tree_int32_walk_init(&t, &state);
+    int count = 0;
+    while (state != NULL) {
+        printf("%d\n", tree_int32_walk_next(&state));
+        count++;
+        if (count > 12) {
+            break;
+        }
+    }
+        
     return 0;
 }

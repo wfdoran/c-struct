@@ -76,6 +76,40 @@ size_t GLUE3(tree_, prefix, _size)(TREE *a) {
     return a->root == NULL ? 0 : a->root->size;
 }
 
+void GLUE3(tree_, prefix, _walk_init)(TREE *a, void **state) {
+    if (a->root == NULL) {
+        *state = NULL;
+    } else {
+        NODE *n = a->root;
+        while (n->left != NULL) {
+            n = n->left;
+        }
+        *state = n;
+    }
+}
+
+data_t GLUE3(tree_, prefix, _walk_next)(void **state) {
+    NODE *n = *state;
+    data_t rv = n->key;
+    
+    if (n->right != NULL) {
+        n = n->right;
+        while (n->left != NULL) {
+            n = n->left;
+        }
+    } else {
+        while (true) {
+            NODE *prev = n;
+            n = n->parent;
+            if (n == NULL || n->left == prev) {
+                break;
+            }        
+        }
+    }
+    *state = n;
+    return rv;
+}
+
 #undef NODE
 #undef TREE
 #undef GLUE3
