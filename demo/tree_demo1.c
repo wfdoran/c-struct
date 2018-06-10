@@ -29,6 +29,7 @@ int main(void) {
         int32_t val = (rand() >> 3) & 0xf;
         tree_int32_insert(&t, val);
     }
+    printf("Tree Size: %d\n", tree_int32_size(&t));
     walk_tree(t.root);
     return 0;
 }

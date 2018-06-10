@@ -22,6 +22,7 @@
 
 typedef struct NODE {
     data_t key;
+    size_t size;
     struct NODE *left;
     struct NODE *right;
 } NODE;
@@ -40,6 +41,7 @@ void GLUE3(tree_, prefix, _init) (TREE *a) {
 NODE* GLUE3(tree_, prefix, _init_node)(data_t val) {
     NODE *n = malloc(sizeof(NODE));
     n->key = val;
+    n->size = 1;
     n->left = NULL;
     n->right = NULL;
     return n;
@@ -56,11 +58,18 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE 
     if (c > 0) {
         n->right = GLUE3(tree_, prefix, _insert_node)(comp, n->right, val);   
     }
+    size_t left_size = n->left == NULL ? 0 : n->left->size;
+    size_t right_size = n->right == NULL ? 0 : n->right->size;
+    n->size = 1 + left_size + right_size;
     return n;
 }
 
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t val) {
     a->root = GLUE3(tree_, prefix, _insert_node)(a->comp, a->root, val);
+}
+
+size_t GLUE3(tree_, prefix, _size)(TREE *a) {
+    return a->root == NULL ? 0 : a->root->size;
 }
 
 #undef NODE
