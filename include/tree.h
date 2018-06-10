@@ -25,6 +25,7 @@ typedef struct NODE {
     size_t size;
     struct NODE *left;
     struct NODE *right;
+    struct NODE *parent;
 } NODE;
 
 typedef struct {
@@ -44,6 +45,7 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t val) {
     n->size = 1;
     n->left = NULL;
     n->right = NULL;
+    n->parent = NULL;
     return n;
 }
 
@@ -53,10 +55,12 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE 
     }
     int c = comp(&val, &(n->key));
     if (c < 0) {
-        n->left = GLUE3(tree_, prefix, _insert_node)(comp, n->left, val);        
+        n->left = GLUE3(tree_, prefix, _insert_node)(comp, n->left, val);
+        n->left->parent = n;
     }
     if (c > 0) {
-        n->right = GLUE3(tree_, prefix, _insert_node)(comp, n->right, val);   
+        n->right = GLUE3(tree_, prefix, _insert_node)(comp, n->right, val);
+        n->right->parent = n;        
     }
     size_t left_size = n->left == NULL ? 0 : n->left->size;
     size_t right_size = n->right == NULL ? 0 : n->right->size;
