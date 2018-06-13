@@ -51,6 +51,17 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t val) {
     return n;
 }
 
+void GLUE3(tree_, prefix, _fillin)(NODE *n) {
+    size_t left_size = n->left == NULL ? 0 : n->left->size;
+    size_t right_size = n->right == NULL ? 0 : n->right->size;
+    n->size = 1 + left_size + right_size;
+    
+    int left_height = n->left == NULL ? 0 : n->left->height;
+    int right_height = n->right == NULL ? 0 : n->right->height;
+    n->height =  1 + (left_height > right_height ? left_height : right_height);
+    
+}
+
 NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE *n, data_t val) {
     if (n == NULL) {
         return GLUE3(tree_, prefix, _init_node)(val);
@@ -64,14 +75,7 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE 
         n->right = GLUE3(tree_, prefix, _insert_node)(comp, n->right, val);
         n->right->parent = n;        
     }
-    
-    size_t left_size = n->left == NULL ? 0 : n->left->size;
-    size_t right_size = n->right == NULL ? 0 : n->right->size;
-    n->size = 1 + left_size + right_size;
-    
-    int left_height = n->left == NULL ? 0 : n->left->height;
-    int right_height = n->right == NULL ? 0 : n->right->height;
-    n->height =  1 + (left_height > right_height ? left_height : right_height);
+    GLUE3(tree_, prefix, _fillin)(n);
     return n;
 }
 
