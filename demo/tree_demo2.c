@@ -15,7 +15,7 @@ int main(void) {
     tree_int64_t t;
     tree_int64_init(&t);
     
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 1000000; i++) {
         int64_t val = 0;
         for (int j = 0; j < 5; j++) {
             val = (val << 13) + rand();
