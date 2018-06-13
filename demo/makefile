@@ -32,4 +32,7 @@ array_demo7: array_demo7.c
 tree_demo1: tree_demo1.c
     $(CC) $(CFLAGS) $(INCLUDE) tree_demo1.c -o tree_demo1
     
+tree_demo2: tree_demo2.c
+    $(CC) $(CFLAGS) $(INCLUDE) tree_demo2.c -o tree_demo2
+    
     

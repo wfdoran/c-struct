@@ -23,6 +23,7 @@
 typedef struct NODE {
     data_t key;
     size_t size;
+    int height;
     struct NODE *left;
     struct NODE *right;
     struct NODE *parent;
@@ -43,6 +44,7 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t val) {
     NODE *n = malloc(sizeof(NODE));
     n->key = val;
     n->size = 1;
+    n->height = 1;
     n->left = NULL;
     n->right = NULL;
     n->parent = NULL;
@@ -62,9 +64,14 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE 
         n->right = GLUE3(tree_, prefix, _insert_node)(comp, n->right, val);
         n->right->parent = n;        
     }
+    
     size_t left_size = n->left == NULL ? 0 : n->left->size;
     size_t right_size = n->right == NULL ? 0 : n->right->size;
     n->size = 1 + left_size + right_size;
+    
+    int left_height = n->left == NULL ? 0 : n->left->height;
+    int right_height = n->right == NULL ? 0 : n->right->height;
+    n->height =  1 + (left_height > right_height ? left_height : right_height);
     return n;
 }
 
@@ -74,6 +81,10 @@ void GLUE3(tree_, prefix, _insert)(TREE *a, data_t val) {
 
 size_t GLUE3(tree_, prefix, _size)(TREE *a) {
     return a->root == NULL ? 0 : a->root->size;
+}
+
+int GLUE3(tree_, prefix, _height)(TREE *a) {
+    return a->root == NULL ? 0 : a->root->height;   
 }
 
 void GLUE3(tree_, prefix, _walk_init)(TREE *a, void **state) {
