@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11
+CFLAGS = -O2 -std=gnu11 -g
 INCLUDE = -I../include
 
 linked_list_demo: linked_list_demo.c
@@ -34,5 +34,8 @@ tree_demo1: tree_demo1.c
     
 tree_demo2: tree_demo2.c
     $(CC) $(CFLAGS) $(INCLUDE) tree_demo2.c -o tree_demo2
+    
+tree_demo3: tree_demo3.c
+    $(CC) $(CFLAGS) $(INCLUDE) tree_demo3.c -o tree_demo3
     
     

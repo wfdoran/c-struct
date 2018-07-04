@@ -52,6 +52,9 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t val) {
 }
 
 void GLUE3(tree_, prefix, _fillin)(NODE *n) {
+    if (n == NULL) {
+        return;
+    }
     size_t left_size = n->left == NULL ? 0 : n->left->size;
     size_t right_size = n->right == NULL ? 0 : n->right->size;
     n->size = 1 + left_size + right_size;
@@ -86,6 +89,9 @@ NODE* GLUE3(tree_, prefix, _rotate_right) (NODE *n, bool more) {
     n->right = c;
     n->parent = m;
     GLUE3(tree_, prefix, _fillin)(n);
+    if (b != NULL) {
+        b->parent = n;
+    }
     
     m->left = a;
     m->right = n;
@@ -116,6 +122,9 @@ NODE* GLUE3(tree_, prefix, _rotate_left) (NODE *n, bool more) {
     n->right = b;
     n->parent = m;
     GLUE3(tree_, prefix, _fillin)(n);
+    if (b != NULL) {
+        b->parent = n;
+    }
     
     m->left = n;
     m->right = c;
@@ -157,7 +166,56 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE 
 
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t val) {
     a->root = GLUE3(tree_, prefix, _insert_node)(a->comp, a->root, val);
+    a->root->parent = NULL;
 }
+
+NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE *n, data_t val, NODE **rv) {
+    if (n == NULL) {
+       *rv == NULL;
+       return NULL;
+    }
+    
+    int c = comp(&val, &(n->key));
+    if (c != 0) {
+        if (c < 0) {
+            n->left = GLUE3(tree_, prefix, _delete_node)(comp, n->left, val, rv);
+            if (n->left != NULL) {
+                n->left->parent = n;
+            }
+        }
+        if (c > 0) {
+            n->right = GLUE3(tree_, prefix, _delete_node)(comp, n->right, val, rv);
+            if (n->right != NULL) {
+                n->right->parent = n;
+            }
+        }
+        n = GLUE3(tree_, prefix, _balance)(n);
+        GLUE3(tree_, prefix, _fillin)(n);
+        return n;
+    }
+    
+    if (n->left == NULL) {
+        *rv = n;
+        return n->right;
+    }
+    
+    if (n->right == NULL) {
+        *rv = n;
+        return n->left;
+    }
+        
+    n = GLUE3(tree_, prefix, _rotate_right)(n, false);
+    return GLUE3(tree_, prefix, _delete_node)(comp, n, val, rv);
+}
+
+void GLUE3(tree_, prefix, _delete)(TREE *a, data_t val) {
+    NODE *rv = NULL;
+    a->root = GLUE3(tree_, prefix, _delete_node)(a->comp, a->root, val, &rv);
+    free(rv);
+    if (a->root != NULL) {
+        a->root->parent = NULL;
+    }
+}    
 
 size_t GLUE3(tree_, prefix, _size)(TREE *a) {
     return a->root == NULL ? 0 : a->root->size;
