@@ -17,7 +17,7 @@ int main(void) {
     
     for (int i = 0; i < 100; i++) {
         int32_t val = (rand() >> 3) & 0xffff;
-        tree_int32_insert(&t, val);
+        tree_int32_insert(&t, val, NULL);
     }
     printf("Tree Size: %d\n", tree_int32_size(&t));
     printf("Tree Height: %d\n", tree_int32_height(&t));

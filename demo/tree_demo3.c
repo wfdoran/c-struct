@@ -38,7 +38,7 @@ int main(void) {
     for (int i = 0; i < n; i++) {
         vals[i] = ((double) ((rand() >> 3) & 0xffff)) / 0x1000;
         printf("IN %.4f\n", vals[i]);
-        tree_double_insert(&t, vals[i]);
+        tree_double_insert(&t, vals[i], NULL);
     }
     printf("Tree Size: %d\n", tree_double_size(&t));
     printf("Tree Height: %d\n", tree_double_height(&t));

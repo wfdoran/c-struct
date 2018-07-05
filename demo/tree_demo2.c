@@ -20,7 +20,7 @@ int main(void) {
         for (int j = 0; j < 5; j++) {
             val = (val << 13) + rand();
         }
-        tree_int64_insert(&t, val);
+        tree_int64_insert(&t, val, NULL);
     }
     printf("Tree Size: %d\n", tree_int64_size(&t));
     printf("Tree Height: %d\n", tree_int64_height(&t));
