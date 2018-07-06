@@ -34,6 +34,7 @@ typedef struct NODE {
 typedef struct {
     struct NODE *root;
     int (*comp) (data_t *, data_t *);
+	void * (*update) (void *, void *);
 } TREE;
 
 typedef struct {
@@ -45,6 +46,15 @@ void GLUE3(tree_, prefix, _init) (TREE *a) {
     a->root = NULL;
     data_t temp;
     a->comp = DEFAULT_COMP(temp);
+	a->update = NULL;
+}
+
+void GLUE3(tree_, prefix, _set_comp) (TREE *a, int (*comp) (data_t *, data_t *)) {
+	a->comp = comp;
+}
+
+void GLUE3(tree_, prefix, _set_update) (TREE *a, void *(*update) (void *, void *)) {
+	a->update = update;
 }
 
 NODE* GLUE3(tree_, prefix, _init_node)(data_t key, void *value) {
@@ -153,21 +163,25 @@ NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
     return n;   
 }
 
-NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE *n, data_t key, void *value) {
+NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), void * (*update) (void *, void *), NODE *n, data_t key, void *value) {
     if (n == NULL) {
         return GLUE3(tree_, prefix, _init_node)(key, value);
     }
     int c = comp(&key, &(n->key));
     if (c < 0) {
-        n->left = GLUE3(tree_, prefix, _insert_node)(comp, n->left, key, value);
+        n->left = GLUE3(tree_, prefix, _insert_node)(comp, update, n->left, key, value);
         n->left->parent = n;
     }
     if (c > 0) {
-        n->right = GLUE3(tree_, prefix, _insert_node)(comp, n->right, key, value);
+        n->right = GLUE3(tree_, prefix, _insert_node)(comp, update, n->right, key, value);
         n->right->parent = n;        
     }
 	if (c == 0) {
-		n->value = value;
+		if (n->value == NULL || update == NULL) {
+			n->value = value;
+		} else {
+			n->value = update(n->value, value);
+		}
 	}
     
     n = GLUE3(tree_, prefix, _balance)(n);
@@ -176,7 +190,7 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), NODE 
 }
 
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
-    a->root = GLUE3(tree_, prefix, _insert_node)(a->comp, a->root, key, value);
+    a->root = GLUE3(tree_, prefix, _insert_node)(a->comp, a->update, a->root, key, value);
     a->root->parent = NULL;
 }
 
