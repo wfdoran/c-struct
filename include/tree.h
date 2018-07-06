@@ -165,7 +165,13 @@ NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
 
 NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), void * (*update) (void *, void *), NODE *n, data_t key, void *value) {
     if (n == NULL) {
-        return GLUE3(tree_, prefix, _init_node)(key, value);
+        NODE *rv = GLUE3(tree_, prefix, _init_node)(key, NULL);
+		if (update == NULL) {
+			rv->value = value;
+		} else {
+			rv->value = update(rv->value, value);
+		}
+		return rv;
     }
     int c = comp(&key, &(n->key));
     if (c < 0) {
@@ -177,7 +183,7 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), void 
         n->right->parent = n;        
     }
 	if (c == 0) {
-		if (n->value == NULL || update == NULL) {
+		if (update == NULL) {
 			n->value = value;
 		} else {
 			n->value = update(n->value, value);
