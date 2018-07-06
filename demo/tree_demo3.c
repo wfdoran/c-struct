@@ -47,7 +47,8 @@ int main(void) {
     void *state;
     tree_double_walk_init(&t, &state);
     while (state != NULL) {
-        printf("%.4f ", tree_double_walk_next(&state));
+		key_double_value_t pair = tree_double_walk_next(&state);
+        printf("%.4f ", pair.key);
     }
     printf("\n");
         
@@ -73,7 +74,8 @@ int main(void) {
     
     tree_double_walk_init(&t, &state);
     while (state != NULL) {
-        printf("%.4f ", tree_double_walk_next(&state));
+		key_double_value_t pair = tree_double_walk_next(&state);
+        printf("%.4f ", pair.key);
     }
     printf("\n");
         

@@ -19,6 +19,7 @@
 
 #define TREE GLUE3(tree_, prefix, _t)
 #define NODE GLUE3(tnode_, prefix, _t)
+#define KEYVAL GLUE3(key_, prefix, _value_t)
 
 typedef struct NODE {
     data_t key;
@@ -34,6 +35,11 @@ typedef struct {
     struct NODE *root;
     int (*comp) (data_t *, data_t *);
 } TREE;
+
+typedef struct {
+	data_t key;
+	void *value;
+} KEYVAL;
 
 void GLUE3(tree_, prefix, _init) (TREE *a) {
     a->root = NULL;
@@ -247,9 +253,9 @@ void GLUE3(tree_, prefix, _walk_init)(TREE *a, void **state) {
     }
 }
 
-data_t GLUE3(tree_, prefix, _walk_next)(void **state) {
+KEYVAL GLUE3(tree_, prefix, _walk_next)(void **state) {
     NODE *n = *state;
-    data_t rv = n->key;
+    KEYVAL rv = {.key = n->key, .value = n->value};
     
     if (n->right != NULL) {
         n = n->right;
