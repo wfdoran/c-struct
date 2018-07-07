@@ -239,6 +239,26 @@ NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE 
     return GLUE3(tree_, prefix, _delete_node)(comp, n, key, rv);
 }
 
+KEYVAL *GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
+	NODE *n = a->root;
+	
+	while (true) {
+		if (n == NULL) {
+			return NULL;
+		}
+		
+		int c = a->comp(&key, &(n->key));
+		if (c == 0) {
+			KEYVAL *rv = malloc(sizeof(KEYVAL));
+			rv->key = n->key;
+			rv->value = n->value;
+			return rv;
+		}
+		
+		n = c < 0 ? n->left : n->right; 
+	}
+}
+
 void* GLUE3(tree_, prefix, _delete)(TREE *a, data_t val) {
     NODE *n = NULL;
     a->root = GLUE3(tree_, prefix, _delete_node)(a->comp, a->root, val, &n);
