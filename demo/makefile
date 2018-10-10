@@ -43,4 +43,7 @@ tree_demo4: tree_demo4.c
 
 tree_demo5: tree_demo5.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_demo5.c -o tree_demo5
+
+tree_demo6: tree_demo6.c
+	$(CC) $(CFLAGS) $(INCLUDE) tree_demo6.c -o tree_demo6
     

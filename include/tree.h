@@ -21,6 +21,16 @@
 #define NODE GLUE3(tnode_, prefix, _t)
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 
+// rank
+// retrieve min
+// retrieve max
+// delete min
+// delete max
+
+/* ----------------------------------------------------------------------- */
+/*                         data structures                                 */
+/* ----------------------------------------------------------------------- */
+                              
 typedef struct NODE {
     data_t key;
 	void *value;
@@ -35,6 +45,7 @@ typedef struct {
     struct NODE *root;
     int (*comp) (data_t *, data_t *);
 	void * (*update) (void *, void *);
+    void (*value_free) (void *);
 } TREE;
 
 typedef struct {
@@ -42,20 +53,56 @@ typedef struct {
 	void *value;
 } KEYVAL;
 
-void GLUE3(tree_, prefix, _init) (TREE *a) {
+/* ----------------------------------------------------------------------- */
+/*                         constructors                                    */
+/* ----------------------------------------------------------------------- */
+
+/* tree_prefix_t* tree_prefix_init(); 
+
+   allocates and returns an empty binary tree.  The caller must free the 
+   returned pointer by calling tree_prefix_destroy(t);   
+*/
+TREE *GLUE3(tree_, prefix, _init) () {
+    TREE *a = malloc(sizeof(TREE));
+    if (a == NULL) {
+        return a;
+    }
+    
     a->root = NULL;
     data_t temp;
     a->comp = DEFAULT_COMP(temp);
-	a->update = NULL;
+    a->update = NULL;
+    a->value_free = NULL;
+    
+    return a;
 }
 
+
+/* void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *);
+
+   Attaches a comparison function to the binary tree.  For basic data_t such as 
+   int8_t, int16_t, int32_t, int64_t, float, double, char*, this is not needed.
+   For more complicated data_t, the user must define the comparison function.
+   See comp.h for details and the C11 generics which deal with the basic data_ts.
+*/
 void GLUE3(tree_, prefix, _set_comp) (TREE *a, int (*comp) (data_t *, data_t *)) {
 	a->comp = comp;
 }
 
+/* void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void *));
+
+   Attaches an update function.  When inserting, if node the key value already 
+   exists, this function is used to update the value in that node.  
+   
+*/
+
 void GLUE3(tree_, prefix, _set_update) (TREE *a, void *(*update) (void *, void *)) {
 	a->update = update;
 }
+
+void GLUE3(tree_, prefix, _set_value_free) (TREE *a, void (*value_free)(void *)) {
+    a->value_free = value_free;
+}    
 
 NODE* GLUE3(tree_, prefix, _init_node)(data_t key, void *value) {
     NODE *n = malloc(sizeof(NODE));
@@ -67,6 +114,32 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t key, void *value) {
     n->right = NULL;
     n->parent = NULL;
     return n;
+}
+
+void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
+	if (n == NULL) {
+		return;
+	}
+	
+	GLUE3(tree_, prefix, _node_destroy)(n->left, value_free);
+	GLUE3(tree_, prefix, _node_destroy)(n->right, value_free);
+    n->left = NULL;
+    n->right = NULL;
+    n->parent = NULL;
+    
+    if (value_free != NULL) {
+        value_free(n->value);
+    }
+	free(n);
+}
+
+void GLUE3(tree_, prefix, _destroy) (TREE *a) {
+    GLUE3(tree_, prefix, _node_destroy) (a->root, a->value_free);
+    a->root = NULL;
+    a->comp = NULL;
+    a->update = NULL;
+    a->value_free = NULL;
+    free(a);
 }
 
 void GLUE3(tree_, prefix, _fillin)(NODE *n) {
@@ -163,30 +236,33 @@ NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
     return n;   
 }
 
-NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), void * (*update) (void *, void *), NODE *n, data_t key, void *value) {
+NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value) {
     if (n == NULL) {
         NODE *rv = GLUE3(tree_, prefix, _init_node)(key, NULL);
-		if (update == NULL) {
+		if (a->update == NULL) {
 			rv->value = value;
 		} else {
-			rv->value = update(rv->value, value);
+			rv->value = a->update(rv->value, value);
 		}
 		return rv;
     }
-    int c = comp(&key, &(n->key));
+    int c = a->comp(&key, &(n->key));
     if (c < 0) {
-        n->left = GLUE3(tree_, prefix, _insert_node)(comp, update, n->left, key, value);
+        n->left = GLUE3(tree_, prefix, _insert_node)(a, n->left, key, value);
         n->left->parent = n;
     }
     if (c > 0) {
-        n->right = GLUE3(tree_, prefix, _insert_node)(comp, update, n->right, key, value);
+        n->right = GLUE3(tree_, prefix, _insert_node)(a, n->right, key, value);
         n->right->parent = n;        
     }
 	if (c == 0) {
-		if (update == NULL) {
+		if (a->update == NULL) {
+            if (a->value_free != NULL) {
+                a->value_free(n->value);
+            }
 			n->value = value;
 		} else {
-			n->value = update(n->value, value);
+			n->value = a->update(n->value, value);
 		}
 	}
     
@@ -196,7 +272,7 @@ NODE* GLUE3(tree_, prefix, _insert_node)(int (*comp) (data_t *, data_t *), void 
 }
 
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
-    a->root = GLUE3(tree_, prefix, _insert_node)(a->comp, a->update, a->root, key, value);
+    a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value);
     a->root->parent = NULL;
 }
 
@@ -259,9 +335,9 @@ KEYVAL *GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
 	}
 }
 
-void* GLUE3(tree_, prefix, _delete)(TREE *a, data_t val) {
+void* GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
     NODE *n = NULL;
-    a->root = GLUE3(tree_, prefix, _delete_node)(a->comp, a->root, val, &n);
+    a->root = GLUE3(tree_, prefix, _delete_node)(a->comp, a->root, key, &n);
 	void *rv = NULL;
 	if (n != NULL) {
 		rv = n->value;
