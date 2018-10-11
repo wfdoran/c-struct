@@ -1,3 +1,5 @@
+// https://algs4.cs.princeton.edu/32bst/
+
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
@@ -94,6 +96,12 @@ void GLUE3(tree_, prefix, _set_comp) (TREE *a, int (*comp) (data_t *, data_t *))
    Attaches an update function.  When inserting, if node the key value already 
    exists, this function is used to update the value in that node.  
    
+        new_value = update(current_value, passed_value);
+        
+    Any memory management must be done by update().  update is also used when 
+    initializing a node.
+    
+        new_value = update(NULL, passed_value)   
 */
 
 void GLUE3(tree_, prefix, _set_update) (TREE *a, void *(*update) (void *, void *)) {
@@ -104,17 +112,10 @@ void GLUE3(tree_, prefix, _set_value_free) (TREE *a, void (*value_free)(void *))
     a->value_free = value_free;
 }    
 
-NODE* GLUE3(tree_, prefix, _init_node)(data_t key, void *value) {
-    NODE *n = malloc(sizeof(NODE));
-    n->key = key;
-	n->value = value;
-    n->size = 1;
-    n->height = 1;
-    n->left = NULL;
-    n->right = NULL;
-    n->parent = NULL;
-    return n;
-}
+
+/* ----------------------------------------------------------------------- */
+/*                         destructor                                      */
+/* ----------------------------------------------------------------------- */
 
 void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
 	if (n == NULL) {
@@ -141,6 +142,22 @@ void GLUE3(tree_, prefix, _destroy) (TREE *a) {
     a->value_free = NULL;
     free(a);
 }
+
+
+
+
+NODE* GLUE3(tree_, prefix, _init_node)(data_t key) {
+    NODE *n = malloc(sizeof(NODE));
+    n->key = key;
+	n->value = NULL;
+    n->size = 1;
+    n->height = 1;
+    n->left = NULL;
+    n->right = NULL;
+    n->parent = NULL;
+    return n;
+}
+
 
 void GLUE3(tree_, prefix, _fillin)(NODE *n) {
     if (n == NULL) {
@@ -238,7 +255,7 @@ NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
 
 NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value) {
     if (n == NULL) {
-        NODE *rv = GLUE3(tree_, prefix, _init_node)(key, NULL);
+        NODE *rv = GLUE3(tree_, prefix, _init_node)(key);
 		if (a->update == NULL) {
 			rv->value = value;
 		} else {
