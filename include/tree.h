@@ -364,6 +364,70 @@ void* GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
         a->root->parent = NULL;
     }
 	return rv;
+}
+
+KEYVAL* GLUE3(tree_, prefix, _delete_min)(TREE *a) {
+    if (a->root == NULL) {
+        return NULL;
+    }
+    KEYVAL *rv = malloc(sizeof(KEYVAL));
+    
+    NODE *n = a->root;
+    while (n->left != NULL) {
+        n = n->left;
+    }
+    
+    rv->key = n->key;
+    rv->value = GLUE3(tree_, prefix, _delete)(a, rv->key);
+    return rv;
+}    
+
+KEYVAL* GLUE3(tree_, prefix, _delete_max)(TREE *a) {
+    if (a->root == NULL) {
+        return NULL;
+    }
+    KEYVAL *rv = malloc(sizeof(KEYVAL));
+    
+    NODE *n = a->root;
+    while (n->right != NULL) {
+        n = n->right;
+    }
+    
+    rv->key = n->key;
+    rv->value = GLUE3(tree_, prefix, _delete)(a, rv->key);
+    return rv;
+}    
+
+KEYVAL* GLUE3(tree_, prefix, _retrieve_min)(TREE *a) {
+    if (a->root == NULL) {
+        return NULL;
+    }
+    KEYVAL *rv = malloc(sizeof(KEYVAL));
+    
+    NODE *n = a->root;
+    while (n->left != NULL) {
+        n = n->left;
+    }
+    
+    rv->key = n->key;
+    rv->value = n->value;
+    return rv;
+}    
+
+KEYVAL* GLUE3(tree_, prefix, _retrieve_max)(TREE *a) {
+    if (a->root == NULL) {
+        return NULL;
+    }
+    KEYVAL *rv = malloc(sizeof(KEYVAL));
+    
+    NODE *n = a->root;
+    while (n->right != NULL) {
+        n = n->right;
+    }
+    
+    rv->key = n->key;
+    rv->value = n->value;
+    return rv;
 }    
 
 size_t GLUE3(tree_, prefix, _size)(TREE *a) {
