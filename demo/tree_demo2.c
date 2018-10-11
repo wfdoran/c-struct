@@ -12,19 +12,20 @@
 int main(void) {
     srand(time(NULL));
     
-    tree_int64_t t;
-    tree_int64_init(&t);
+    tree_int64_t *t = tree_int64_init();
     
     for (int i = 0; i < 1000000; i++) {
         int64_t val = 0;
         for (int j = 0; j < 5; j++) {
             val = (val << 13) + rand();
         }
-        tree_int64_insert(&t, val, NULL);
+        tree_int64_insert(t, val, NULL);
     }
-    printf("Tree Size: %d\n", tree_int64_size(&t));
-    printf("Tree Height: %d\n", tree_int64_height(&t));
+    printf("Tree Size: %d\n", tree_int64_size(t));
+    printf("Tree Height: %d\n", tree_int64_height(t));
     printf("\n");
+    
+    tree_int64_destroy(t);
     
     return 0;
 }
