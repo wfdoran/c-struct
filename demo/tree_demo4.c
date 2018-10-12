@@ -25,27 +25,29 @@ void *update(void *prev, void *curr) {
 int main(void) {
     srand(time(NULL));
     
-    tree_int_t t;
-    tree_int_init(&t);
-	tree_int_set_update(&t, &update);
+    tree_int_t *t = tree_int_init();
+	tree_int_set_update(t, &update);
+    tree_int_set_value_free(t, &free);
     
     int n = 100;
+    int samples = 1000;
     
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < samples; i++) {
 		int v = rand() % n;
-		tree_int_insert(&t, v, NULL);
+		tree_int_insert(t, v, NULL);
     }
-    printf("Tree Size: %d\n", tree_int_size(&t));
-    printf("Tree Height: %d\n", tree_int_height(&t));
+    printf("Tree Size: %d\n", tree_int_size(t));
+    printf("Tree Height: %d\n", tree_int_height(t));
     printf("\n");
     
     void *state;
-    tree_int_walk_init(&t, &state);
+    tree_int_walk_init(t, &state);
     while (state != NULL) {
 		key_int_value_t pair = tree_int_walk_next(&state);
 		printf("%5d %5d\n", pair.key, *((int *)pair.value));
     }
     printf("\n");
         
+    tree_int_destroy(t);    
     return 0;
 }
