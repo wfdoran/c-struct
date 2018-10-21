@@ -108,6 +108,19 @@ void GLUE3(tree_, prefix, _set_update) (TREE *a, void *(*update) (void *, void *
 	a->update = update;
 }
 
+/* void tree_prefix_set_value_free(tree_prefix_t *a, void (*value_free)(void *)
+
+    Attaches a free functions for values in each node.  This is used in two places:
+      1) If no update is provided and tree_prefix_insert hits an existing node
+         with the target key, this function is used to free to the value at
+         this node before it is replaced by the provided value.
+      2) When tree_prefix_destroy() is called, this function is used to 
+         free the value in every node.
+  
+    The most common usage to pass the system free() for the value_free assuming
+    the values where allocated by the system malloc().    
+*/
+
 void GLUE3(tree_, prefix, _set_value_free) (TREE *a, void (*value_free)(void *)) {
     a->value_free = value_free;
 }    
@@ -435,7 +448,45 @@ size_t GLUE3(tree_, prefix, _size)(TREE *a) {
 }
 
 int GLUE3(tree_, prefix, _height)(TREE *a) {
-    return a->root == NULL ? 0 : a->root->height;   
+    return a->root == NULL ? 0 : a->root->height; 
+}
+
+NODE *GLUE3(tree_, prefix, _postwalk_descent)(NODE *n) {
+    while (true) {
+        if (n->left != NULL) {
+            n = n->left;
+            continue;
+        }
+        
+        if (n->right != NULL) {
+            n = n->right;
+            continue;
+        }
+        
+        return n;
+    }
+}
+    
+void GLUE3(tree_, prefix, _postwalk_init)(TREE *a, void **state) {
+    if (a->root == NULL) {
+        *state = NULL;
+    } else {
+        NODE *n = GLUE3(tree_, prefix, _postwalk_descent)(a->root);
+        *state = n;
+    }
+}
+
+KEYVAL GLUE3(tree_, prefix, _postwalk_next)(void **state) {
+    NODE *n = *state;
+    KEYVAL rv = {.key = n->key, .value = n->value};
+    
+    NODE *p = n->parent;
+    if (p != NULL && n == p->left && p->right != NULL) {
+        *state = GLUE3(tree_, prefix, _postwalk_descent)(p->right);
+    } else {
+        *state = p;
+    }
+    return rv;
 }
 
 void GLUE3(tree_, prefix, _walk_init)(TREE *a, void **state) {
@@ -470,6 +521,30 @@ KEYVAL GLUE3(tree_, prefix, _walk_next)(void **state) {
     }
     *state = n;
     return rv;
+}
+
+KEYVAL GLUE3(tree_, prefix, _get_rank)(TREE *a, size_t rank) {
+    NODE *n = a->root;
+    if (rank < 0 || rank >= n->size) {
+        KEYVAL rv = {.value = NULL};
+        return rv;
+    }
+    
+    while (true) {
+        size_t left_size = n->left == NULL ? 0 : n->left->size;
+        if (rank < left_size) {
+            n = n->left;
+            continue;
+        }
+        if (rank > left_size) {
+            rank -= left_size + 1;
+            n = n->right;
+            continue;
+        }
+                
+        KEYVAL rv = {.key = n->key, .value = n->value};
+        return rv;
+    }
 }
 
 #undef NODE
