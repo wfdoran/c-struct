@@ -53,6 +53,7 @@ typedef struct {
 typedef struct {
 	data_t key;
 	void *value;
+    bool found;
 } KEYVAL;
 
 /* ----------------------------------------------------------------------- */
@@ -358,6 +359,7 @@ KEYVAL *GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
 			KEYVAL *rv = malloc(sizeof(KEYVAL));
 			rv->key = n->key;
 			rv->value = n->value;
+            rv->found = true;
 			return rv;
 		}
 		
@@ -392,6 +394,7 @@ KEYVAL* GLUE3(tree_, prefix, _delete_min)(TREE *a) {
     
     rv->key = n->key;
     rv->value = GLUE3(tree_, prefix, _delete)(a, rv->key);
+    rv->found = true;
     return rv;
 }    
 
@@ -408,6 +411,7 @@ KEYVAL* GLUE3(tree_, prefix, _delete_max)(TREE *a) {
     
     rv->key = n->key;
     rv->value = GLUE3(tree_, prefix, _delete)(a, rv->key);
+    rv->found = true;
     return rv;
 }    
 
@@ -424,6 +428,7 @@ KEYVAL* GLUE3(tree_, prefix, _retrieve_min)(TREE *a) {
     
     rv->key = n->key;
     rv->value = n->value;
+    rv->found = true;
     return rv;
 }    
 
@@ -440,6 +445,7 @@ KEYVAL* GLUE3(tree_, prefix, _retrieve_max)(TREE *a) {
     
     rv->key = n->key;
     rv->value = n->value;
+    rv->found = true;
     return rv;
 }    
 
@@ -478,7 +484,7 @@ void GLUE3(tree_, prefix, _postwalk_init)(TREE *a, void **state) {
 
 KEYVAL GLUE3(tree_, prefix, _postwalk_next)(void **state) {
     NODE *n = *state;
-    KEYVAL rv = {.key = n->key, .value = n->value};
+    KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
     
     NODE *p = n->parent;
     if (p != NULL && n == p->left && p->right != NULL) {
@@ -503,7 +509,7 @@ void GLUE3(tree_, prefix, _walk_init)(TREE *a, void **state) {
 
 KEYVAL GLUE3(tree_, prefix, _walk_next)(void **state) {
     NODE *n = *state;
-    KEYVAL rv = {.key = n->key, .value = n->value};
+    KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
     
     if (n->right != NULL) {
         n = n->right;
@@ -526,7 +532,7 @@ KEYVAL GLUE3(tree_, prefix, _walk_next)(void **state) {
 KEYVAL GLUE3(tree_, prefix, _get_rank)(TREE *a, size_t rank) {
     NODE *n = a->root;
     if (rank < 0 || rank >= n->size) {
-        KEYVAL rv = {.value = NULL};
+        KEYVAL rv = {.value = NULL, .found = false};
         return rv;
     }
     
@@ -542,7 +548,7 @@ KEYVAL GLUE3(tree_, prefix, _get_rank)(TREE *a, size_t rank) {
             continue;
         }
                 
-        KEYVAL rv = {.key = n->key, .value = n->value};
+        KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
         return rv;
     }
 }
