@@ -14,8 +14,8 @@ int main(void) {
 	tree_str_insert(t, "Charlie", "999-999-9999");
 	tree_str_insert(t, "Dave", "656-666-6666");
 	
-	key_str_value_t *rv = tree_str_retrieve(t, "Bill");
-	printf("%s\n", rv->value);
+	key_str_value_t rv = tree_str_retrieve(t, "Bill");
+	printf("%s\n", rv.value);
 	
     tree_str_destroy(t);
 	return 0;

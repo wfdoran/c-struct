@@ -24,10 +24,11 @@
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 
 // rank
-// retrieve min
-// retrieve max
-// delete min
-// delete max
+// change subroutines which return KEYVAL* to return KEYVAL.  
+// move routines which the caller should not see to <tree_private.h> 
+// initialize iterator with rank or bound or something
+
+// search and replace
 
 /* ----------------------------------------------------------------------- */
 /*                         data structures                                 */
@@ -346,108 +347,102 @@ NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE 
     return GLUE3(tree_, prefix, _delete_node)(comp, n, key, rv);
 }
 
-KEYVAL *GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
+KEYVAL GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
 	NODE *n = a->root;
 	
 	while (true) {
 		if (n == NULL) {
-			return NULL;
+            KEYVAL rv = {.key = key, .value = NULL, .found = false};
+			return rv;
 		}
 		
 		int c = a->comp(&key, &(n->key));
 		if (c == 0) {
-			KEYVAL *rv = malloc(sizeof(KEYVAL));
-			rv->key = n->key;
-			rv->value = n->value;
-            rv->found = true;
-			return rv;
+            KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
+            return rv;
 		}
 		
 		n = c < 0 ? n->left : n->right; 
 	}
 }
 
-void* GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
+KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
     NODE *n = NULL;
     a->root = GLUE3(tree_, prefix, _delete_node)(a->comp, a->root, key, &n);
-	void *rv = NULL;
-	if (n != NULL) {
-		rv = n->value;
-	}
-    free(n);
     if (a->root != NULL) {
         a->root->parent = NULL;
     }
-	return rv;
+    
+    if (n == NULL) {
+        KEYVAL rv = {.key = key, .value = NULL, .found = false};
+        return rv;
+    }
+    
+    KEYVAL rv = {.key = key, .value = n->value, .found = true};
+    free(n);
+    return rv;
 }
 
-KEYVAL* GLUE3(tree_, prefix, _delete_min)(TREE *a) {
-    if (a->root == NULL) {
-        return NULL;
-    }
-    KEYVAL *rv = malloc(sizeof(KEYVAL));
-    
+KEYVAL GLUE3(tree_, prefix, _delete_min)(TREE *a) {
     NODE *n = a->root;
+    if (n == NULL) {
+        KEYVAL rv = {.value = NULL, .found = false};
+        return rv;
+    }
+            
     while (n->left != NULL) {
         n = n->left;
     }
     
-    rv->key = n->key;
-    rv->value = GLUE3(tree_, prefix, _delete)(a, rv->key);
-    rv->found = true;
-    return rv;
+    return GLUE3(tree_, prefix, _delete)(a, n->key);
 }    
 
-KEYVAL* GLUE3(tree_, prefix, _delete_max)(TREE *a) {
-    if (a->root == NULL) {
-        return NULL;
-    }
-    KEYVAL *rv = malloc(sizeof(KEYVAL));
-    
+KEYVAL GLUE3(tree_, prefix, _delete_max)(TREE *a) {
     NODE *n = a->root;
+    if (n == NULL) {
+        KEYVAL rv = {.value = NULL, .found = false};
+        return rv;
+    }
+            
     while (n->right != NULL) {
         n = n->right;
     }
     
-    rv->key = n->key;
-    rv->value = GLUE3(tree_, prefix, _delete)(a, rv->key);
-    rv->found = true;
-    return rv;
+    return GLUE3(tree_, prefix, _delete)(a, n->key);
 }    
-
-KEYVAL* GLUE3(tree_, prefix, _retrieve_min)(TREE *a) {
-    if (a->root == NULL) {
-        return NULL;
-    }
-    KEYVAL *rv = malloc(sizeof(KEYVAL));
     
+KEYVAL GLUE3(tree_, prefix, _retrieve_min)(TREE *a) {
     NODE *n = a->root;
+    
+    if (n == NULL) {
+        KEYVAL rv = {.value = NULL, .found = false};
+        return rv;
+    }
+    
     while (n->left != NULL) {
         n = n->left;
     }
-    
-    rv->key = n->key;
-    rv->value = n->value;
-    rv->found = true;
+
+    KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
     return rv;
 }    
 
-KEYVAL* GLUE3(tree_, prefix, _retrieve_max)(TREE *a) {
-    if (a->root == NULL) {
-        return NULL;
-    }
-    KEYVAL *rv = malloc(sizeof(KEYVAL));
-    
+KEYVAL GLUE3(tree_, prefix, _retrieve_max)(TREE *a) {
     NODE *n = a->root;
+    
+    if (n == NULL) {
+        KEYVAL rv = {.value = NULL, .found = false};
+        return rv;
+    }
+    
     while (n->right != NULL) {
         n = n->right;
     }
-    
-    rv->key = n->key;
-    rv->value = n->value;
-    rv->found = true;
+
+    KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
     return rv;
-}    
+}
+
 
 size_t GLUE3(tree_, prefix, _size)(TREE *a) {
     return a->root == NULL ? 0 : a->root->size;

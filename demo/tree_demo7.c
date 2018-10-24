@@ -21,12 +21,12 @@ int main(void) {
     while (true) {
         size_t size = tree_float_size(t);
         int height = tree_float_height(t);
-        key_float_value_t *kv_pair = tree_float_delete_min(t);
-        if (t == NULL) {
+        key_float_value_t kv_pair = tree_float_delete_min(t);
+        if (!kv_pair.found) {
             break;
         }
         
-        printf("%4d %4d %8.4f\n", size, height, kv_pair->key);
+        printf("%4d %4d %8.4f\n", size, height, kv_pair.key);
     }
     
     tree_float_destroy(t);
