@@ -30,7 +30,6 @@ int main(void) {
     srand(time(NULL));
     
     tree_trip_t *t = tree_trip_init();
-    tree_trip_init(t);
 	tree_trip_set_comp(t, comp);
     tree_trip_set_value_free(t, free);
 	
@@ -46,7 +45,7 @@ int main(void) {
 	tree_trip_walk_init(t, &state);
 	while (state != NULL) {
 		key_trip_value_t q = tree_trip_walk_next(&state);
-		printf("%6d %6d %6d  %8.4f \n", q.key.x[0], q.key.x[1], q.key.x[2], *(double*)q.value);
+		printf("%10d %10d %10d  %8.4f \n", q.key.x[0], q.key.x[1], q.key.x[2], *(double*)q.value);
 	}	
 	
 	tree_trip_destroy(t);
