@@ -36,7 +36,7 @@
                               
 typedef struct NODE {
     data_t key;
-	void *value;
+    void *value;
     size_t size;
     int height;
     struct NODE *left;
@@ -47,13 +47,13 @@ typedef struct NODE {
 typedef struct {
     struct NODE *root;
     int (*comp) (data_t *, data_t *);
-	void * (*update) (void *, void *);
+    void * (*update) (void *, void *);
     void (*value_free) (void *);
 } TREE;
 
 typedef struct {
-	data_t key;
-	void *value;
+    data_t key;
+    void *value;
     bool found;
 } KEYVAL;
 
@@ -90,7 +90,7 @@ TREE *GLUE3(tree_, prefix, _init) () {
    See comp.h for details and the C11 generics which deal with the basic data_ts.
 */
 void GLUE3(tree_, prefix, _set_comp) (TREE *a, int (*comp) (data_t *, data_t *)) {
-	a->comp = comp;
+    a->comp = comp;
 }
 
 /* void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void *));
@@ -107,7 +107,7 @@ void GLUE3(tree_, prefix, _set_comp) (TREE *a, int (*comp) (data_t *, data_t *))
 */
 
 void GLUE3(tree_, prefix, _set_update) (TREE *a, void *(*update) (void *, void *)) {
-	a->update = update;
+    a->update = update;
 }
 
 /* void tree_prefix_set_value_free(tree_prefix_t *a, void (*value_free)(void *)
@@ -133,12 +133,12 @@ void GLUE3(tree_, prefix, _set_value_free) (TREE *a, void (*value_free)(void *))
 /* ----------------------------------------------------------------------- */
 
 void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
-	if (n == NULL) {
-		return;
-	}
-	
-	GLUE3(tree_, prefix, _node_destroy)(n->left, value_free);
-	GLUE3(tree_, prefix, _node_destroy)(n->right, value_free);
+    if (n == NULL) {
+        return;
+    }
+    
+    GLUE3(tree_, prefix, _node_destroy)(n->left, value_free);
+    GLUE3(tree_, prefix, _node_destroy)(n->right, value_free);
     n->left = NULL;
     n->right = NULL;
     n->parent = NULL;
@@ -146,7 +146,7 @@ void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
     if (value_free != NULL) {
         value_free(n->value);
     }
-	free(n);
+    free(n);
 }
 
 void GLUE3(tree_, prefix, _destroy) (TREE *a) {
@@ -164,7 +164,7 @@ void GLUE3(tree_, prefix, _destroy) (TREE *a) {
 NODE* GLUE3(tree_, prefix, _init_node)(data_t key) {
     NODE *n = malloc(sizeof(NODE));
     n->key = key;
-	n->value = NULL;
+    n->value = NULL;
     n->size = 1;
     n->height = 1;
     n->left = NULL;
@@ -271,12 +271,12 @@ NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
 NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value) {
     if (n == NULL) {
         NODE *rv = GLUE3(tree_, prefix, _init_node)(key);
-		if (a->update == NULL) {
-			rv->value = value;
-		} else {
-			rv->value = a->update(rv->value, value);
-		}
-		return rv;
+        if (a->update == NULL) {
+            rv->value = value;
+        } else {
+            rv->value = a->update(rv->value, value);
+        }
+        return rv;
     }
     int c = a->comp(&key, &(n->key));
     if (c < 0) {
@@ -287,16 +287,16 @@ NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *val
         n->right = GLUE3(tree_, prefix, _insert_node)(a, n->right, key, value);
         n->right->parent = n;        
     }
-	if (c == 0) {
-		if (a->update == NULL) {
+    if (c == 0) {
+        if (a->update == NULL) {
             if (a->value_free != NULL) {
                 a->value_free(n->value);
             }
-			n->value = value;
-		} else {
-			n->value = a->update(n->value, value);
-		}
-	}
+            n->value = value;
+        } else {
+            n->value = a->update(n->value, value);
+        }
+    }
     
     n = GLUE3(tree_, prefix, _balance)(n);
     GLUE3(tree_, prefix, _fillin)(n);
@@ -348,22 +348,22 @@ NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE 
 }
 
 KEYVAL GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
-	NODE *n = a->root;
-	
-	while (true) {
-		if (n == NULL) {
+    NODE *n = a->root;
+    
+    while (true) {
+        if (n == NULL) {
             KEYVAL rv = {.key = key, .value = NULL, .found = false};
-			return rv;
-		}
-		
-		int c = a->comp(&key, &(n->key));
-		if (c == 0) {
+            return rv;
+        }
+        
+        int c = a->comp(&key, &(n->key));
+        if (c == 0) {
             KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
             return rv;
-		}
-		
-		n = c < 0 ? n->left : n->right; 
-	}
+        }
+        
+        n = c < 0 ? n->left : n->right; 
+    }
 }
 
 KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
