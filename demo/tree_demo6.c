@@ -48,6 +48,6 @@ int main(void) {
 		printf("%10d %10d %10d  %8.4f \n", q.key.x[0], q.key.x[1], q.key.x[2], *(double*)q.value);
 	}	
 	
-	tree_trip_destroy(t);
+	tree_trip_destroy(&t);
     return 0;
 }

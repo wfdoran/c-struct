@@ -24,6 +24,6 @@ int main(void) {
         printf("%4d %4d\n", i, pair.key);
     }
     
-    tree_int32_destroy(t);        
+    tree_int32_destroy(&t);        
     return 0;
 }

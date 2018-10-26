@@ -79,7 +79,7 @@ int main(void) {
     }
     printf("\n");
         
-    tree_double_destroy(t);    
+    tree_double_destroy(&t);    
         
     return 0;
 }

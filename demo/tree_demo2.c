@@ -25,7 +25,7 @@ int main(void) {
     printf("Tree Height: %d\n", tree_int64_height(t));
     printf("\n");
     
-    tree_int64_destroy(t);
+    tree_int64_destroy(&t);
     
     return 0;
 }

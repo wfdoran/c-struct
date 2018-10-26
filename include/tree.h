@@ -132,7 +132,7 @@ void GLUE3(tree_, prefix, _set_value_free) (TREE *a, void (*value_free)(void *))
 /*                         destructor                                      */
 /* ----------------------------------------------------------------------- */
 
-void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
+static void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
     if (n == NULL) {
         return;
     }
@@ -149,17 +149,25 @@ void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
     free(n);
 }
 
-void GLUE3(tree_, prefix, _destroy) (TREE *a) {
+/* void tree_prefix_destroy(tree_prefix_t **a)
+
+   Destroys a tree, frees all of its nodes, and sets the pointer to NULL.        
+*/   
+
+void GLUE3(tree_, prefix, _destroy) (TREE **a_ptr) {
+    TREE *a = *a_ptr;
+    // in case a user tries a double destroy
+    if (a == NULL) { 
+        return;
+    }
     GLUE3(tree_, prefix, _node_destroy) (a->root, a->value_free);
     a->root = NULL;
     a->comp = NULL;
     a->update = NULL;
     a->value_free = NULL;
     free(a);
+    a_ptr = NULL;
 }
-
-
-
 
 NODE* GLUE3(tree_, prefix, _init_node)(data_t key) {
     NODE *n = malloc(sizeof(NODE));

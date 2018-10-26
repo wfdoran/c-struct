@@ -17,6 +17,6 @@ int main(void) {
 	key_str_value_t rv = tree_str_retrieve(t, "Bill");
 	printf("%s\n", rv.value);
 	
-    tree_str_destroy(t);
+    tree_str_destroy(&t);
 	return 0;
 }

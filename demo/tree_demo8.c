@@ -30,7 +30,7 @@ int main(void) {
     }
     printf("\n");
     
-    tree_int32_destroy(t);
+    tree_int32_destroy(&t);
         
     return 0;
 }
