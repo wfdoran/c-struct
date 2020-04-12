@@ -58,12 +58,20 @@ TODO: pre-order, post-order
 Returns the key-value pair for the current node in walk and steps state.
 At the last node, the internals of the state are freed and state is set to NULL. 
 
+### `void tree_prefix_set_update(tree_prefix_t *t, void *(*update) (void *, void *));`
 
+The default for `tree_prefix_insert` is to set `value` for the node with
+the given value or replace it is this key already exists.  This function
+allows you prescribe the behavior. 
 
+### `void tree_prefix_set_value_free(tree_prefix_t *t, void (*value_free)(void *)`
+
+By default, the system `free()` is used to free values.  You can use
+this command to set your own free function. 
 
 ### `void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *));`
 
-### `void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void *));`
+
 
 ### `key_prefix_value_t *tree_prefix_retrieve(tree_prefix_t *a, data_t key);`
 
