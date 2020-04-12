@@ -23,6 +23,8 @@ typedef struct {
 
 ### `void tree_prefix_init(tree_prefix_t *a);`
 
+Initializes a binary tree.
+
 ### `void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *));`
 
 ### `void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void *));`
