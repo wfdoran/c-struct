@@ -33,6 +33,11 @@ Destroys a binary tree, frees all of its nodes, and sets the pointer to NULL.
 
 Inserts a key-value pair into a binary tree.
 
+### ### `void* tree_prefix_delete(tree_prefix_t *t, data_t key);`
+
+Removes a node from the tree.  Returns the value for this node.
+Returns NULL if not found. 
+
 ### `size_t tree_prefix_size(tree_prefix_t *t);`
 
 Returns the number of nodes in the tree.  This implementation does not
@@ -59,8 +64,6 @@ At the last node, the internals of the state are freed and state is set to NULL.
 ### `void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *));`
 
 ### `void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void *));`
-
-### `void *tree_prefix_delete(tree_prefix_t *a, data_t key);`
 
 ### `key_prefix_value_t *tree_prefix_retrieve(tree_prefix_t *a, data_t key);`
 
