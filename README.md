@@ -21,26 +21,52 @@ typedef struct {
 } key_prefix_value_t;
 ```
 
-### `void tree_prefix_init(tree_prefix_t *a);`
+### `tree_prefix_t* tree_prefix_init();`
 
-Initializes a binary tree.
+Initializes an empty binary tree.
+
+### `void tree_prefix_destroy(tree_prefix_t **t)`
+
+Destroys a binary tree, frees all of its nodes, and sets the pointer to NULL.
+
+### `void tree_prefix_insert(tree_prefix_t *t, data_t key, void *value);`
+
+Inserts a key-value pair into a binary tree.
+
+### `size_t tree_prefix_size(tree_prefix_t *t);`
+
+Returns the number of nodes in the tree.  This implementation does not
+have a fictitious root node.  
+
+### `size_t tree_prefix_height(tree_prefix_t *t);`
+
+Returns the height of the tree which is always ceil(log2(num_nodes)).  
+
+### `void tree_prefix_walk_init(tree_prefix_t *t, void **state);`
+
+Initializes an in-order walk of the tree.
+
+TODO: pre-order, post-order
+
+### `key_prefix_value_t tree_prefix_walk_next(void **state);`
+
+Returns the key-value pair for the current node in walk and steps state.
+At the last node, the internals of the state are freed and state is set to NULL. 
+
+
+
 
 ### `void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *));`
 
 ### `void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void *));`
 
-### `void tree_prefix_insert(tree_prefix_t *a, data_t key, void *value);`
-
 ### `void *tree_prefix_delete(tree_prefix_t *a, data_t key);`
 
 ### `key_prefix_value_t *tree_prefix_retrieve(tree_prefix_t *a, data_t key);`
 
-### `size_t tree_prefix_size(tree_prefix_t *a);`
 
-### `size_t tree_prefix_height(tree_prefix_t *a);`
 
-### `void tree_prefix_walk_init)(tree_prefix_t *a, void **state);`
 
-### `key_prefix_value_t tree_prefix_walk_next(void **state);`
+
 
 

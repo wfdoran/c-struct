@@ -11,14 +11,15 @@
 
 int main(void) {
     srand(time(NULL));
+    int32_t num_items = 100;
     
     tree_int32_t *t = tree_int32_init();
     
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < num_items; i++) {
         int32_t val = (rand() >> 3) & 0xffff;
         tree_int32_insert(t, val, NULL);
     }
-    printf("Tree Size: %d\n", tree_int32_size(t));
+    printf("Tree Size: %zu\n", tree_int32_size(t));
     printf("Tree Height: %d\n", tree_int32_height(t));
     printf("\n");
     
