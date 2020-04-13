@@ -456,6 +456,86 @@ size_t GLUE3(tree_, prefix, _size)(TREE *a) {
     return a->root == NULL ? 0 : a->root->size;
 }
 
+size_t GLUE3(tree_, prefix, _num_less)(TREE *a, data_t key) {
+  size_t total = 0;
+  NODE *n = a->root;
+  while (n != NULL) {
+    int c = a->comp(&key, &(n->key));
+
+    if (c < 0) {
+      n = n->left;
+    } else {
+      if (c > 0) {
+	total++;
+      }
+      if (n->left != NULL) {
+	total += n->left->size;
+      }
+      n = n->right;
+    }
+  }
+  return total;
+}
+
+size_t GLUE3(tree_, prefix, _num_less_equal)(TREE *a, data_t key) {
+  size_t total = 0;
+  NODE *n = a->root;
+  while (n != NULL) {
+    int c = a->comp(&key, &(n->key));
+
+    if (c < 0) {
+      n = n->left;
+    } else {
+      total++;
+      if (n->left != NULL) {
+	total += n->left->size;
+      }
+      n = n->right;
+    }
+  }
+  return total;
+}
+
+size_t GLUE3(tree_, prefix, _num_greater)(TREE *a, data_t key) {
+  size_t total = 0;
+  NODE *n = a->root;
+  while (n != NULL) {
+    int c = a->comp(&key, &(n->key));
+
+    if (c > 0) {
+      n = n->right;
+    } else {
+      if (c < 0) {
+	total++;
+      }
+      if (n->right != NULL) {
+	total += n->right->size;
+      }
+      n = n->left;
+    }
+  }
+  return total;
+}
+
+size_t GLUE3(tree_, prefix, _num_greater_equal)(TREE *a, data_t key) {
+  size_t total = 0;
+  NODE *n = a->root;
+  while (n != NULL) {
+    int c = a->comp(&key, &(n->key));
+
+    if (c > 0) {
+      n = n->right;
+    } else {
+      total++;
+      if (n->right != NULL) {
+	total += n->right->size;
+      }
+      n = n->left;
+    }
+  }
+  return total;
+}
+
 int GLUE3(tree_, prefix, _height)(TREE *a) {
     return a->root == NULL ? 0 : a->root->height; 
 }

@@ -40,7 +40,7 @@ Returns NULL if not found.
 
 ### `key_prefix_value_t tree_prefix_retrieve(tree_prefix_t *t, data_t key)`
 
-
+Retrieves but does not delete the key-value pair for a given key. 
 
 ### `size_t tree_prefix_size(tree_prefix_t *t);`
 
@@ -73,11 +73,21 @@ allows you prescribe the behavior.
 By default, the system `free()` is used to free values.  You can use
 this command to set your own free function. 
 
-### `void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *));`
+### `void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *f, data_t *));`
 
 
 
-### `key_prefix_value_t *tree_prefix_retrieve(tree_prefix_t *a, data_t key);`
+### `key_prefix_value_t tree_prefix_rank(tree_prefix_t *t, size_t rank)`
+
+### `size_t tree_prefix_num_less(tree_prefix_t *t, key_t key)`
+
+### `size_t tree_prefix_num_less_equal(tree_prefix_t *t, key_t key)`
+
+### `size_t tree_prefix_num_greater(tree_prefix_t *t, key_t key)`
+
+### `size_t tree_prefix_num_greater_equal(tree_prefix_t *t, key_t key)`
+
+
 
 
 
