@@ -55,12 +55,15 @@ Returns the height of the tree which is always ceil(log2(num_nodes)).
 
 Initializes an in-order walk of the tree.
 
-TODO: pre-order, post-order
-
 ### `key_prefix_value_t tree_prefix_walk_next(void **state);`
 
 Returns the key-value pair for the current node in walk and steps state.
 At the last node, the internals of the state are freed and state is set to NULL. 
+
+### `void tree_prefix_walk_init2(tree_prefix_t *t, data_t key, void **state)`
+
+Initializes the in-order walk at the first node which is equal to greater than
+key.
 
 ### `void tree_prefix_set_update(tree_prefix_t *t, void *(*update) (void *, void *));`
 

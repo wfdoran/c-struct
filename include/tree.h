@@ -23,7 +23,6 @@
 #define NODE GLUE3(tnode_, prefix, _t)
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 
-// rank
 // change subroutines which return KEYVAL* to return KEYVAL.  
 // move routines which the caller should not see to <tree_private.h> 
 // initialize iterator with rank or bound or something
@@ -576,6 +575,27 @@ KEYVAL GLUE3(tree_, prefix, _postwalk_next)(void **state) {
         *state = p;
     }
     return rv;
+}
+
+void GLUE3(tree_, prefix, _walk_init2)(TREE *a, data_t key, void **state) {
+  if (a->root == NULL) {
+    *state = NULL;
+  } else {
+    NODE *n = a->root;
+    while (true) {
+      int c = a->comp(&key, &(n->key));
+      if (c == 0) {
+	break;
+      }
+
+      NODE *next = c > 0 ? n->right : n->left;
+      if (next == NULL) {
+	break;
+      }
+      n = next;
+    }
+    *state = n;
+  }
 }
 
 void GLUE3(tree_, prefix, _walk_init)(TREE *a, void **state) {
