@@ -1,7 +1,11 @@
 #define data_t float
+#define prefix float
 #include <linked_list.h>
+#undef prefix
+#undef data_t
 
 int main(void) {
-    linked_list_t a = INIT_LINKED_LIST_T;
-    return 0;
+  llist_float_t *a = llist_float_init();
+  llist_float_destroy(&a);
+  return 0;
 }
