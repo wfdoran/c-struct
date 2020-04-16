@@ -8,6 +8,10 @@
 #error "prefix not defined"
 #endif
 
+#ifndef null_value
+#error "null_value not defined"
+#endif
+
 #define GLUE_HELPER(x, y) x##y
 #define GLUE(x, y) GLUE_HELPER(x,y)
 #define GLUE3(x, y, z) GLUE(GLUE(x,y), z)
@@ -131,6 +135,38 @@ int32_t GLUE3(llist_, prefix, _add_end) (LLIST *a, data_t d) {
   }
 
   return 0;
+}
+
+data_t GLUE3(llist_, prefix, _remove_start) (LLIST *a) {
+  if (a == NULL || a->head == NULL) {
+    return null_value;
+  }
+
+  LNODE *n = a->head;
+  data_t rv = n->data;
+  a->head = n->next;
+  if (a->head == NULL) {
+    a->tail = NULL;
+  }
+  a->size -= 1;
+  free(n);
+  return rv;
+}
+
+data_t GLUE3(llist_, prefix, _remove_end) (LLIST *a) {
+  if (a == NULL || a->head == NULL) {
+    return null_value;
+  }
+
+  LNODE *n = a->tail;
+  data_t rv = n->data;
+  a->tail = n->prev;
+  if (a->tail == NULL) {
+    a->head = NULL;
+  }
+  a->size -= 1;
+  free(n);
+  return rv;
 }
 
 
