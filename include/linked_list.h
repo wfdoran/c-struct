@@ -29,7 +29,6 @@ typedef struct {
 } LLIST;
 
 /* 
-  llist_prefix_destroy
   llist_prefix_size;
   llist_prefix_add_start;
   llist_prefix_add_end;
@@ -77,6 +76,65 @@ void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
   free(a);
   a_ptr = NULL;
 }
+
+/* ----------------------------------------------------------------------- */
+/*                          add / remove                                   */
+/* ----------------------------------------------------------------------- */
+
+int32_t GLUE3(llist_, prefix, _add_start) (LLIST *a, data_t d) {
+  if (a == NULL) {
+    return -1;
+  }
+
+  LNODE *n = malloc(sizeof(LNODE));
+  if (n == NULL) {
+    return -1;
+  }
+  n->data = d;
+  n->next = a->head;
+  n->prev = NULL;
+
+  if (a->head == NULL) {
+    a->head = n;
+    a->tail = n;
+    a->size = 1;
+  } else {
+    a->head->prev = n;
+    a->head = n;
+    a->size += 1;
+  }
+  
+  return 0;
+}
+
+int32_t GLUE3(llist_, prefix, _add_end) (LLIST *a, data_t d) {
+  if (a == NULL) {
+    return -1;
+  }
+
+  LNODE *n = malloc(sizeof(LNODE));
+  if (n == NULL) {
+    return -1;
+  }
+  n->data = d;
+  n->next = NULL;
+  n->prev = a->tail;
+
+  if (a->head == NULL) {
+    a->head = n;
+    a->tail = n;
+    a->size = 1;
+  } else {
+    a->tail->next = n;
+    a->tail = n;
+    a->size += 1;
+  }
+
+  return 0;
+}
+
+
+
 
 #undef LNODE
 #undef LLIST
