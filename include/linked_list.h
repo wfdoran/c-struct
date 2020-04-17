@@ -34,10 +34,6 @@ typedef struct {
 
 /* 
   llist_prefix_size;
-  llist_prefix_add_start;
-  llist_prefix_add_end;
-  llist_prefix_remove_start;
-  llist_prefix_remove_end;
   llist_prefix_set_start;
   llist_prefix_step_forward;
 */
@@ -169,8 +165,40 @@ data_t GLUE3(llist_, prefix, _remove_end) (LLIST *a) {
   return rv;
 }
 
+/* ----------------------------------------------------------------------- */
+/*                     walk the linked list                                */
+/* ----------------------------------------------------------------------- */
 
+data_t GLUE3(llist_, prefix, _walk_init_start) (LLIST *a, LNODE **n_ptr) {
+  LNODE *n = a->head;
+  *n_ptr = n;
+  return n == NULL ? null_value : n->data;
+}
 
+data_t GLUE3(llist_, prefix, _walk_init_end) (LLIST *a, LNODE **n_ptr) {
+  LNODE *n = a->tail;
+  *n_ptr = n;
+  return n == NULL ? null_value : n->data;
+}
+
+data_t GLUE3(llist_, prefix, _walk_forward) (LNODE **n_ptr) {
+  LNODE *n = *n_ptr;
+  if (n != NULL) {
+    n = n->next;
+  }
+  *n_ptr = n;
+  return n == NULL ? null_value : n->data;
+}
+
+data_t GLUE3(llist_, prefix, _walk_backwards) (LNODE **n_ptr) {
+  LNODE *n = *n_ptr;
+  if (n != NULL) {
+    n = n->prev;
+  }
+  *n_ptr = n;
+  return n == NULL ? null_value : n->data;
+}
+  
 
 #undef LNODE
 #undef LLIST

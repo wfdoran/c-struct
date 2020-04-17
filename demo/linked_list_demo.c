@@ -20,8 +20,11 @@ int main(void) {
     llist_float_add_end(a, 1.0 / i);
   }
 
-  for (lnode_float_t *n = a->head; n != NULL; n = n->next) {
-    printf("%12.4f \n", n->data);
+  lnode_float_t *temp_node;
+  for (float d = llist_float_walk_init_start(a, &temp_node);
+       !isnan(d);
+       d = llist_float_walk_forward(&temp_node)) {
+    printf("%12.4f \n", d);
   }
   
   while (1) {
