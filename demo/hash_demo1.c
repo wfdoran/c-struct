@@ -23,6 +23,21 @@ int main() {
     assert(rc == 0);
   }
 
+  {
+    int sqrt;
+    int rc;
+
+    sqrt = 0;
+    rc = hash_int_get(h, 16, &sqrt);
+    printf("%d %d\n", rc, sqrt);
+
+    sqrt = 0;
+    rc = hash_int_get(h, 17, &sqrt);
+    printf("%d %d\n", rc, sqrt);
+  }
+    
+  
+
 
   printf("%ld \n", h->size);
   return 0;
