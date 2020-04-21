@@ -54,5 +54,9 @@ int comp_str(char **a, char **b) {
     char: &comp_char, \
     char*: &comp_str, \
     default: NULL)
+
+#define DEFAULT_COMP_PTR(x) _Generic((x),	\
+    char*: &comp_str, \
+    default: NULL)
     
 #endif
