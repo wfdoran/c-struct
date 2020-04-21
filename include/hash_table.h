@@ -89,8 +89,35 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   key_t temp;
   h->hash_func = DEFAULT_HASH(temp);
   h->comp = DEFAULT_COMP_PTR(temp);
+
+  return h;
 }
 
+int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, key_t key, value_t value) {
+  if (h == NULL || h->hash_func == NULL) {
+    return -1;
+  }
+  uint64_t hash = h->hash_func(key);
+  uint64_t mask = h->capacity - UINT64_C(1);
+  uint64_t base = hash & mask;
+  uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
+  
+  for (uint64_t pos = base; ; pos = (pos + step) & mask) {
+    if (h->A[pos] == NULL) {
+      HNODE *n = malloc(sizeof(HNODE));
+      if (n == NULL) {
+	return -1;
+      }
+      n->hash = hash;
+      n->key = key;
+      n->value = value;
+      h->A[pos] = n;
+      h->size++;
+      break;
+    }
+  }
+  return 0;
+}
 
 #undef HNODE
 #undef HTABLE

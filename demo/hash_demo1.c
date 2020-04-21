@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
-#define key_t int
+#define key_t int32_t
 #define value_t int
 #define prefix int
 #include <hash_table.h>
@@ -16,7 +17,14 @@ int main() {
   printf("%016lx\n", a_hash);
 
   htable_int_t *h = hash_int_init(0);
-  
+
+  for (int i = 1; i <= 10; i++) {
+    int rc = hash_int_put(h, i*i, i);
+    assert(rc == 0);
+  }
+
+
+  printf("%ld \n", h->size);
   return 0;
 }
 
