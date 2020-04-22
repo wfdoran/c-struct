@@ -39,17 +39,11 @@ typedef struct HLIST {
 } HTABLE;
 
 /* 
-   HLIST *GLUE3(tree_, prefix, _init) (size_t expected_size);
-   void GLUE3(tree_, prefix, _destroy) (HTABLE
-
    destroy
    set_hash
    get_size
    get_capacity
-   get
    remove
-
-   rehash
 
    first
    next
@@ -91,6 +85,43 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   return h;
 }
 
+int32_t GLUE3(hash_, prefix, _rehash)(HTABLE *h) {
+  if (h == NULL) {
+    return -1;
+  }
+  int64_t new_capacity = 2 * h->capacity;
+  HNODE **new_A = malloc(new_capacity * sizeof(HNODE*));
+  if (new_A == NULL) {
+    return -1;
+  }
+  for (int64_t i = 0; i < new_capacity; i++) {
+    new_A[i] = NULL;
+  }
+
+  const uint64_t mask = new_capacity - UINT64_C(1);
+
+  for (int64_t i = 0; i < h->capacity; i++) {
+    HNODE *n = h->A[i];
+    if (n == NULL) {
+      continue;
+    }
+    uint64_t base = n->hash & mask;
+    uint64_t step = ((n->hash / new_capacity) & mask) | UINT64_C(1);
+
+    for (uint64_t pos = base; ; pos = (pos + step) & mask) {
+      if (new_A[pos] == NULL) {
+	new_A[pos] = n;
+	break;
+      }
+    }
+  }
+
+  free(h->A);
+  h->A = new_A;
+  h->capacity = new_capacity;
+  return 0;
+}
+
 int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, key_t key, value_t value) {
   if (h == NULL || h->hash_func == NULL) {
     return -1;
@@ -110,8 +141,15 @@ int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, key_t key, value_t value) {
       n->key = key;
       n->value = value;
       h->A[pos] = n;
-      h->size++;
       break;
+    }
+  }
+
+  h->size++;
+  if (h->size > LOAD_FACTOR * h->capacity) {
+    int32_t rc = GLUE3(hash_, prefix, _rehash)(h);
+    if (rc != 0) {
+      return 0;
     }
   }
   return 0;
@@ -139,6 +177,7 @@ int32_t GLUE3(hash_, prefix, _get)(HTABLE *h, key_t key, value_t *value) {
     }
   }
 }
+
    
 #undef HNODE
 #undef HTABLE

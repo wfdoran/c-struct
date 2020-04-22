@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define key_t int32_t
+#define key_t int
 #define value_t int
 #define prefix int
 #include <hash_table.h>
@@ -18,7 +18,7 @@ int main() {
 
   htable_int_t *h = hash_int_init(0);
 
-  for (int i = 1; i <= 10; i++) {
+  for (int i = 1; i <= 100; i++) {
     int rc = hash_int_put(h, i*i, i);
     assert(rc == 0);
   }
