@@ -17,11 +17,13 @@ int main() {
   printf("%016lx\n", a_hash);
 
   htable_int_t *h = hash_int_init(0);
+  hash_int_put(h, 0, 0);
 
   for (int i = 1; i <= 100; i++) {
     int rc = hash_int_put(h, i*i, i);
     assert(rc == 0);
   }
+  hash_int_put(h, 0, -5);
 
   {
     int sqrt;
@@ -34,8 +36,12 @@ int main() {
     sqrt = 0;
     rc = hash_int_get(h, 17, &sqrt);
     printf("%d %d\n", rc, sqrt);
+
+    sqrt = 0;
+    rc = hash_int_get(h, 0, &sqrt);
+    printf("%d %d\n", rc, sqrt);    
   }
-    
+  
   
 
 
