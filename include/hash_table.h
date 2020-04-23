@@ -85,6 +85,27 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   return h;
 }
 
+void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
+  HTABLE *h = *h_ptr;
+  if (h == NULL) {
+    return;
+  }
+
+  for (int64_t i = 0; i < h->capacity; i++) {
+    free(h->A[i]);
+  }
+  free(h->A);
+
+  h->capacity = 0;
+  h->size = 0;
+  h->A = NULL;
+  h->hash_func = NULL;
+  h->comp = NULL;
+
+  free(h);
+  h_ptr = NULL;
+}
+
 int32_t GLUE3(hash_, prefix, _rehash)(HTABLE *h) {
   if (h == NULL) {
     return -1;
@@ -141,6 +162,7 @@ int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, key_t key, value_t value) {
       n->key = key;
       n->value = value;
       h->A[pos] = n;
+      h->size++;
       break;
     } else if (h->A[pos]->hash == hash) {
       h->A[pos]->value = value;
@@ -148,7 +170,6 @@ int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, key_t key, value_t value) {
     }
   }
 
-  h->size++;
   if (h->size > LOAD_FACTOR * h->capacity) {
     int32_t rc = GLUE3(hash_, prefix, _rehash)(h);
     if (rc != 0) {

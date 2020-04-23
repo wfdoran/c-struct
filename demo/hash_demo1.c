@@ -42,10 +42,9 @@ int main() {
     printf("%d %d\n", rc, sqrt);    
   }
   
-  
-
-
   printf("%ld \n", h->size);
+
+  hash_int_destroy(&h);
   return 0;
 }
 
