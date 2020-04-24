@@ -44,6 +44,13 @@ int main() {
   
   printf("%ld \n", h->size);
 
+  hiter_int_t *iter;
+  int key;
+  int value;
+  for (hash_int_first(h, &iter, &key, &value); iter != NULL; hash_int_next(&iter, &key, &value)) {
+    printf("%8d %8d\n", key, value); 
+  }
+
   hash_int_destroy(&h);
   return 0;
 }

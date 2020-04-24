@@ -21,6 +21,7 @@
 
 #define HTABLE GLUE3(htable_, prefix, _t)
 #define HNODE GLUE3(hnode_, prefix, _t)
+#define HITER GLUE3(hiter_, prefix, _t)
 
 #define LOAD_FACTOR (0.75)
 
@@ -38,9 +39,16 @@ typedef struct HLIST {
   int (*comp) (key_t *, key_t *);
 } HTABLE;
 
+typedef struct HITER {
+  const HTABLE *h;
+  uint64_t curr;
+} HITER;
+
 /* 
-   destroy
+   update?
+
    set_hash
+   set_comp
    get_size
    get_capacity
    remove
@@ -202,6 +210,44 @@ int32_t GLUE3(hash_, prefix, _get)(HTABLE *h, key_t key, value_t *value) {
   }
 }
 
+int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, key_t *key, value_t *value) {
+  HITER *iter = *iter_ptr;
+  const HTABLE *h = iter->h;
+  uint64_t curr = iter->curr;
+
+  while (1) {
+    if (curr == h->capacity) {
+      iter->h = NULL;
+      iter->curr = -1;
+      free(iter);
+      *iter_ptr = NULL;
+      return 1;
+    }
+    
+    if (h->A[curr] != NULL) {
+      if (key != NULL) {
+	*key = h->A[curr]->key;
+      }
+      if (value != NULL) {
+	*value = h->A[curr]->value;
+      }
+      curr++;
+      iter->curr = curr;
+      return 0;
+    }
+    
+    curr++;
+  }
+}
+
+int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, key_t *key, value_t *value) {
+  HITER *iter = malloc(sizeof(HITER));
+  iter->h = h;
+  iter->curr = 0;
+  *iter_ptr = iter;
+
+  return GLUE3(hash_, prefix, _next)(iter_ptr, key, value);
+}
    
 #undef HNODE
 #undef HTABLE
