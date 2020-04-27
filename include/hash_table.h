@@ -52,9 +52,6 @@ typedef struct HITER {
    get_size
    get_capacity
    remove
-
-   first
-   next
  
 https://en.wikipedia.org/wiki/Hash_table
 */
@@ -204,6 +201,32 @@ int32_t GLUE3(hash_, prefix, _get)(HTABLE *h, key_t key, value_t *value) {
 	if (value != NULL) {
 	  *value = h->A[pos]->value;
 	}
+	return 1;
+      }
+    }
+  }
+}
+
+int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, key_t key, value_t *value) {
+  if (h == NULL || h->hash_func == NULL) {
+    return -1;
+  }
+  uint64_t hash = h->hash_func(key);
+  uint64_t mask = h->capacity - UINT64_C(1);
+  uint64_t base = hash & mask;
+  uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
+  
+  for (uint64_t pos = base; ; pos = (pos + step) & mask) {
+    if (h->A[pos] == NULL) {
+      return 0;
+    } else {
+      if (h->A[pos]->hash == hash) {
+	if (value != NULL) {
+	  *value = h->A[pos]->value;
+	}
+	free(h->A[pos]);
+	h->A[pos] = NULL;
+	h->size--;
 	return 1;
       }
     }

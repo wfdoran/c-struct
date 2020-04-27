@@ -44,6 +44,16 @@ int main() {
   
   printf("%ld \n", h->size);
 
+
+  {
+    for (int i = 100; i <= 200; i++) {
+      hash_int_remove(h, i, NULL);
+    }
+  }
+
+  printf("%ld \n", h->size);
+ 
+
   hiter_int_t *iter;
   int key;
   int value;
