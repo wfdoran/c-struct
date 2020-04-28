@@ -51,9 +51,8 @@ int main() {
     }
   }
 
-  printf("%ld \n", h->size);
+  printf("number of entries %ld of %ld\n", hash_int_get_size(h), hash_int_get_capacity(h));
  
-
   hiter_int_t *iter;
   int key;
   int value;

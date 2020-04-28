@@ -93,6 +93,14 @@ void GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func) (key_t)) {
   h->hash_func = hash_func;
 }
 
+int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
+  return h->size;
+}
+
+int64_t GLUE3(hash_, prefix, _get_capacity) (const HTABLE *h) {
+  return h->capacity;
+}
+
 void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
   HTABLE *h = *h_ptr;
   if (h == NULL) {
