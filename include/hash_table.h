@@ -47,7 +47,6 @@ typedef struct HITER {
 /* 
    update?
 
-   set_hash
    set_comp
    get_size
    get_capacity
@@ -88,6 +87,10 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   h->comp = DEFAULT_COMP_PTR(temp);
 
   return h;
+}
+
+void GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func) (key_t)) {
+  h->hash_func = hash_func;
 }
 
 void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
