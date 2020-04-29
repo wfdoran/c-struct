@@ -46,11 +46,7 @@ typedef struct HITER {
 
 /* 
    update?
-
-   set_comp
-   get_size
-   get_capacity
-   remove
+   shrink?
  
 https://en.wikipedia.org/wiki/Hash_table
 */
@@ -185,8 +181,10 @@ int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, key_t key, value_t value) {
       h->size++;
       break;
     } else if (h->A[pos]->hash == hash) {
-      h->A[pos]->value = value;
-      break;
+      if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+	h->A[pos]->value = value;
+	break;
+      }
     }
   }
 
@@ -213,10 +211,12 @@ int32_t GLUE3(hash_, prefix, _get)(HTABLE *h, key_t key, value_t *value) {
       return 0;
     } else {
       if (h->A[pos]->hash == hash) {
-	if (value != NULL) {
-	  *value = h->A[pos]->value;
+	if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+	  if (value != NULL) {
+	    *value = h->A[pos]->value;
+	  }
+	  return 1;
 	}
-	return 1;
       }
     }
   }
@@ -236,13 +236,15 @@ int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, key_t key, value_t *value) {
       return 0;
     } else {
       if (h->A[pos]->hash == hash) {
-	if (value != NULL) {
-	  *value = h->A[pos]->value;
+	if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+	  if (value != NULL) {
+	    *value = h->A[pos]->value;
+	  }
+	  free(h->A[pos]);
+	  h->A[pos] = NULL;
+	  h->size--;
+	  return 1;
 	}
-	free(h->A[pos]);
-	h->A[pos] = NULL;
-	h->size--;
-	return 1;
       }
     }
   }
