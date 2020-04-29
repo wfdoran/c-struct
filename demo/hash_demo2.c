@@ -25,10 +25,22 @@ uint64_t triple_hash(triple_t t) {
   return rv;
 }
 
+int triple_comp(triple_t a, triple_t b) {
+  for (int i = 0; i < 3; i++) {
+    if (a.x[i] > b.x[i]) {
+      return 1;
+    }
+    if (a.x[i] < b.x[i]) {
+      return -1;
+    }
+  }
+  return 0;
+}
+
 int main() {
   htable_trip_t *h = hash_trip_init(0);
   hash_trip_set_hash(h, &triple_hash);
-
+  hash_trip_set_comp(h, &triple_comp);
 
   int32_t n = 100;
 

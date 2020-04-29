@@ -55,8 +55,14 @@ int comp_str(char **a, char **b) {
     char*: &comp_str, \
     default: NULL)
 
-#define DEFAULT_COMP_PTR(x) _Generic((x),	\
-    char*: &comp_str, \
+
+int comp_str_data(char *a, char *b) {
+    return strcmp(a, b);
+}
+
+
+#define DEFAULT_COMP_TYPE(x) _Generic((x),	\
+    char*: &comp_str_data, \
     default: NULL)
     
 #endif

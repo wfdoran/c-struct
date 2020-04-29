@@ -36,7 +36,7 @@ typedef struct HLIST {
   int64_t size;
   HNODE **A;
   uint64_t (*hash_func) (key_t);
-  int (*comp) (key_t *, key_t *);
+  int (*comp) (key_t, key_t);
 } HTABLE;
 
 typedef struct HITER {
@@ -84,13 +84,17 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   }
   key_t temp;
   h->hash_func = DEFAULT_HASH(temp);
-  h->comp = DEFAULT_COMP_PTR(temp);
+  h->comp = DEFAULT_COMP_TYPE(temp);
 
   return h;
 }
 
 void GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func) (key_t)) {
   h->hash_func = hash_func;
+}
+
+void GLUE3(hash_, prefix, _set_comp)(HTABLE *h, int (*comp)(key_t, key_t)) {
+  h->comp = comp;
 }
 
 int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
