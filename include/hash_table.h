@@ -37,6 +37,7 @@ typedef struct HLIST {
   HNODE **A;
   uint64_t (*hash_func) (key_t);
   int (*comp) (key_t, key_t);
+  value_t (*update) (value_t, value_t);
 } HTABLE;
 
 typedef struct HITER {
@@ -81,6 +82,7 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   key_t temp;
   h->hash_func = DEFAULT_HASH(temp);
   h->comp = DEFAULT_COMP_TYPE(temp);
+  h->update = NULL;
 
   return h;
 }
@@ -91,6 +93,10 @@ void GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func) (key_t)) {
 
 void GLUE3(hash_, prefix, _set_comp)(HTABLE *h, int (*comp)(key_t, key_t)) {
   h->comp = comp;
+}
+
+void GLUE3(hash_, prefix, _set_update)(HTABLE *h, value_t (*update)(value_t, value_t)) {
+  h->update = update;
 }
 
 int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
@@ -117,7 +123,8 @@ void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
   h->A = NULL;
   h->hash_func = NULL;
   h->comp = NULL;
-
+  h->update = NULL;
+  
   free(h);
   h_ptr = NULL;
 }
@@ -182,7 +189,7 @@ int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, key_t key, value_t value) {
       break;
     } else if (h->A[pos]->hash == hash) {
       if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
-	h->A[pos]->value = value;
+	h->A[pos]->value = h->update == NULL ? value : h->update(h->A[pos]->value, value);
 	break;
       }
     }
