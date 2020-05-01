@@ -25,6 +25,9 @@
 
 #define LOAD_FACTOR (0.75)
 
+/* Basic structs used in the header file. 
+ 
+*/
 typedef struct HNODE {
   uint64_t hash;
   key_t key;
@@ -46,8 +49,16 @@ typedef struct HITER {
 } HITER;
 
 /* 
-   update?
+   void hash_prefix_filter(htable_prefix_t *h, bool (*filter)(key_t, value_t));
+   void hash_prefix_apply(htable_prefix_t *h, value_t (*apply)(key_t, value_t));
+   void Hash_prefix_apply_r(htable_prefix_t *h, value_t (*apply_r) (key_t, value_t, void*), void *arg);
+   htable_prefix_t* hash_prefix_duplicate(const htable_prefix_t *h)
+   
+   put_many
+   merge
+
    shrink?
+   smoother expansion instead of stop-the-world
  
 https://en.wikipedia.org/wiki/Hash_table
 */
@@ -64,6 +75,16 @@ static int64_t GLUE3(hash_, prefix, _roundup_pow2) (int64_t x) {
   return x;
 }
 
+/* htable_prefix_t* hash_prefix_init(int64_t expected_size); 
+
+   allocates and initializes a hash table.  This includes
+   
+   - allocating the htable_prefix_t.
+   - the initial allocation of the the hash table itself.
+   - setting the hash fucntion if hash.h recognizes the key_t type.
+   - setting the comp function if comp.h recognizes teh key_t type.
+
+*/
 HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   HTABLE* h = malloc(sizeof(HTABLE));
   if (h == NULL) {
@@ -87,26 +108,81 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
   return h;
 }
 
+/* void hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func) (key_t));
+
+   The hash table needs a hash fuction which maps key_t to uint64_t.  hash.h
+   will reconginze many basic types and provide a hash function.  These include
+   int32_t, int, float, double, char*.  For more complicated types, the user
+   must use write their own and use this routine to tell the hash table to 
+   use it.    
+*/
 void GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func) (key_t)) {
   h->hash_func = hash_func;
 }
+
+/* void hash_prefix_set_comp(htable_prefix_t *h, int (*comp)(key_t, key_t));
+
+   If no comp function is given, it is assumed the hash value means
+   the same key_t.  If hash collisions with different key_ts are
+   possible, a further compare function function can be set.  If should 
+   return 0 if the two key_t are the same, and non-zero if different.
+
+   Note: if key_t is char*, strcmp is used.  
+*/
 
 void GLUE3(hash_, prefix, _set_comp)(HTABLE *h, int (*comp)(key_t, key_t)) {
   h->comp = comp;
 }
 
+/* void hash_prefix_set_update(htable_prefix_t *h, value_t (*update)(value_t, value_t));
+
+   When putting a key_t/value_t pair into a hash table where the key_t already 
+   exists, the default is overwrite the previous value_t with the this new one. 
+   Using the routine, you can set the an update routine which combines the 
+   previous value_t with the new value_t.  
+
+   For example, if value_t is int, the following update function
+  
+     int update(int previous, int current) {
+       return previous + current;
+     }
+ 
+   would keep the sum the values in the hash table. 
+*/
 void GLUE3(hash_, prefix, _set_update)(HTABLE *h, value_t (*update)(value_t, value_t)) {
   h->update = update;
 }
 
+/* int64_t hash_prefix_get_size(const htable_prefix_t *h);
+
+   Returns the number of unique key_ts inserted into the hash table. 
+*/
 int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
   return h->size;
 }
 
+/* int64_t hash_prefix_get_capacity(const htable_prefix_t *h);
+
+   Returns the allocated size of the hash table.  
+
+   Once this is 75% filled, it is automatically doubled. 
+*/
 int64_t GLUE3(hash_, prefix, _get_capacity) (const HTABLE *h) {
   return h->capacity;
 }
 
+/* void hash_prefix_destroy(htable_prefix_t **h_ptr);
+
+   Deallocates the hash table and resets all of the internal values of
+   the htable_prefix_t.  Then the htable_prefix_t itself is
+   deallocated and the callers pointer is set to NULL.  This avoids
+   double frees.
+
+   Note: this routine does not know how to deallocate or free the 
+   key_ts and/or value_ts stored in the hash table.  If these are
+   pointers to structs, the caller should first iterate through the
+   hash table and free them appropriately. 
+*/ 
 void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
   HTABLE *h = *h_ptr;
   if (h == NULL) {
@@ -129,6 +205,11 @@ void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
   h_ptr = NULL;
 }
 
+/* int32_t hash_prefix_rehash(htable_prefix_t *h);
+
+   This routine doubles the capacity of a hash table and reinserts all
+   of the entries in the new table.
+*/
 int32_t GLUE3(hash_, prefix, _rehash)(HTABLE *h) {
   if (h == NULL) {
     return -1;
