@@ -26,7 +26,7 @@ int main(void) {
             break;
         }
         
-        printf("%4d %4d %8.4f\n", size, height, kv_pair.key);
+        printf("%4zu %4d %12.4f\n", size, height, kv_pair.key);
     }
     
     tree_float_destroy(&t);
