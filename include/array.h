@@ -23,13 +23,11 @@
 // array_prefix_remove
 // array_prefix_index
 // array_prefix_popfirst
-// array_prefix_heapify
 // array_prefix_concat
 // array_prefix_merge
 // array_prefix_resize
 // array_prefix_isheap
 // array_prefix_issorted
-// array_prefix_map
 // array_prefix_filter
 // array_prefix_bisect_upper
 // array_prefix_bisect_lower
@@ -41,17 +39,29 @@ typedef struct {
     int (*comp) (data_t *, data_t *);
 } TYPE;
 
-void GLUE3(array_, prefix, _init) (TYPE *a) {
-    a->data = malloc(sizeof(data_t));
-    assert(a->data != NULL);
-    a->size = 0;
-    a->capacity = 1;
-    data_t temp;
-    a->comp = DEFAULT_COMP(temp);
+TYPE* GLUE3(array_, prefix, _init) () {
+  TYPE *a = malloc(sizeof(TYPE));
+  a->data = malloc(sizeof(data_t));
+  assert(a->data != NULL);
+  a->size = 0;
+  a->capacity = 1;
+  data_t temp;
+  a->comp = DEFAULT_COMP(temp);
+  return a;
 }
 
 void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t*)) {
     a->comp = comp;
+}
+
+void GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
+  TYPE *a = *a_ptr;
+  free(a->data);
+  a->data = NULL;
+  a->size = 0;
+  a->capacity = 0;
+  free(a);
+  a_ptr = NULL;
 }
 
 void GLUE3(array_, prefix, _sort) (TYPE *a) {
@@ -212,7 +222,16 @@ void GLUE3(array_, prefix, _heapify) (TYPE *a) {
     for (size_t i = 0; i < size; i++) {
         GLUE3(array_, prefix, _heappush) (a, a->data[i]);
     }
-}    
+}
+
+size_t GLUE3(array_, prefix, _index) (TYPE *a, data_t v) {
+  for(size_t i = 0; i < a->size; i++) {
+    if (a->comp(&a->data[i], &v) == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 #undef HEAP_RIGHT_CHILD
 #undef HEAP_LEFT_CHILD
