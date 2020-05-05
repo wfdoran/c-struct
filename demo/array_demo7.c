@@ -18,12 +18,14 @@ int16_t sqr(int16_t a) {
 }
 
 int main(void) {
-    array_int16_t a;
-    array_int16_init(&a);
+    array_int16_t *a = array_int16_init();
  
     for (int16_t i = 1; i <= 10; i++) {
-        array_int16_append(&a, i);
+        array_int16_append(a, i);
     }
-    array_int16_map(&a, sqr);
-    printf("%d\n", array_int16_fold(&a, add));
+    array_int16_map(a, sqr);
+    printf("%d\n", array_int16_fold(a, add));
+
+    array_int16_destroy(&a);
+    return 0;
 }
