@@ -140,13 +140,6 @@ size_t GLUE3(array_, prefix, _capacity) (TYPE *a) {
     return a->capacity;
 }
 
-void GLUE3(array_, prefix, _free) (TYPE *a) {
-    free(a->data);
-    a->data = NULL;
-    a->size = 0;
-    a->capacity = 0;
-}
-
 void GLUE3(array_, prefix, _copy) (TYPE *src, TYPE *dst) {
     dst = src;
     dst->data = malloc(dst->capacity * sizeof(data_t));
