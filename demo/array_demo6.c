@@ -13,10 +13,11 @@ typedef struct {int x[5];} intarr_t;
 
 
 int main(void) {
-    array_intarr_t a;
-    array_intarr_init(&a);
+  array_intarr_t *a = array_intarr_init();
     
-    intarr_t b = {.x = {1,2,3,4,5}};
-    array_intarr_append(&a, (intarr_t){.x = {1,2,3,4,5}});
-    return 0;
+  intarr_t b = {.x = {1,2,3,4,5}};
+  array_intarr_append(a, (intarr_t){.x = {1,2,3,4,5}});
+
+  array_intarr_destroy(&a);
+  return 0;
 }    
