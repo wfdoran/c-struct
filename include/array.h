@@ -41,6 +41,7 @@ typedef struct {
 
 TYPE* GLUE3(array_, prefix, _init) () {
   TYPE *a = malloc(sizeof(TYPE));
+  assert(a != NULL);
   a->data = malloc(sizeof(data_t));
   assert(a->data != NULL);
   a->size = 0;
@@ -50,6 +51,21 @@ TYPE* GLUE3(array_, prefix, _init) () {
   return a;
 }
 
+TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
+  TYPE *a = malloc(sizeof(TYPE));
+  assert(a != NULL);
+  a->data = malloc(size * sizeof(data_t));
+  assert(a->data != NULL);
+  a->size = size;
+  a->capacity = size;
+  data_t temp;
+  a->comp = DEFAULT_COMP(temp);
+  for (int64_t i = 0; i < size; i++) {
+    a->data[i] = default_value;
+  }
+  return a;
+}
+  
 void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t*)) {
     a->comp = comp;
 }
