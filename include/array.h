@@ -105,6 +105,49 @@ size_t GLUE3(array_, prefix, _bisect) (TYPE *a, data_t v) {
     return -1;
 }
 
+/*
+   a->data[rv] <= v
+   a->data[rv+1] > v
+*/
+
+size_t GLUE3(array_, prefix, _bisect_upper) (TYPE *a, data_t v) {
+  size_t lo = -1;
+  size_t hi = a->size;
+
+  while (hi - lo > 1) {
+    size_t mid = lo + (hi - lo) / 2;
+    int x = a->comp(&a->data[mid], &v);
+    if (x <= 0) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  return lo;
+}
+
+/* 
+   a->data[rv] >= v
+   a->data[rv-1] < v
+*/
+
+size_t GLUE3(array_, prefix, _bisect_lower) (TYPE *a, data_t v) {
+  size_t lo = -1;
+  size_t hi = a->size;
+
+  while (hi - lo > 1) {
+    size_t mid = lo + (hi - lo) / 2;
+    int x = a->comp(&a->data[mid], &v);
+    if (x < 0) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  return hi == a->size ? -1 : hi;
+}
+
+
 void GLUE3(array_, prefix, _map) (TYPE *a, data_t(*f)(data_t)) {
     for (size_t i = 0; i < a->size; i++) {
         a->data[i] = f(a->data[i]);
