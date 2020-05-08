@@ -21,7 +21,6 @@
 
 // array_prefix_insert 
 // array_prefix_remove
-// array_prefix_index
 // array_prefix_popfirst
 // array_prefix_concat
 // array_prefix_merge
@@ -29,8 +28,6 @@
 // array_prefix_isheap
 // array_prefix_issorted
 // array_prefix_filter
-// array_prefix_bisect_upper
-// array_prefix_bisect_lower
 
 typedef struct {
     data_t *data;
@@ -65,8 +62,27 @@ TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
   }
   return a;
 }
+
+
+TYPE* GLUE3(array_, prefix, _deep_clone) (const TYPE* in, data_t (*f)(const data_t))  {
+  TYPE *out = malloc(sizeof(TYPE));
+  assert(out != NULL);
+  out->data = malloc(in->size * sizeof(TYPE));
+  assert(out->data != NULL);
+  out->size = in->size;
+  out->capacity = in->size;
+  out->comp = in->comp;
+  for (int64_t i = 0; i < in->size; i++) {
+    out->data[i] = f == NULL ? in->data[i] : f(in->data[i]);
+  }
+  return out;
+}
   
-void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t*)) {
+TYPE* GLUE3(array_, prefix, _clone) (const TYPE* in) {
+  return GLUE3(array_, prefix, _deep_clone) (in, NULL);
+}
+
+void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t*, data_t*)) {
     a->comp = comp;
 }
 
