@@ -178,6 +178,12 @@ data_t GLUE3(array_, prefix, _fold) (TYPE *a, data_t(*f)(data_t, data_t)) {
     return rv;
 }
 
+void GLUE3(array_, prefix, _scan) (TYPE *a, data_t(*f)(data_t, data_t)) {
+    for (size_t i = 1; i < a->size; i++) {
+        a->data[i] = f(a->data[i - 1], a->data[i]);
+    }
+}
+
 data_t GLUE3(array_, prefix, _get) (TYPE *a, size_t idx) {
     assert(idx >= 0 && idx < a->size);
     return a->data[idx] ;
