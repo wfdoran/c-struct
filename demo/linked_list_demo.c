@@ -20,10 +20,10 @@ int main(void) {
     llist_float_add_end(a, 1.0 / i);
   }
 
-  lnode_float_t *temp_node;
-  for (float d = llist_float_walk_init_start(a, &temp_node);
+  lnode_float_t *n;
+  for (float d = llist_float_walk_init_start(a, &n);
        !isnan(d);
-       d = llist_float_walk_forward(&temp_node)) {
+       d = llist_float_walk_forward(&n)) {
     printf("%12.4f \n", d);
   }
   

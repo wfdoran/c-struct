@@ -17,6 +17,9 @@ linked_list_demo: linked_list_demo.c
 linked_list_demo2: linked_list_demo2.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo2.c -o linked_list_demo2
 
+linked_list_demo3: linked_list_demo3.c
+	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo3.c -o linked_list_demo3
+
 comp_demo: comp_demo.c
 	$(CC) $(CFLAGS) $(INCLUDE) comp_demo.c -o comp_demo
 

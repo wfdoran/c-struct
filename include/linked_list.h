@@ -1,7 +1,7 @@
 #include <stdlib.h>
 
 #ifndef data_t
-#error "data_t no defined"
+#error "data_t not defined"
 #endif
 
 #ifndef prefix
@@ -34,8 +34,7 @@ typedef struct {
 
 /* 
   llist_prefix_size;
-  llist_prefix_set_start;
-  llist_prefix_step_forward;
+  llist_prefix_insert_
 */
 
 /* ----------------------------------------------------------------------- */
@@ -120,7 +119,7 @@ int32_t GLUE3(llist_, prefix, _add_end) (LLIST *a, data_t d) {
   n->next = NULL;
   n->prev = a->tail;
 
-  if (a->head == NULL) {
+  if (a->tail == NULL) {
     a->head = n;
     a->tail = n;
     a->size = 1;
@@ -199,6 +198,129 @@ data_t GLUE3(llist_, prefix, _walk_backwards) (LNODE **n_ptr) {
   return n == NULL ? null_value : n->data;
 }
   
+/* ----------------------------------------------------------------------- */
+/*                     insert/delete nodes                                 */
+/* ----------------------------------------------------------------------- */
+
+/* Removes the current LNODE and moves the n_ptr to the next LNODE */
+data_t GLUE3(llist_, prefix, _remove_forward) (LLIST *a, LNODE **n_ptr) {
+  LNODE *n = *n_ptr;
+  if (n == NULL) {
+    return null_value;
+  }
+
+  /* Update the LLIST */
+  if (n->prev == NULL) {
+    a->head = n->next;
+  }
+  if (n->next == NULL) {
+    a->tail = n->prev;
+  }
+  a->size -= 1;
+  
+
+  /* Update the neighbors */
+  if (n->prev != NULL) {
+    n->prev->next = n->next;
+  }
+  if (n->next != NULL) {
+    n->next->prev = n->prev;
+  }
+
+  /* step and free this n */
+  *n_ptr = n->next;
+  data_t rv = n->data;
+  n->data = null_value;
+  n->prev = NULL;
+  n->next = NULL;
+  free(n);
+  return rv;
+}
+
+data_t GLUE3(llist_, prefix, _remove_backwards) (LLIST *a, LNODE **n_ptr) {
+  LNODE *n = *n_ptr;
+  if (n == NULL) {
+    return null_value;
+  }
+
+  /* Update the LLIST */
+  if (n->prev == NULL) {
+    a->head = n->next;
+  }
+  if (n->next == NULL) {
+    a->tail = n->prev;
+  }
+  a->size -= 1;
+  
+
+  /* Update the neighbors */
+  if (n->prev != NULL) {
+    n->prev->next = n->next;
+  }
+  if (n->next != NULL) {
+    n->next->prev = n->prev;
+  }
+
+  /* step and free this n */
+  *n_ptr = n->prev;
+  data_t rv = n->data;
+  n->data = null_value;
+  n->prev = NULL;
+  n->next = NULL;
+  free(n);
+  return rv;
+}
+
+int32_t GLUE3(llist_, prefix, _insert_before) (LLIST *a, LNODE **n_ptr, data_t d) {
+  LNODE *n = *n_ptr;
+  if (n == NULL) {
+    return -1;
+  }
+
+  LNODE *new_node = malloc(sizeof(LNODE));
+  if (new_node == NULL) {
+    return -1;
+  }
+  new_node->data = d;
+  new_node->next = n;
+  new_node->prev = n->prev;
+  n->prev = new_node;
+  if (new_node->prev == NULL) {
+    a->head = new_node;
+  } else {
+    new_node->prev->next = new_node;
+  }
+  a->size += 1;
+  
+  *n_ptr = new_node;
+  return 0;  
+}
+
+int32_t GLUE3(llist_, prefix, _insert_after) (LLIST *a, LNODE **n_ptr, data_t d) {
+  LNODE *n = *n_ptr;
+  if (n == NULL) {
+    return -1;
+  }
+
+  LNODE *new_node = malloc(sizeof(LNODE));
+  if (new_node == NULL) {
+    return -1;
+  }
+  new_node->data = d;
+  new_node->next = n->next;
+  new_node->prev = n;
+  n->next = new_node;
+  if (new_node->next == NULL) {
+    a->tail = new_node;
+  } else {
+    new_node->next->prev = new_node;
+  }
+  a->size += 1;
+  
+  *n_ptr = new_node;
+  return 0;  
+}
+
 
 #undef LNODE
 #undef LLIST
