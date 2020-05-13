@@ -86,3 +86,6 @@ tree_demo9: tree_demo9.c
 tree_demo10: tree_demo10.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_demo10.c -o tree_demo10
 
+tree_array_demo: tree_array_demo.c
+	$(CC) $(CFLAGS) $(INCLUDE) tree_array_demo.c -o tree_array_demo
+
