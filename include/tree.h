@@ -63,7 +63,7 @@ typedef struct {
 /* tree_prefix_t* tree_prefix_init(); 
 
    allocates and returns an empty binary tree.  The caller must free the 
-   returned pointer by calling tree_prefix_destroy(t);   
+   returned pointer by calling tree_prefix_destroy(&t);   
 */
 TREE *GLUE3(tree_, prefix, _init) () {
     TREE *a = malloc(sizeof(TREE));
@@ -83,10 +83,11 @@ TREE *GLUE3(tree_, prefix, _init) () {
 
 /* void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *);
 
-   Attaches a comparison function to the binary tree.  For basic data_t such as 
-   int8_t, int16_t, int32_t, int64_t, float, double, char*, this is not needed.
-   For more complicated data_t, the user must define the comparison function.
-   See comp.h for details and the C11 generics which deal with the basic data_ts.
+   Attaches a comparison function to the binary tree.  For basic
+   data_t such as int8_t, int16_t, int32_t, int64_t, float, double,
+   char*, this is not needed.  For more complicated data_t, the user
+   must define the comparison function.  See comp.h for details and
+   the C11 generics which deal with the basic data_ts.
 */
 void GLUE3(tree_, prefix, _set_comp) (TREE *a, int (*comp) (data_t *, data_t *)) {
     a->comp = comp;
@@ -94,13 +95,14 @@ void GLUE3(tree_, prefix, _set_comp) (TREE *a, int (*comp) (data_t *, data_t *))
 
 /* void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void *));
 
-   Attaches an update function.  When inserting, if node the key value already 
-   exists, this function is used to update the value in that node.  
+   Attaches an update function.  When inserting, if a node with the
+   key value already exists, this function is used to update the value
+   in that node.
    
         new_value = update(current_value, passed_value);
         
-    Any memory management must be done by update().  update is also used when 
-    initializing a node.
+    Any memory management must be done by update().  update is also
+    used when initializing a node.
     
         new_value = update(NULL, passed_value)   
 */
@@ -111,15 +113,19 @@ void GLUE3(tree_, prefix, _set_update) (TREE *a, void *(*update) (void *, void *
 
 /* void tree_prefix_set_value_free(tree_prefix_t *a, void (*value_free)(void *)
 
-    Attaches a free functions for values in each node.  This is used in two places:
-      1) If no update is provided and tree_prefix_insert hits an existing node
-         with the target key, this function is used to free to the value at
-         this node before it is replaced by the provided value.
-      2) When tree_prefix_destroy() is called, this function is used to 
-         free the value in every node.
+    Attaches a free functions for values in each node.  This is used
+    in two places:
+
+      1) If no update is provided and tree_prefix_insert hits an
+         existing node with the target key, this function is used to
+         free to the value at this node before it is replaced by the
+         provided value.
+
+      2) When tree_prefix_destroy() is called, this function is used
+         to free the value in every node.
   
-    The most common usage to pass the system free() for the value_free assuming
-    the values where allocated by the system malloc().    
+    The most common usage to pass the system free() for the value_free
+    assuming the values where allocated by the system malloc().
 */
 
 void GLUE3(tree_, prefix, _set_value_free) (TREE *a, void (*value_free)(void *)) {
@@ -131,6 +137,12 @@ void GLUE3(tree_, prefix, _set_value_free) (TREE *a, void (*value_free)(void *))
 /*                         destructor                                      */
 /* ----------------------------------------------------------------------- */
 
+/* tree_prefix_node_destroy(NODE *n, void (*free)(void *));
+
+   Resets to default values and frees a node and all of its children.
+   If the user has provided a function for cleaning up the value
+   void*, that is applied as well.  
+*/
 static void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(void *)) {
     if (n == NULL) {
         return;
@@ -150,7 +162,9 @@ static void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_free)(voi
 
 /* void tree_prefix_destroy(tree_prefix_t **a)
 
-   Destroys a tree, frees all of its nodes, and sets the pointer to NULL.        
+   Destroys a tree, frees all of its nodes, applies a user provided
+   value_free function to all of the value enties in the nodes, and
+   sets the pointer to NULL.
 */   
 
 void GLUE3(tree_, prefix, _destroy) (TREE **a_ptr) {
@@ -168,7 +182,12 @@ void GLUE3(tree_, prefix, _destroy) (TREE **a_ptr) {
     a_ptr = NULL;
 }
 
-NODE* GLUE3(tree_, prefix, _init_node)(data_t key) {
+/* NODE* tree_prefix_init_node(data_t key);
+
+   Allocates and fills in initial values for a node. 
+*/
+
+static NODE* GLUE3(tree_, prefix, _init_node)(data_t key) {
     NODE *n = malloc(sizeof(NODE));
     n->key = key;
     n->value = NULL;
@@ -180,8 +199,15 @@ NODE* GLUE3(tree_, prefix, _init_node)(data_t key) {
     return n;
 }
 
+/* void tree_prefix_fillin(NODE *n);
 
-void GLUE3(tree_, prefix, _fillin)(NODE *n) {
+   Fills in the values for size and height for a node assume the
+   values for its children are correct.  After inserting or removing a
+   node, this is used as you walk up the tree to fix up the values on
+   the path.
+*/
+
+static void GLUE3(tree_, prefix, _fillin)(NODE *n) {
     if (n == NULL) {
         return;
     }
@@ -195,9 +221,24 @@ void GLUE3(tree_, prefix, _fillin)(NODE *n) {
     
 }
 
-NODE* GLUE3(tree_, prefix, _rotate_left) (NODE *n, bool more);
+static NODE* GLUE3(tree_, prefix, _rotate_left) (NODE *n, bool more);
 
-NODE* GLUE3(tree_, prefix, _rotate_right) (NODE *n, bool more) {
+/* NODE* tree_prefix_rotate_right(NODE *n, bool more); 
+
+        n                     m                     
+       / \                   / \
+      m   c       =>        a   n
+     / \                       / \
+    a   b                     b   c
+
+   By recursion, we assume that the height of a and b differ by at
+   most one.  Since we are moving a up one level, if ht(a) < ht(b) (=>
+   ht(a) = ht(b) - 1), then we want to rotate m first so that ht(a) ==
+   ht(b) or ht(a) = ht(b) + 1.  But we don't want to recurse all the
+   way done.  The more parameter controls whether we check this 
+   before applying the rotation.  
+*/
+static NODE* GLUE3(tree_, prefix, _rotate_right) (NODE *n, bool more) {
     NODE *m = n->left;
     if (m == NULL) {
         return n;
@@ -230,7 +271,7 @@ NODE* GLUE3(tree_, prefix, _rotate_right) (NODE *n, bool more) {
     return m;
 }
 
-NODE* GLUE3(tree_, prefix, _rotate_left) (NODE *n, bool more) {
+static NODE* GLUE3(tree_, prefix, _rotate_left) (NODE *n, bool more) {
     NODE *m = n->right;
     if (m == NULL) {
         return n;
@@ -262,7 +303,12 @@ NODE* GLUE3(tree_, prefix, _rotate_left) (NODE *n, bool more) {
     return m;
 }
 
-NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
+/* tree_prefix_balance(NODE *n);
+ 
+   If the heights of the two children of a node differ by more than 1,
+   use either rotate_right or rotate_left to fix this.
+*/
+static NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
     int left_height = n->left == NULL ? 0 : n->left->height;
     int right_height = n->right == NULL ? 0 : n->right->height;
     
@@ -275,7 +321,7 @@ NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
     return n;   
 }
 
-NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value) {
+static NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value) {
     if (n == NULL) {
         NODE *rv = GLUE3(tree_, prefix, _init_node)(key);
         if (a->update == NULL) {
@@ -310,6 +356,10 @@ NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *val
     return n;
 }
 
+/* tree_prefix_insert(TREE *a, data_t key, void *value) 
+
+   Inserts a key/value pair into the tree.
+*/
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
     a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value);
     a->root->parent = NULL;
