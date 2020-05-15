@@ -23,8 +23,8 @@
 #define NODE GLUE3(tnode_, prefix, _t)
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 
-// change subroutines which return KEYVAL* to return KEYVAL.  
-// move routines which the caller should not see to <tree_private.h> 
+// move routines which the use should not see to <tree_private.h>
+//   Any subroutine with a static is inteneded for internal use. 
 // initialize iterator with rank or bound or something
 
 // search and replace
@@ -372,6 +372,14 @@ void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
     a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value);
     a->root->parent = NULL;
 }
+
+/* tree_prefix_delete_node(int (*comp) (data_t *, data_t *), NODE *n, data_t key, NODE **rv)
+
+   Deletes the node with key value key from the subtree rooted at n.
+   The deleted node is returned in rv.  The return value from this
+   routine is the new root node for this subtree, which can change due
+   to balancing.
+*/
 
 static NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE *n, data_t key, NODE **rv) {
     if (n == NULL) {
