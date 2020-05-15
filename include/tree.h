@@ -321,6 +321,10 @@ static NODE* GLUE3(tree_, prefix, _balance) (NODE *n) {
     return n;   
 }
 
+/* tree_prefix_insert_node(TREE *a, NODE *n, data_t key, void *value)
+
+   Inserts a key/value at node n in the tree.
+*/
 static NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value) {
     if (n == NULL) {
         NODE *rv = GLUE3(tree_, prefix, _init_node)(key);
@@ -341,13 +345,13 @@ static NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, vo
         n->right->parent = n;        
     }
     if (c == 0) {
-        if (a->update == NULL) {
+        if (a->update != NULL) {
+	    n->value = a->update(n->value, value);
+	} else {
             if (a->value_free != NULL) {
                 a->value_free(n->value);
             }
             n->value = value;
-        } else {
-            n->value = a->update(n->value, value);
         }
     }
     
@@ -358,14 +362,18 @@ static NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, vo
 
 /* tree_prefix_insert(TREE *a, data_t key, void *value) 
 
-   Inserts a key/value pair into the tree.
+   Inserts a key/value pair into the tree.  If the key already visits,
+   the value is replaced until tree_prefix_set_update() has set an
+   update function.
+
+   Note: because of rotations, the root node might change.
 */
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
     a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value);
     a->root->parent = NULL;
 }
 
-NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE *n, data_t key, NODE **rv) {
+static NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE *n, data_t key, NODE **rv) {
     if (n == NULL) {
        *rv == NULL;
        return NULL;
@@ -389,7 +397,7 @@ NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE 
         GLUE3(tree_, prefix, _fillin)(n);
         return n;
     }
-    
+  
     if (n->left == NULL) {
         *rv = n;
         return n->right;
@@ -404,24 +412,9 @@ NODE* GLUE3(tree_, prefix, _delete_node)(int (*comp) (data_t *, data_t *), NODE 
     return GLUE3(tree_, prefix, _delete_node)(comp, n, key, rv);
 }
 
-KEYVAL GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
-    NODE *n = a->root;
-    
-    while (true) {
-        if (n == NULL) {
-            KEYVAL rv = {.key = key, .value = NULL, .found = false};
-            return rv;
-        }
-        
-        int c = a->comp(&key, &(n->key));
-        if (c == 0) {
-            KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
-            return rv;
-        }
-        
-        n = c < 0 ? n->left : n->right; 
-    }
-}
+/* KEYVAL tree_prefix_delete(TREE *a, data_t key) 
+
+*/
 
 KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
     NODE *n = NULL;
@@ -429,7 +422,7 @@ KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
     if (a->root != NULL) {
         a->root->parent = NULL;
     }
-    
+
     if (n == NULL) {
         KEYVAL rv = {.key = key, .value = NULL, .found = false};
         return rv;
@@ -438,6 +431,25 @@ KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
     KEYVAL rv = {.key = key, .value = n->value, .found = true};
     free(n);
     return rv;
+}
+
+KEYVAL GLUE3(tree_, prefix, _retrieve)(TREE *a, data_t key) {
+    NODE *n = a->root;
+    
+    while (true) {
+        if (n == NULL) {
+            KEYVAL rv = {.key = key, .value = NULL, .found = false};
+            return rv;
+        }
+
+        int c = a->comp(&key, &(n->key));
+        if (c == 0) {
+            KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
+            return rv;
+        }
+ 
+        n = c < 0 ? n->left : n->right; 
+    }
 }
 
 KEYVAL GLUE3(tree_, prefix, _delete_min)(TREE *a) {
