@@ -718,6 +718,50 @@ KEYVAL GLUE3(tree_, prefix, _get_rank)(TREE *a, size_t rank) {
     }
 }
 
+
+static void GLUE3(tree_, prefix, _print_node)(void (*node_print)(data_t, void*), NODE *n, int depth, uint64_t mask) {
+    if (n == NULL) {
+      return;
+    }
+
+    uint64_t lmask, rmask;
+    char s;
+
+    if (n->parent == NULL) {
+      lmask = mask;
+      rmask = mask;
+      s = ' ';
+    } else if (n->parent->left == n) {
+      lmask = mask;
+      rmask = mask | (1UL << depth);
+      s = '/';
+    } else {
+      lmask = mask | (1UL << depth);
+      rmask = mask;
+      s = '\\';
+    }
+
+    GLUE3(tree_, prefix, _print_node)(node_print, n->left, depth + 1, lmask);
+    for (int i = 0; i < depth; i++) {
+      if ((mask >> i) & 1) {
+	printf("|   ");
+      } else {
+	printf("    ");
+      }
+    }
+    printf("%c-- * ", s);
+    if (node_print != NULL) {
+      node_print(n->key, n->value);
+    }
+    printf("\n");
+    GLUE3(tree_, prefix, _print_node)(node_print, n->right, depth + 1, rmask);
+}
+  
+void GLUE3(tree_, prefix, _print)(TREE *a, void (*node_print)(data_t, void*)) {
+  GLUE3(tree_, prefix, _print_node) (node_print, a->root, 0, 0);
+
+}
+
 #undef NODE
 #undef TREE
 #undef GLUE3

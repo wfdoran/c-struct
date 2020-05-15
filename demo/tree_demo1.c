@@ -9,6 +9,10 @@
 #undef prefix
 #undef data_t
 
+void node_print(int32_t x, void *unused) {
+  printf("%d", x);
+}
+
 int main(void) {
     srand(time(NULL));
     int32_t num_items = 100;
@@ -31,6 +35,9 @@ int main(void) {
         printf("%d ", pair.key);
     }
     printf("\n");
+
+    printf("\n");
+    tree_int32_print(t, node_print);
     
     tree_int32_destroy(&t);
         
