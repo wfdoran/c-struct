@@ -50,7 +50,6 @@ typedef struct HITER {
 
 /* 
    void hash_prefix_filter(htable_prefix_t *h, bool (*filter)(key_t, value_t));
-   void hash_prefix_apply(htable_prefix_t *h, value_t (*apply)(key_t, value_t));
    void Hash_prefix_apply_r(htable_prefix_t *h, value_t (*apply_r) (key_t, value_t, void*), void *arg);
    htable_prefix_t* hash_prefix_duplicate(const htable_prefix_t *h)
    
@@ -382,6 +381,15 @@ void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f)(key_t, value_t)) {
     HNODE *a = h->A[idx];
     if (a != NULL) {
       a->value = f(a->key, a->value);
+    }
+  }
+}
+
+void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f)(key_t, value_t, void *), void *arg) {
+    for (int64_t idx = 0; idx < h->capacity; idx++) {
+    HNODE *a = h->A[idx];
+    if (a != NULL) {
+      a->value = f(a->key, a->value, arg);
     }
   }
 }

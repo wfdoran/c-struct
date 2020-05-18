@@ -14,6 +14,9 @@ hash_demo3: hash_demo3.c
 hash_demo4: hash_demo4.c
 	$(CC) $(CFLAGS) $(INCLUDE) hash_demo4.c -o hash_demo4 -lm
 
+hash_demo5: hash_demo5.c
+	$(CC) $(CFLAGS) $(INCLUDE) hash_demo5.c -o hash_demo5
+
 linked_list_demo: linked_list_demo.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo.c -o linked_list_demo -lm
 
