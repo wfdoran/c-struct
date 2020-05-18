@@ -376,6 +376,15 @@ int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, key_t *
 
   return GLUE3(hash_, prefix, _next)(iter_ptr, key, value);
 }
+
+void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f)(key_t, value_t)) {
+  for (int64_t idx = 0; idx < h->capacity; idx++) {
+    HNODE *a = h->A[idx];
+    if (a != NULL) {
+      a->value = f(a->key, a->value);
+    }
+  }
+}
    
 #undef HNODE
 #undef HTABLE
