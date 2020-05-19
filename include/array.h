@@ -36,6 +36,10 @@ typedef struct {
     int (*comp) (data_t *, data_t *);
 } TYPE;
 
+/* array_prefix_t* array_prefix_init();
+   
+   Initializes an empty array.
+*/
 TYPE* GLUE3(array_, prefix, _init) () {
   TYPE *a = malloc(sizeof(TYPE));
   assert(a != NULL);
@@ -47,6 +51,11 @@ TYPE* GLUE3(array_, prefix, _init) () {
   a->comp = DEFAULT_COMP(temp);
   return a;
 }
+
+/* array_prefix_t* array_prefix_init2(size_t size, data_t default_value);
+
+   Initializes an array of size size with the given default value.
+*/
 
 TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
   TYPE *a = malloc(sizeof(TYPE));
@@ -63,11 +72,15 @@ TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
   return a;
 }
 
+/* array_prefix_deep_clone(const *array_prefix_t, data_t(*f)(const data_t)); 
 
+   Makes a deep copy of an array.  The user provided f is uses to
+   create/initialize each entry in the clone.
+*/
 TYPE* GLUE3(array_, prefix, _deep_clone) (const TYPE* in, data_t (*f)(const data_t))  {
   TYPE *out = malloc(sizeof(TYPE));
   assert(out != NULL);
-  out->data = malloc(in->size * sizeof(TYPE));
+  out->data = malloc(in->size * sizeof(data_t));
   assert(out->data != NULL);
   out->size = in->size;
   out->capacity = in->size;
@@ -170,13 +183,22 @@ void GLUE3(array_, prefix, _map) (TYPE *a, data_t(*f)(data_t)) {
     }
 }
 
-data_t GLUE3(array_, prefix, _fold) (TYPE *a, data_t(*f)(data_t, data_t)) {
+data_t GLUE3(array_, prefix, _fold) (TYPE *a, data_t(*f)(data_t, const data_t)) {
     data_t rv = a->data[0];
     for (size_t i = 1; i < a->size; i++) {
         rv = f(rv, a->data[i]);
     }
     return rv;
 }
+
+data_t GLUE3(array_, prefix, _fold2) (TYPE *a, data_t init, data_t(*f)(data_t, const data_t)) {
+    data_t rv = init;
+    for (size_t i = 0; i < a->size; i++) {
+        rv = f(rv, a->data[i]);
+    }
+    return rv;
+}
+
 
 void GLUE3(array_, prefix, _scan) (TYPE *a, data_t(*f)(data_t, data_t)) {
     for (size_t i = 1; i < a->size; i++) {
