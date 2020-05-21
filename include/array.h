@@ -30,6 +30,7 @@
 // array_prefix_filter
 
 typedef struct {
+    data_t *alloc;
     data_t *data;
     size_t size;
     size_t capacity;
@@ -43,8 +44,9 @@ typedef struct {
 TYPE* GLUE3(array_, prefix, _init) () {
   TYPE *a = malloc(sizeof(TYPE));
   assert(a != NULL);
-  a->data = malloc(sizeof(data_t));
-  assert(a->data != NULL);
+  a->alloc = malloc(sizeof(data_t));
+  assert(a->alloc != NULL);
+  a->data = a->alloc;
   a->size = 0;
   a->capacity = 1;
   data_t temp;
@@ -60,8 +62,9 @@ TYPE* GLUE3(array_, prefix, _init) () {
 TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
   TYPE *a = malloc(sizeof(TYPE));
   assert(a != NULL);
-  a->data = malloc(size * sizeof(data_t));
-  assert(a->data != NULL);
+  a->alloc = malloc(size * sizeof(data_t));
+  assert(a->alloc != NULL);
+  a->data = a->alloc;
   a->size = size;
   a->capacity = size;
   data_t temp;
@@ -72,7 +75,7 @@ TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
   return a;
 }
 
-/* array_prefix_deep_clone(const *array_prefix_t, data_t(*f)(const data_t)); 
+/* array_prefix_deep_clone(const array_prefix_t*, data_t(*f)(const data_t)); 
 
    Makes a deep copy of an array.  The user provided f is uses to
    create/initialize each entry in the clone.
@@ -80,8 +83,9 @@ TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
 TYPE* GLUE3(array_, prefix, _deep_clone) (const TYPE* in, data_t (*f)(const data_t))  {
   TYPE *out = malloc(sizeof(TYPE));
   assert(out != NULL);
-  out->data = malloc(in->size * sizeof(data_t));
-  assert(out->data != NULL);
+  out->alloc = malloc(in->size * sizeof(data_t));
+  assert(out->alloc != NULL);
+  out->data = out->alloc;
   out->size = in->size;
   out->capacity = in->size;
   out->comp = in->comp;
@@ -90,7 +94,11 @@ TYPE* GLUE3(array_, prefix, _deep_clone) (const TYPE* in, data_t (*f)(const data
   }
   return out;
 }
-  
+
+/* array_prefix_clone(const array_prefix_t*);
+
+   Makes a copy of an array.    
+*/
 TYPE* GLUE3(array_, prefix, _clone) (const TYPE* in) {
   return GLUE3(array_, prefix, _deep_clone) (in, NULL);
 }
@@ -101,7 +109,8 @@ void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t*, data_t*)) 
 
 void GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
   TYPE *a = *a_ptr;
-  free(a->data);
+  free(a->alloc);
+  a->alloc = NULL;
   a->data = NULL;
   a->size = 0;
   a->capacity = 0;
@@ -227,8 +236,9 @@ void GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
         data_t *tmp = malloc(2 * a->capacity * sizeof(data_t));
         assert(tmp != NULL);
         memcpy(tmp, a->data, a->capacity * sizeof(data_t));
-        free(a->data);
-        a->data = tmp;
+        free(a->alloc);
+	a->alloc = tmp;
+        a->data = a->alloc;
         a->capacity *= 2;
     }
     a->data[a->size] = value;
@@ -242,13 +252,6 @@ size_t GLUE3(array_, prefix, _size) (TYPE *a) {
 size_t GLUE3(array_, prefix, _capacity) (TYPE *a) {
     return a->capacity;
 }
-
-void GLUE3(array_, prefix, _copy) (TYPE *src, TYPE *dst) {
-    dst = src;
-    dst->data = malloc(dst->capacity * sizeof(data_t));
-    assert(dst->data != NULL);
-    memcpy(dst->data, src->data, src->size * sizeof(data_t));
-}    
 
 #define HEAP_PARENT(x) (((x)-1)/2)
 #define HEAP_LEFT_CHILD(x) (2*(x) + 1)
