@@ -226,6 +226,15 @@ data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
     return a->data[a->size];
 }
 
+data_t GLUE3(array_, prefix, _pop_first)(TYPE *a) {
+    assert(a->size > 0);
+    data_t rv = a->data[0];
+    a->size--;
+    a->capacity--;
+    a->data += 1;
+    return rv;
+}
+
 void GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
     assert(idx >= 0 && idx < a->size);
     a->data[idx] = value;
