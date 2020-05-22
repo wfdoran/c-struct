@@ -35,6 +35,8 @@ typedef struct {
     size_t size;
     size_t capacity;
     int (*comp) (data_t *, data_t *);
+  bool have_null_value;
+  data_t null_value;
 } TYPE;
 
 /* array_prefix_t* array_prefix_init();
@@ -51,6 +53,7 @@ TYPE* GLUE3(array_, prefix, _init) () {
   a->capacity = 1;
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
+  a->have_null_value = false;
   return a;
 }
 
@@ -69,6 +72,7 @@ TYPE* GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
   a->capacity = size;
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
+  a->have_null_value = false;
   for (int64_t i = 0; i < size; i++) {
     a->data[i] = default_value;
   }
@@ -89,6 +93,8 @@ TYPE* GLUE3(array_, prefix, _deep_clone) (const TYPE* in, data_t (*f)(const data
   out->size = in->size;
   out->capacity = in->size;
   out->comp = in->comp;
+  out->have_null_value = in->have_null_value;
+  out->null_value = in->null_value;
   for (int64_t i = 0; i < in->size; i++) {
     out->data[i] = f == NULL ? in->data[i] : f(in->data[i]);
   }
@@ -106,6 +112,12 @@ TYPE* GLUE3(array_, prefix, _clone) (const TYPE* in) {
 void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t*, data_t*)) {
     a->comp = comp;
 }
+
+void GLUE3(array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
+  a->have_null_value = true;
+  a->null_value = null_value;
+}
+
 
 void GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
   TYPE *a = *a_ptr;
