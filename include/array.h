@@ -228,18 +228,37 @@ void GLUE3(array_, prefix, _scan) (TYPE *a, data_t(*f)(data_t, data_t)) {
 }
 
 data_t GLUE3(array_, prefix, _get) (TYPE *a, size_t idx) {
-    assert(idx >= 0 && idx < a->size);
-    return a->data[idx] ;
+  if (idx < 0 || idx >= a->size) {
+    if (a->have_null_value) {
+      return a->null_value;
+    } else {
+      assert(idx >= 0 && idx < a->size);
+    }
+  }
+  return a->data[idx] ;
 }
 
 data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
-    assert(a->size > 0);
-    a->size--;
-    return a->data[a->size];
+  if (a->size <= 0) {
+    if (a->have_null_value) {
+      return a->null_value;
+    } else {
+      assert(a->size > 0);
+    }
+  }
+  a->size--;
+  return a->data[a->size];
 }
 
 data_t GLUE3(array_, prefix, _pop_first)(TYPE *a) {
-    assert(a->size > 0);
+  if (a->size <= 0) {
+    if (a->have_null_value) {
+      return a->null_value;
+    } else {
+      assert(a->size > 0);
+    }
+  }
+    
     data_t rv = a->data[0];
     a->size--;
     a->capacity--;
@@ -295,7 +314,13 @@ void GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
 }
 
 data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
-    assert(a->size > 0);
+ if (a->size <= 0) {
+    if (a->have_null_value) {
+      return a->null_value;
+    } else {
+      assert(a->size > 0);
+    }
+  }
     assert(a->comp != NULL);
     data_t rv = a->data[0];
     a->size--;

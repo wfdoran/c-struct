@@ -8,19 +8,57 @@
 
 
 int main(void) {
+  int v;
+  int null_value = -1;
+
   array_int_t *a = array_int_init();
+  array_int_set_null_value(a, null_value);
+  
 
   for (int i = 1; i <= 10; i++) {
     array_int_append(a, i);
   }
 
-  for (int i = 0; i < 5; i++) {
-    int v1 = array_int_pop(a);
-    printf("%d\n", v1);
-    int v2 = array_int_pop_first(a);
-    printf("%d\n", v2);
+  for (;;) {
+    v = array_int_pop(a);
+    if (v == null_value) {
+      break;
+    }
+    printf("%d ", v);
+    v = array_int_pop_first(a);
+    if (v == null_value) {
+      break;
+    }
+    printf("%d ", v);
   }
+  printf("\n");
 
+  for (int i = 1; i <= 10; i++) {
+    array_int_append(a, i);
+  }
+  while((v = array_int_pop_first(a)) != null_value) {
+    printf("%d ", v);
+  }
+  printf("\n");
+  
+  for (int i = 1; i <= 10; i++) {
+    array_int_append(a, i);
+  }
+  while((v = array_int_pop(a)) != null_value) {
+    printf("%d ", v);
+  }
+  printf("\n");
+  
+  
+  for (int i = 0; i < 10; i++) {
+    array_int_heappush(a, 1 + (7 * i) % 10 );
+  }
+  while((v = array_int_heappop(a)) != null_value) {
+    printf("%d ", v);
+  }
+  printf("\n");
+  
+  
   array_int_destroy(&a);
   return 0;
 }
