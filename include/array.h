@@ -21,7 +21,6 @@
 
 // array_prefix_insert 
 // array_prefix_remove
-// array_prefix_popfirst
 // array_prefix_concat
 // array_prefix_merge
 // array_prefix_resize
@@ -101,13 +100,19 @@ TYPE* GLUE3(array_, prefix, _deep_clone) (const TYPE* in, data_t (*f)(const data
   return out;
 }
 
-/* array_prefix_clone(const array_prefix_t*);
+/* array_prefix_clone(const array_prefix_t *a);
 
    Makes a copy of an array.    
 */
 TYPE* GLUE3(array_, prefix, _clone) (const TYPE* in) {
   return GLUE3(array_, prefix, _deep_clone) (in, NULL);
 }
+
+/* array_prefix_set_comp(array_prefix_t *a, int (*comp) (data_t*, data_t*)
+
+   Sets a comparision function.  This is required in order to call 
+   array_prefix_sort().  
+*/
 
 void GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t*, data_t*)) {
     a->comp = comp;
@@ -136,7 +141,14 @@ void GLUE3(array_, prefix, _sort) (TYPE *a) {
     qsort(a->data, a->size, sizeof(data_t), comp);
 }
 
-size_t GLUE3(array_, prefix, _bisect) (TYPE *a, data_t v) {
+/* 
+
+  Assumes the array is sorted.  Finds the index rv such that
+     a->data[rv] == v
+  If such index exists, returns -1.
+*/
+
+size_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
     size_t lo = -1;
     size_t hi = a->size;
     
@@ -155,12 +167,27 @@ size_t GLUE3(array_, prefix, _bisect) (TYPE *a, data_t v) {
     return -1;
 }
 
-/*
-   a->data[rv] <= v
-   a->data[rv+1] > v
+/* array_prefix_bisect_upper
+
+   Assumes the array is sorted.  Finds the index rv such that
+     a->data[rv] <= v
+     a->data[rv+1] > v
+   Returns -1 if all of the values are greater than v.
+
+   The conventions for array_prefix_bisect_lower and array_bisect_upper
+   were selected so that 
+
+   lower_bound = array_prefix_bisect_lower(a, v1);
+   upper_bound = array_prefix_bisect_upper(a, v2);
+   for (int idx = lower_bound; idx <= upper_bound; idx++) {
+       ...
+   }
+   
+   will loop over all indicies with values between v1 and v2 inclusive.
+   Also, this handles empty ranges as well.  
 */
 
-size_t GLUE3(array_, prefix, _bisect_upper) (TYPE *a, data_t v) {
+size_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
   size_t lo = -1;
   size_t hi = a->size;
 
@@ -177,11 +204,13 @@ size_t GLUE3(array_, prefix, _bisect_upper) (TYPE *a, data_t v) {
 }
 
 /* 
-   a->data[rv] >= v
-   a->data[rv-1] < v
+   Assumes the array is sorted.  Finds the index rv such that
+     a->data[rv] >= v
+     a->data[rv-1] < v
+   Returns the size of the array if all of the values are less than v.
 */
 
-size_t GLUE3(array_, prefix, _bisect_lower) (TYPE *a, data_t v) {
+size_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
   size_t lo = -1;
   size_t hi = a->size;
 
@@ -194,17 +223,19 @@ size_t GLUE3(array_, prefix, _bisect_lower) (TYPE *a, data_t v) {
       hi = mid;
     }
   }
-  return hi == a->size ? -1 : hi;
+  return hi;
 }
 
-
+/* Applies a function to every entry in an array */
 void GLUE3(array_, prefix, _map) (TYPE *a, data_t(*f)(data_t)) {
     for (size_t i = 0; i < a->size; i++) {
         a->data[i] = f(a->data[i]);
     }
 }
 
-data_t GLUE3(array_, prefix, _fold) (TYPE *a, data_t(*f)(data_t, const data_t)) {
+/* Combines all of the entries in the array using a user provided function.
+   Takes the first value as the initial value.  */
+data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t(*f)(data_t, const data_t)) {
     data_t rv = a->data[0];
     for (size_t i = 1; i < a->size; i++) {
         rv = f(rv, a->data[i]);
@@ -212,7 +243,10 @@ data_t GLUE3(array_, prefix, _fold) (TYPE *a, data_t(*f)(data_t, const data_t)) 
     return rv;
 }
 
-data_t GLUE3(array_, prefix, _fold2) (TYPE *a, data_t init, data_t(*f)(data_t, const data_t)) {
+/* Combines all of the entries in the array using a user provided function.
+   The user provides the initial value. */
+
+data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init, data_t(*f)(data_t, const data_t)) {
     data_t rv = init;
     for (size_t i = 0; i < a->size; i++) {
         rv = f(rv, a->data[i]);
