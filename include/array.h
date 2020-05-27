@@ -19,8 +19,8 @@
 
 #define TYPE GLUE3(array_, prefix, _t)
 
-// array_prefix_insert 
-// array_prefix_remove
+
+// array_set_data_free
 // array_prefix_concat
 // array_prefix_merge
 // array_prefix_resize
@@ -29,8 +29,8 @@
 // array_prefix_filter
 
 typedef struct {
-    data_t *alloc;
     data_t *data;
+    data_t *alloc;
     size_t size;
     size_t capacity;
     int (*comp) (data_t *, data_t *);
@@ -118,11 +118,21 @@ void GLUE3 (array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t *
     a->comp = comp;
 }
 
+/* 
+
+   Sets the null value.  This is returned from various getters if the
+   array is empty or the request is out of range. 
+*/
 void GLUE3 (array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
     a->have_null_value = true;
     a->null_value = null_value;
 }
 
+/* 
+
+   Destroys an array.  
+
+*/
 
 void GLUE3 (array_, prefix, _destroy) (TYPE **a_ptr) {
     TYPE *a = *a_ptr;
@@ -277,6 +287,11 @@ data_t GLUE3 (array_, prefix, _get) (TYPE *a, size_t idx) {
     return a->data[idx];
 }
 
+/* 
+
+   Pops the last value off of the array.  Using this and array_prefix_append()
+   you get a stack.
+*/
 data_t GLUE3 (array_, prefix, _pop) (TYPE *a) {
     if (a->size <= 0) {
         if (a->have_null_value) {
@@ -290,6 +305,11 @@ data_t GLUE3 (array_, prefix, _pop) (TYPE *a) {
     return a->data[a->size];
 }
 
+/* 
+
+   Pops the first value off of the array.  Using this and array_prefix_append()
+   you get a queue.
+*/
 data_t GLUE3 (array_, prefix, _pop_first) (TYPE *a) {
     if (a->size <= 0) {
         if (a->have_null_value) {
@@ -312,6 +332,9 @@ void GLUE3 (array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
     a->data[idx] = value;
 }
 
+/* 
+   Appends a value to the end of an array. 
+*/
 void GLUE3 (array_, prefix, _append) (TYPE *a, data_t value) {
     if (a->size == a->capacity) {
         data_t *tmp = malloc (2 * a->capacity * sizeof (data_t));
@@ -337,6 +360,11 @@ size_t GLUE3 (array_, prefix, _capacity) (TYPE *a) {
 #define HEAP_PARENT(x) (((x)-1)/2)
 #define HEAP_LEFT_CHILD(x) (2*(x) + 1)
 #define HEAP_RIGHT_CHILD(x) (2*(x) + 2)
+
+/* 
+   Using array_prefix_heappush() and array_prefix_heappop()
+   you get a heap.
+*/
 
 void GLUE3 (array_, prefix, _heappush) (TYPE *a, data_t value) {
     assert (a->comp != NULL);
