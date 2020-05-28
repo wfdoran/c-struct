@@ -19,14 +19,19 @@
 
 #define TYPE GLUE3(array_, prefix, _t)
 
+// create new array
+// array_prefix_slice
+// array_prefix_deep_slice
+// array_prefix_filter
 
-// array_set_data_free
+// update current array
 // array_prefix_concat
-// array_prefix_merge
 // array_prefix_resize
+
+// info about current array
 // array_prefix_isheap
 // array_prefix_issorted
-// array_prefix_filter
+// array_prefix_isempty
 
 typedef struct {
     data_t *data;
@@ -130,8 +135,9 @@ void GLUE3 (array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
 
 /* 
 
-   Destroys an array.  
-
+   Destroys an array.  If the array entries contains pointers, the user
+   needs to destroy these first manually.  array_prefix_map() could be 
+   used to do this.
 */
 
 void GLUE3 (array_, prefix, _destroy) (TYPE **a_ptr) {
@@ -144,6 +150,10 @@ void GLUE3 (array_, prefix, _destroy) (TYPE **a_ptr) {
     free (a);
     a_ptr = NULL;
 }
+
+/*
+    Sorts the array.
+*/
 
 void GLUE3 (array_, prefix, _sort) (TYPE *a) {
     assert (a->comp != NULL);
@@ -275,6 +285,13 @@ void GLUE3 (array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
     }
 }
 
+
+/* 
+
+   Gets the value at a particular index.  If a null value has been provided 
+   and the index is out of range, the null value is returned.  Otherwise,
+   index out of range results in an assert failure.
+*/
 data_t GLUE3 (array_, prefix, _get) (TYPE *a, size_t idx) {
     if (idx < 0 || idx >= a->size) {
         if (a->have_null_value) {
@@ -349,10 +366,16 @@ void GLUE3 (array_, prefix, _append) (TYPE *a, data_t value) {
     a->size++;
 }
 
+/* 
+   Returns the number of entries in the array. 
+*/
 size_t GLUE3 (array_, prefix, _size) (TYPE *a) {
     return a->size;
 }
 
+/* 
+   Returns the capacity in the array until a resize is needed.
+*/
 size_t GLUE3 (array_, prefix, _capacity) (TYPE *a) {
     return a->capacity;
 }
@@ -362,6 +385,8 @@ size_t GLUE3 (array_, prefix, _capacity) (TYPE *a) {
 #define HEAP_RIGHT_CHILD(x) (2*(x) + 2)
 
 /* 
+   Viewing the array as a heap, pushes a value onto the heap.
+   
    Using array_prefix_heappush() and array_prefix_heappop()
    you get a heap.
 */
@@ -381,6 +406,12 @@ void GLUE3 (array_, prefix, _heappush) (TYPE *a, data_t value) {
         pos = parent;
     }
 }
+
+/*
+
+   Viewing the array as a heap, pops the top value off the heap
+
+*/
 
 data_t GLUE3 (array_, prefix, _heappop) (TYPE *a) {
     if (a->size <= 0) {
@@ -431,6 +462,10 @@ data_t GLUE3 (array_, prefix, _heappop) (TYPE *a) {
     }
     return rv;
 }
+
+/* 
+   Heapifies an array.
+*/
 
 void GLUE3 (array_, prefix, _heapify) (TYPE *a) {
     size_t size = a->size;
