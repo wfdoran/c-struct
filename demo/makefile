@@ -68,6 +68,9 @@ array_demo12: array_demo12.c
 array_demo13: array_demo13.c
 	$(CC) $(CFLAGS) $(INCLUDE) array_demo13.c -o array_demo13
 
+array_demo14: array_demo14.c
+	$(CC) $(CFLAGS) $(INCLUDE) array_demo14.c -o array_demo14
+
 tree_demo1: tree_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_demo1.c -o tree_demo1
 
