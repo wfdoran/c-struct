@@ -6,3 +6,8 @@ tree: tree.h
 array: array.h
 	indent $(DEFAULT) -T TYPE -T data_t array.h -o array_indent.h
 
+hash_table: hash_table.h
+	indent $(DEFAULT) -T TYPE -T HNODE -T HTABLE -T HITER -T key_t -T value_t -T uint64_t hash_table.h -o hash_table_indent.h
+
+clean:
+	rm -f *_indent.h
