@@ -17,8 +17,8 @@ hash_demo4: hash_demo4.c
 hash_demo5: hash_demo5.c
 	$(CC) $(CFLAGS) $(INCLUDE) hash_demo5.c -o hash_demo5
 
-linked_list_demo: linked_list_demo.c
-	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo.c -o linked_list_demo -lm
+linked_list_demo1: linked_list_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo1.c -o linked_list_demo1 -lm
 
 linked_list_demo2: linked_list_demo2.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo2.c -o linked_list_demo2
@@ -128,7 +128,7 @@ clean:
 	rm -rf hash_demo3
 	rm -rf hash_demo4
 	rm -rf hash_demo5
-	rm -rf linked_list_demo
+	rm -rf linked_list_demo1
 	rm -rf linked_list_demo2
 	rm -rf linked_list_demo3
 	rm -rf tree_demo1
