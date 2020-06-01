@@ -107,3 +107,40 @@ tree_demo11: tree_demo11.c
 tree_array_demo: tree_array_demo.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_array_demo.c -o tree_array_demo
 
+
+clean:
+	rm -rf array_demo1
+	rm -rf array_demo2
+	rm -rf array_demo3
+	rm -rf array_demo4
+	rm -rf array_demo5
+	rm -rf array_demo6
+	rm -rf array_demo7
+	rm -rf array_demo8
+	rm -rf array_demo9
+	rm -rf array_demo10
+	rm -rf array_demo11
+	rm -rf array_demo12
+	rm -rf array_demo13
+	rm -rf array_demo14
+	rm -rf hash_demo1
+	rm -rf hash_demo2
+	rm -rf hash_demo3
+	rm -rf hash_demo4
+	rm -rf hash_demo5
+	rm -rf linked_list_demo
+	rm -rf linked_list_demo2
+	rm -rf linked_list_demo3
+	rm -rf tree_demo1
+	rm -rf tree_demo2
+	rm -rf tree_demo3
+	rm -rf tree_demo4
+	rm -rf tree_demo5
+	rm -rf tree_demo6
+	rm -rf tree_demo7
+	rm -rf tree_demo8
+	rm -rf tree_demo9
+	rm -rf tree_demo10
+	rm -rf tree_array_demo
+	rm -rf *~
+
