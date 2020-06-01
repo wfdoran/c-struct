@@ -16,7 +16,8 @@ int main(void) {
   array_intarr_t *a = array_intarr_init();
     
   intarr_t b = {.x = {1,2,3,4,5}};
-  array_intarr_append(a, (intarr_t){.x = {1,2,3,4,5}});
+  array_intarr_append(a, b);
+  array_intarr_append(a, (intarr_t){.x = {5,6,7,8,9}});
 
   array_intarr_destroy(&a);
   return 0;
