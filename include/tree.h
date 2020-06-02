@@ -23,8 +23,6 @@
 #define NODE GLUE3(tnode_, prefix, _t)
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 
-// move routines which the use should not see to <tree_private.h>
-//   Any subroutine with a static is inteneded for internal use. 
 // initialize iterator with rank or bound or something
 
 // search and replace
@@ -60,6 +58,8 @@ typedef struct {
 /*                         constructors                                    */
 /* ----------------------------------------------------------------------- */
 
+#define _unused(x) ((void)(x))
+
 /* tree_prefix_t* tree_prefix_init(); 
 
    allocates and returns an empty binary tree.  The caller must free the 
@@ -74,6 +74,7 @@ TREE *GLUE3 (tree_, prefix, _init) () {
     a->root = NULL;
     data_t temp;
     a->comp = DEFAULT_COMP (temp);
+    _unused(temp);
     a->update = NULL;
     a->value_free = NULL;
 
@@ -386,7 +387,7 @@ void GLUE3 (tree_, prefix, _insert) (TREE *a, data_t key, void *value) {
 static NODE *GLUE3 (tree_, prefix, _delete_node) (int (*comp) (data_t *, data_t *), NODE *n,
                                                   data_t key, NODE **rv) {
     if (n == NULL) {
-        *rv == NULL;
+        *rv = NULL;
         return NULL;
     }
 
@@ -425,6 +426,8 @@ static NODE *GLUE3 (tree_, prefix, _delete_node) (int (*comp) (data_t *, data_t 
 
 /* KEYVAL tree_prefix_delete(TREE *a, data_t key) 
 
+   Searches for a node with a given key.  If found the node is removed from the
+   tree and the key/value is returned. 
 */
 
 KEYVAL GLUE3 (tree_, prefix, _delete) (TREE *a, data_t key) {
@@ -444,6 +447,10 @@ KEYVAL GLUE3 (tree_, prefix, _delete) (TREE *a, data_t key) {
     return rv;
 }
 
+/* 
+
+   Searchs for a node with a given key.  The node is not removed if found.
+*/
 KEYVAL GLUE3 (tree_, prefix, _retrieve) (TREE *a, data_t key) {
     NODE *n = a->root;
 

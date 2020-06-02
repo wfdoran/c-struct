@@ -8,7 +8,6 @@
 
 
 int main(void) {
-  int v;
   int null_value = -1;
 
   array_int_t *a = array_int_init();

@@ -84,6 +84,9 @@ static int64_t GLUE3 (hash_, prefix, _roundup_pow2) (int64_t x) {
    - setting the comp function if comp.h recognizes teh key_t type.
 
 */
+
+#define _unused(x) ((void)(x))
+
 HTABLE *GLUE3 (hash_, prefix, _init) (int64_t expected_size) {
     HTABLE *h = malloc (sizeof (HTABLE));
     if (h == NULL) {
@@ -102,6 +105,7 @@ HTABLE *GLUE3 (hash_, prefix, _init) (int64_t expected_size) {
     key_t temp;
     h->hash_func = DEFAULT_HASH (temp);
     h->comp = DEFAULT_COMP_TYPE (temp);
+    _unused(temp);
     h->update = NULL;
 
     return h;

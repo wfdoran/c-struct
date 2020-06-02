@@ -19,6 +19,8 @@
 
 #define TYPE GLUE3(array_, prefix, _t)
 
+#define _unused(x) ((void)(x))
+
 // create new array
 // array_prefix_slice
 // array_prefix_deep_slice
@@ -57,6 +59,7 @@ TYPE *GLUE3 (array_, prefix, _init) () {
     a->capacity = 1;
     data_t temp;
     a->comp = DEFAULT_COMP (temp);
+    _unused(temp);
     a->have_null_value = false;
     return a;
 }
@@ -76,6 +79,7 @@ TYPE *GLUE3 (array_, prefix, _init2) (size_t size, data_t default_value) {
     a->capacity = size;
     data_t temp;
     a->comp = DEFAULT_COMP (temp);
+    _unused(temp);
     a->have_null_value = false;
     for (int64_t i = 0; i < size; i++) {
         a->data[i] = default_value;

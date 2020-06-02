@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11 -g
+CFLAGS = -O2 -std=gnu11 -g -Wall
 INCLUDE = -I../include
 
 hash_demo1: hash_demo1.c
@@ -141,6 +141,7 @@ clean:
 	rm -rf tree_demo8
 	rm -rf tree_demo9
 	rm -rf tree_demo10
+	rm -rf tree_demo11
 	rm -rf tree_array_demo
 	rm -rf *~
 
