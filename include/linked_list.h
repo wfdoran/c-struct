@@ -40,8 +40,8 @@ typedef struct {
 /*                  constructors / destructor                              */
 /* ----------------------------------------------------------------------- */
 
-LLIST *GLUE3 (llist_, prefix, _init) () {
-    LLIST *a = malloc (sizeof (LLIST));
+LLIST *GLUE3(llist_, prefix, _init) () {
+    LLIST *a = malloc(sizeof(LLIST));
     if (a == NULL) {
         return a;
     }
@@ -53,7 +53,7 @@ LLIST *GLUE3 (llist_, prefix, _init) () {
     return a;
 }
 
-void GLUE3 (llist_, prefix, _destroy) (LLIST **a_ptr) {
+void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
     LLIST *a = *a_ptr;
     if (a == NULL) {
         return;
@@ -64,14 +64,14 @@ void GLUE3 (llist_, prefix, _destroy) (LLIST **a_ptr) {
         LNODE *temp = n->next;
         n->next = NULL;
         n->prev = NULL;
-        free (n);
+        free(n);
         n = temp;
     }
 
     a->head = NULL;
     a->tail = NULL;
     a->size = 0;
-    free (a);
+    free(a);
     a_ptr = NULL;
 }
 
@@ -79,12 +79,12 @@ void GLUE3 (llist_, prefix, _destroy) (LLIST **a_ptr) {
 /*                          add / remove                                   */
 /* ----------------------------------------------------------------------- */
 
-int32_t GLUE3 (llist_, prefix, _add_start) (LLIST *a, data_t d) {
+int32_t GLUE3(llist_, prefix, _add_start) (LLIST *a, data_t d) {
     if (a == NULL) {
         return -1;
     }
 
-    LNODE *n = malloc (sizeof (LNODE));
+    LNODE *n = malloc(sizeof(LNODE));
     if (n == NULL) {
         return -1;
     }
@@ -96,8 +96,7 @@ int32_t GLUE3 (llist_, prefix, _add_start) (LLIST *a, data_t d) {
         a->head = n;
         a->tail = n;
         a->size = 1;
-    }
-    else {
+    } else {
         a->head->prev = n;
         a->head = n;
         a->size += 1;
@@ -106,12 +105,12 @@ int32_t GLUE3 (llist_, prefix, _add_start) (LLIST *a, data_t d) {
     return 0;
 }
 
-int32_t GLUE3 (llist_, prefix, _add_end) (LLIST *a, data_t d) {
+int32_t GLUE3(llist_, prefix, _add_end) (LLIST *a, data_t d) {
     if (a == NULL) {
         return -1;
     }
 
-    LNODE *n = malloc (sizeof (LNODE));
+    LNODE *n = malloc(sizeof(LNODE));
     if (n == NULL) {
         return -1;
     }
@@ -123,8 +122,7 @@ int32_t GLUE3 (llist_, prefix, _add_end) (LLIST *a, data_t d) {
         a->head = n;
         a->tail = n;
         a->size = 1;
-    }
-    else {
+    } else {
         a->tail->next = n;
         a->tail = n;
         a->size += 1;
@@ -133,7 +131,7 @@ int32_t GLUE3 (llist_, prefix, _add_end) (LLIST *a, data_t d) {
     return 0;
 }
 
-data_t GLUE3 (llist_, prefix, _remove_start) (LLIST *a) {
+data_t GLUE3(llist_, prefix, _remove_start) (LLIST *a) {
     if (a == NULL || a->head == NULL) {
         return null_value;
     }
@@ -145,11 +143,11 @@ data_t GLUE3 (llist_, prefix, _remove_start) (LLIST *a) {
         a->tail = NULL;
     }
     a->size -= 1;
-    free (n);
+    free(n);
     return rv;
 }
 
-data_t GLUE3 (llist_, prefix, _remove_end) (LLIST *a) {
+data_t GLUE3(llist_, prefix, _remove_end) (LLIST *a) {
     if (a == NULL || a->head == NULL) {
         return null_value;
     }
@@ -161,7 +159,7 @@ data_t GLUE3 (llist_, prefix, _remove_end) (LLIST *a) {
         a->head = NULL;
     }
     a->size -= 1;
-    free (n);
+    free(n);
     return rv;
 }
 
@@ -169,19 +167,19 @@ data_t GLUE3 (llist_, prefix, _remove_end) (LLIST *a) {
 /*                     walk the linked list                                */
 /* ----------------------------------------------------------------------- */
 
-data_t GLUE3 (llist_, prefix, _walk_init_start) (LLIST *a, LNODE **n_ptr) {
+data_t GLUE3(llist_, prefix, _walk_init_start) (LLIST *a, LNODE **n_ptr) {
     LNODE *n = a->head;
     *n_ptr = n;
     return n == NULL ? null_value : n->data;
 }
 
-data_t GLUE3 (llist_, prefix, _walk_init_end) (LLIST *a, LNODE **n_ptr) {
+data_t GLUE3(llist_, prefix, _walk_init_end) (LLIST *a, LNODE **n_ptr) {
     LNODE *n = a->tail;
     *n_ptr = n;
     return n == NULL ? null_value : n->data;
 }
 
-data_t GLUE3 (llist_, prefix, _walk_forward) (LNODE **n_ptr) {
+data_t GLUE3(llist_, prefix, _walk_forward) (LNODE **n_ptr) {
     LNODE *n = *n_ptr;
     if (n != NULL) {
         n = n->next;
@@ -190,7 +188,7 @@ data_t GLUE3 (llist_, prefix, _walk_forward) (LNODE **n_ptr) {
     return n == NULL ? null_value : n->data;
 }
 
-data_t GLUE3 (llist_, prefix, _walk_backwards) (LNODE **n_ptr) {
+data_t GLUE3(llist_, prefix, _walk_backwards) (LNODE **n_ptr) {
     LNODE *n = *n_ptr;
     if (n != NULL) {
         n = n->prev;
@@ -204,7 +202,7 @@ data_t GLUE3 (llist_, prefix, _walk_backwards) (LNODE **n_ptr) {
 /* ----------------------------------------------------------------------- */
 
 /* Removes the current LNODE and moves the n_ptr to the next LNODE */
-data_t GLUE3 (llist_, prefix, _remove_forward) (LLIST *a, LNODE **n_ptr) {
+data_t GLUE3(llist_, prefix, _remove_forward) (LLIST *a, LNODE **n_ptr) {
     LNODE *n = *n_ptr;
     if (n == NULL) {
         return null_value;
@@ -234,11 +232,11 @@ data_t GLUE3 (llist_, prefix, _remove_forward) (LLIST *a, LNODE **n_ptr) {
     n->data = null_value;
     n->prev = NULL;
     n->next = NULL;
-    free (n);
+    free(n);
     return rv;
 }
 
-data_t GLUE3 (llist_, prefix, _remove_backwards) (LLIST *a, LNODE **n_ptr) {
+data_t GLUE3(llist_, prefix, _remove_backwards) (LLIST *a, LNODE **n_ptr) {
     LNODE *n = *n_ptr;
     if (n == NULL) {
         return null_value;
@@ -268,17 +266,17 @@ data_t GLUE3 (llist_, prefix, _remove_backwards) (LLIST *a, LNODE **n_ptr) {
     n->data = null_value;
     n->prev = NULL;
     n->next = NULL;
-    free (n);
+    free(n);
     return rv;
 }
 
-int32_t GLUE3 (llist_, prefix, _insert_before) (LLIST *a, LNODE **n_ptr, data_t d) {
+int32_t GLUE3(llist_, prefix, _insert_before) (LLIST *a, LNODE **n_ptr, data_t d) {
     LNODE *n = *n_ptr;
     if (n == NULL) {
         return -1;
     }
 
-    LNODE *new_node = malloc (sizeof (LNODE));
+    LNODE *new_node = malloc(sizeof(LNODE));
     if (new_node == NULL) {
         return -1;
     }
@@ -288,8 +286,7 @@ int32_t GLUE3 (llist_, prefix, _insert_before) (LLIST *a, LNODE **n_ptr, data_t 
     n->prev = new_node;
     if (new_node->prev == NULL) {
         a->head = new_node;
-    }
-    else {
+    } else {
         new_node->prev->next = new_node;
     }
     a->size += 1;
@@ -298,13 +295,13 @@ int32_t GLUE3 (llist_, prefix, _insert_before) (LLIST *a, LNODE **n_ptr, data_t 
     return 0;
 }
 
-int32_t GLUE3 (llist_, prefix, _insert_after) (LLIST *a, LNODE **n_ptr, data_t d) {
+int32_t GLUE3(llist_, prefix, _insert_after) (LLIST *a, LNODE **n_ptr, data_t d) {
     LNODE *n = *n_ptr;
     if (n == NULL) {
         return -1;
     }
 
-    LNODE *new_node = malloc (sizeof (LNODE));
+    LNODE *new_node = malloc(sizeof(LNODE));
     if (new_node == NULL) {
         return -1;
     }
@@ -314,8 +311,7 @@ int32_t GLUE3 (llist_, prefix, _insert_after) (LLIST *a, LNODE **n_ptr, data_t d
     n->next = new_node;
     if (new_node->next == NULL) {
         a->tail = new_node;
-    }
-    else {
+    } else {
         new_node->next->prev = new_node;
     }
     a->size += 1;
