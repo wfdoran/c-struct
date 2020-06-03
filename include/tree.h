@@ -349,8 +349,7 @@ static NODE *GLUE3 (tree_, prefix, _insert_node) (TREE *a, NODE *n, data_t key, 
     if (c == 0) {
         if (a->update != NULL) {
             n->value = a->update (n->value, value);
-        }
-        else {
+        } else {
             if (a->value_free != NULL) {
                 a->value_free (n->value);
             }
@@ -470,6 +469,12 @@ KEYVAL GLUE3 (tree_, prefix, _retrieve) (TREE *a, data_t key) {
     }
 }
 
+/* 
+
+  Deletes the minimum node based on key.  The key/value of the minimum
+  node is returned
+*/
+
 KEYVAL GLUE3 (tree_, prefix, _delete_min) (TREE *a) {
     NODE *n = a->root;
     if (n == NULL) {
@@ -484,6 +489,12 @@ KEYVAL GLUE3 (tree_, prefix, _delete_min) (TREE *a) {
     return GLUE3 (tree_, prefix, _delete) (a, n->key);
 }
 
+
+/* 
+
+  Deletes the maximum node based on key.  The key/value of the maximum
+  node is returned.
+*/
 KEYVAL GLUE3 (tree_, prefix, _delete_max) (TREE *a) {
     NODE *n = a->root;
     if (n == NULL) {
@@ -498,6 +509,10 @@ KEYVAL GLUE3 (tree_, prefix, _delete_max) (TREE *a) {
     return GLUE3 (tree_, prefix, _delete) (a, n->key);
 }
 
+/* 
+
+  Retrieves the ke/value of the minimum node.  
+*/
 KEYVAL GLUE3 (tree_, prefix, _retrieve_min) (TREE *a) {
     NODE *n = a->root;
 
@@ -514,6 +529,10 @@ KEYVAL GLUE3 (tree_, prefix, _retrieve_min) (TREE *a) {
     return rv;
 }
 
+/* 
+
+  Retrieves teh key/value of the maximum node.
+*/
 KEYVAL GLUE3 (tree_, prefix, _retrieve_max) (TREE *a) {
     NODE *n = a->root;
 
@@ -530,11 +549,18 @@ KEYVAL GLUE3 (tree_, prefix, _retrieve_max) (TREE *a) {
     return rv;
 }
 
+/* 
 
+  Returns the number of nodes in the tree.
+*/
 size_t GLUE3 (tree_, prefix, _size) (TREE *a) {
     return a->root == NULL ? 0 : a->root->size;
 }
 
+/* 
+
+  Returns the number of nodes with key less than the given value.
+*/
 size_t GLUE3 (tree_, prefix, _num_less) (TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
@@ -557,6 +583,11 @@ size_t GLUE3 (tree_, prefix, _num_less) (TREE *a, data_t key) {
     return total;
 }
 
+/* 
+
+   Returns the number of nodes with key less than or equal to
+   the given value.
+*/
 size_t GLUE3 (tree_, prefix, _num_less_equal) (TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
@@ -577,6 +608,10 @@ size_t GLUE3 (tree_, prefix, _num_less_equal) (TREE *a, data_t key) {
     return total;
 }
 
+/* 
+
+  Returns the number of nodes with key greater than the given value.
+*/
 size_t GLUE3 (tree_, prefix, _num_greater) (TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
@@ -599,6 +634,11 @@ size_t GLUE3 (tree_, prefix, _num_greater) (TREE *a, data_t key) {
     return total;
 }
 
+/* 
+
+  Returns the number of nodes with key greater than or equal to the
+  given value.
+*/
 size_t GLUE3 (tree_, prefix, _num_greater_equal) (TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
@@ -619,9 +659,14 @@ size_t GLUE3 (tree_, prefix, _num_greater_equal) (TREE *a, data_t key) {
     return total;
 }
 
+/* 
+
+  Returns the height of the tree.
+*/
 int GLUE3 (tree_, prefix, _height) (TREE *a) {
     return a->root == NULL ? 0 : a->root->height;
 }
+
 
 NODE *GLUE3 (tree_, prefix, _postwalk_descent) (NODE *n) {
     while (true) {

@@ -59,7 +59,7 @@ TYPE *GLUE3 (array_, prefix, _init) () {
     a->capacity = 1;
     data_t temp;
     a->comp = DEFAULT_COMP (temp);
-    _unused(temp);
+    _unused (temp);
     a->have_null_value = false;
     return a;
 }
@@ -79,7 +79,7 @@ TYPE *GLUE3 (array_, prefix, _init2) (size_t size, data_t default_value) {
     a->capacity = size;
     data_t temp;
     a->comp = DEFAULT_COMP (temp);
-    _unused(temp);
+    _unused (temp);
     a->have_null_value = false;
     for (int64_t i = 0; i < size; i++) {
         a->data[i] = default_value;
@@ -184,8 +184,7 @@ size_t GLUE3 (array_, prefix, _bisect) (const TYPE *a, data_t v) {
         }
         if (x > 0) {
             hi = mid;
-        }
-        else {
+        } else {
             lo = mid;
         }
     }
@@ -221,8 +220,7 @@ size_t GLUE3 (array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
         int x = a->comp (&a->data[mid], &v);
         if (x <= 0) {
             lo = mid;
-        }
-        else {
+        } else {
             hi = mid;
         }
     }
@@ -245,8 +243,7 @@ size_t GLUE3 (array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
         int x = a->comp (&a->data[mid], &v);
         if (x < 0) {
             lo = mid;
-        }
-        else {
+        } else {
             hi = mid;
         }
     }
@@ -300,8 +297,7 @@ data_t GLUE3 (array_, prefix, _get) (TYPE *a, size_t idx) {
     if (idx < 0 || idx >= a->size) {
         if (a->have_null_value) {
             return a->null_value;
-        }
-        else {
+        } else {
             assert (idx >= 0 && idx < a->size);
         }
     }
@@ -317,8 +313,7 @@ data_t GLUE3 (array_, prefix, _pop) (TYPE *a) {
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
-        }
-        else {
+        } else {
             assert (a->size > 0);
         }
     }
@@ -335,8 +330,7 @@ data_t GLUE3 (array_, prefix, _pop_first) (TYPE *a) {
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
-        }
-        else {
+        } else {
             assert (a->size > 0);
         }
     }
@@ -421,8 +415,7 @@ data_t GLUE3 (array_, prefix, _heappop) (TYPE *a) {
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
-        }
-        else {
+        } else {
             assert (a->size > 0);
         }
     }

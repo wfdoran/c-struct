@@ -1,4 +1,4 @@
-DEFAULT=-i4 -brs -br -bap -nut -l100
+DEFAULT=-i4 -brs -br -ce -bap -nut -l100
 
 tree: tree.h
 	indent $(DEFAULT) -T NODE -T TREE -T KEYVAL -T data_t tree.h -o tree_indent.h
@@ -14,3 +14,4 @@ linked_list: linked_list.h
 
 clean:
 	rm -f *_indent.h
+	rm -f *~
