@@ -15,11 +15,14 @@ int main() {
   phtable_int_t *h = phash_int_init(0);
   phash_int_put(h, 0, 0);
 
+  printf("AAA\n"); fflush(stdout);
+
   for (int i = 1; i <= 100; i++) {
     int rc = phash_int_put(h, i*i, i);
     assert(rc == 0);
   }
   phash_int_put(h, 0, -5);
+  printf("BBB\n"); fflush(stdout);
 
   {
     int sqrt;
@@ -37,7 +40,8 @@ int main() {
     rc = phash_int_get(h, 0, &sqrt);
     printf("%d %d\n", rc, sqrt);    
   }
-  
+  printf("CCC\n"); fflush(stdout);
+ 
   printf("%ld \n", h->size);
 
 
@@ -48,7 +52,7 @@ int main() {
   }
 
   printf("number of entries %ld of %ld\n", phash_int_get_size(h), phash_int_get_capacity(h));
- 
+  
   phash_int_destroy(&h);
   return 0;
 }

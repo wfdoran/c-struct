@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <assert.h>
 #include "hash.h"
 #include "comp.h"
 
@@ -118,7 +119,9 @@ PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
    use it.    
 */
 void GLUE3(phash_, prefix, _set_hash) (PHTABLE *h, uint64_t (*hash_func) (key_t)) {
+    pthread_rwlock_wrlock(&(h->rwlock));
     h->hash_func = hash_func;
+    pthread_rwlock_unlock(&(h->rwlock));
 }
 
 /* void hash_prefix_set_comp(htable_prefix_t *h, int (*comp)(key_t, key_t));
@@ -132,7 +135,9 @@ void GLUE3(phash_, prefix, _set_hash) (PHTABLE *h, uint64_t (*hash_func) (key_t)
 */
 
 void GLUE3(phash_, prefix, _set_comp) (PHTABLE *h, int (*comp) (key_t, key_t)) {
+    pthread_rwlock_wrlock(&(h->rwlock));
     h->comp = comp;
+    pthread_rwlock_unlock(&(h->rwlock));
 }
 
 /* void hash_prefix_set_update(htable_prefix_t *h, value_t (*update)(value_t, value_t));
@@ -151,15 +156,20 @@ void GLUE3(phash_, prefix, _set_comp) (PHTABLE *h, int (*comp) (key_t, key_t)) {
    would keep the sum the values in the hash table. 
 */
 void GLUE3(phash_, prefix, _set_update) (PHTABLE *h, value_t (*update) (value_t, value_t)) {
+    pthread_rwlock_wrlock(&(h->rwlock));
     h->update = update;
+    pthread_rwlock_unlock(&(h->rwlock));
 }
 
 /* int64_t hash_prefix_get_size(const htable_prefix_t *h);
 
    Returns the number of unique key_ts inserted into the hash table. 
 */
-int64_t GLUE3(phash_, prefix, _get_size) (const PHTABLE *h) {
-    return h->size;
+int64_t GLUE3(phash_, prefix, _get_size) (PHTABLE *h) {
+    pthread_rwlock_rdlock(&(h->rwlock));
+    int64_t rv = h->size;
+    pthread_rwlock_unlock(&(h->rwlock));
+    return rv;
 }
 
 /* int64_t hash_prefix_get_capacity(const htable_prefix_t *h);
@@ -168,8 +178,11 @@ int64_t GLUE3(phash_, prefix, _get_size) (const PHTABLE *h) {
 
    Once this is 75% filled, it is automatically doubled. 
 */
-int64_t GLUE3(phash_, prefix, _get_capacity) (const PHTABLE *h) {
-    return h->capacity;
+int64_t GLUE3(phash_, prefix, _get_capacity) (PHTABLE *h) {
+    pthread_rwlock_rdlock(&(h->rwlock));
+    int64_t rv =  h->capacity;
+    pthread_rwlock_unlock(&(h->rwlock));
+    return rv;
 }
 
 /* void hash_prefix_destroy(htable_prefix_t **h_ptr);
@@ -189,7 +202,9 @@ void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
     if (h == NULL) {
         return;
     }
-
+    printf("%s %ld\n", __func__, h->capacity);
+    pthread_rwlock_wrlock(&(h->rwlock));
+    printf("  got lock\n"); 
     for (int64_t i = 0; i < h->capacity; i++) {
         free(h->A[i]);
     }
@@ -213,10 +228,11 @@ void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
    This routine doubles the capacity of a hash table and reinserts all
    of the entries in the new table.
 */
-int32_t GLUE3(phash_, prefix, _rehash) (PHTABLE *h) {
+static int32_t GLUE3(phash_, prefix, _rehash) (PHTABLE *h) {
     if (h == NULL) {
         return -1;
     }
+
     int64_t new_capacity = 2 * h->capacity;
     PHNODE **new_A = malloc(new_capacity * sizeof(PHNODE *));
     if (new_A == NULL) {
@@ -274,6 +290,8 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
+    pthread_rwlock_wrlock(&(h->rwlock));
+
     const uint64_t hash = h->hash_func(key);
     const uint64_t mask = h->capacity - UINT64_C(1);
     const uint64_t base = hash & mask;
@@ -283,6 +301,7 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
         if (h->A[pos] == NULL) {
             PHNODE *n = malloc(sizeof(PHNODE));
             if (n == NULL) {
+	        pthread_rwlock_unlock(&(h->rwlock));
                 return -1;
             }
             n->hash = hash;
@@ -302,9 +321,12 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
     if (h->size > LOAD_FACTOR * h->capacity) {
         int32_t rc = GLUE3(phash_, prefix, _rehash) (h);
         if (rc != 0) {
-            return 0;
+	    pthread_rwlock_unlock(&(h->rwlock));
+            return rc;
         }
     }
+    pthread_rwlock_unlock(&(h->rwlock));
+
     return 0;
 }
 
@@ -323,6 +345,7 @@ int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, key_t key, value_t *value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
+    pthread_rwlock_rdlock(&(h->rwlock));
     uint64_t hash = h->hash_func(key);
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
@@ -330,6 +353,7 @@ int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, key_t key, value_t *value) {
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == NULL) {
+	    pthread_rwlock_unlock(&(h->rwlock));
             return 0;
         } else {
             if (h->A[pos]->hash == hash) {
@@ -337,6 +361,7 @@ int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, key_t key, value_t *value) {
                     if (value != NULL) {
                         *value = h->A[pos]->value;
                     }
+		    pthread_rwlock_unlock(&(h->rwlock));	
                     return 1;
                 }
             }
@@ -353,6 +378,8 @@ int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, key_t key, value_t *value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
+    pthread_rwlock_wrlock(&(h->rwlock));
+
     uint64_t hash = h->hash_func(key);
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
@@ -360,6 +387,7 @@ int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, key_t key, value_t *value) {
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == NULL) {
+	    pthread_rwlock_unlock(&(h->rwlock));
             return 0;
         } else {
             if (h->A[pos]->hash == hash) {
@@ -370,11 +398,13 @@ int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, key_t key, value_t *value) {
                     free(h->A[pos]);
                     h->A[pos] = NULL;
                     h->size--;
+		    pthread_rwlock_unlock(&(h->rwlock));
                     return 1;
                 }
             }
         }
     }
+    assert(0);
 }
 
 #undef PHNODE
