@@ -302,7 +302,7 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, key_t key, value_t value) {
     if (h->size > LOAD_FACTOR * h->capacity) {
         int32_t rc = GLUE3(hash_, prefix, _rehash) (h);
         if (rc != 0) {
-            return 0;
+            return rc;
         }
     }
     return 0;
@@ -319,7 +319,7 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, key_t key, value_t value) {
      1 => key found, *value set to the corresponding value.
 */
 
-int32_t GLUE3(hash_, prefix, _get) (HTABLE *h, key_t key, value_t *value) {
+int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, key_t key, value_t *value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
