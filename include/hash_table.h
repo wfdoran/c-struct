@@ -41,6 +41,7 @@ typedef struct HLIST {
     uint64_t (*hash_func) (key_t);
     int (*comp) (key_t, key_t);
     value_t (*update) (value_t, value_t);
+    HNODE deleted;  // special marker for a deleted entry 
 } HTABLE;
 
 typedef struct HITER {
@@ -141,7 +142,7 @@ void GLUE3(hash_, prefix, _set_comp) (HTABLE *h, int (*comp) (key_t, key_t)) {
 
    When putting a key_t/value_t pair into a hash table where the key_t already 
    exists, the default is overwrite the previous value_t with the this new one. 
-   Using the routine, you can set the an update routine which combines the 
+   Using this routine, you can set the an update routine which combines the 
    previous value_t with the new value_t.  
 
    For example, if value_t is int, the following update function
@@ -150,7 +151,15 @@ void GLUE3(hash_, prefix, _set_comp) (HTABLE *h, int (*comp) (key_t, key_t)) {
        return previous + current;
      }
  
-   would keep the sum the values in the hash table. 
+   would keep the sum the values in the hash table.  
+
+   Another example, value_t is char* and you want to free it 
+   before overwritting. 
+
+     char* update(char* previous, char* current) {
+        free(previous);
+        return current;
+     }
 */
 void GLUE3(hash_, prefix, _set_update) (HTABLE *h, value_t (*update) (value_t, value_t)) {
     h->update = update;
@@ -193,7 +202,9 @@ void GLUE3(hash_, prefix, _destroy) (HTABLE **h_ptr) {
     }
 
     for (int64_t i = 0; i < h->capacity; i++) {
-        free(h->A[i]);
+        if (h->A[i] != &(h->deleted)) {
+            free(h->A[i]);
+	}
     }
     free(h->A);
 
@@ -228,9 +239,10 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
 
     const uint64_t mask = new_capacity - UINT64_C(1);
 
+    h->size = 0;
     for (int64_t i = 0; i < h->capacity; i++) {
         HNODE *n = h->A[i];
-        if (n == NULL) {
+        if (n == NULL || n == &(h->deleted)) {
             continue;
         }
         uint64_t base = n->hash & mask;
@@ -242,6 +254,7 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
                 break;
             }
         }
+	h->size++;
     }
 
     free(h->A);
@@ -280,7 +293,7 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, key_t key, value_t value) {
     const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
-        if (h->A[pos] == NULL) {
+        if (h->A[pos] == NULL || h->A[pos] == &(h->deleted)) {
             HNODE *n = malloc(sizeof(HNODE));
             if (n == NULL) {
                 return -1;
@@ -288,8 +301,10 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, key_t key, value_t value) {
             n->hash = hash;
             n->key = key;
             n->value = value;
+	    if (h->A[pos] == NULL) {
+	        h->size++;
+	    }
             h->A[pos] = n;
-            h->size++;
             break;
         } else if (h->A[pos]->hash == hash) {
             if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
@@ -332,7 +347,7 @@ int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, key_t key, value_t *value) 
         if (h->A[pos] == NULL) {
             return 0;
         } else {
-            if (h->A[pos]->hash == hash) {
+	    if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
                 if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
                     if (value != NULL) {
                         *value = h->A[pos]->value;
@@ -368,7 +383,7 @@ int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, key_t key, value_t *value) {
                         *value = h->A[pos]->value;
                     }
                     free(h->A[pos]);
-                    h->A[pos] = NULL;
+                    h->A[pos] = &(h->deleted);
                     h->size--;
                     return 1;
                 }
@@ -391,7 +406,7 @@ int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, key_t *key, value_t *valu
             return 1;
         }
 
-        if (h->A[curr] != NULL) {
+        if (h->A[curr] != NULL && h->A[curr] != &(h->deleted)) {
             if (key != NULL) {
                 *key = h->A[curr]->key;
             }
@@ -419,7 +434,7 @@ int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, key_t *
 void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f) (key_t, value_t)) {
     for (int64_t idx = 0; idx < h->capacity; idx++) {
         HNODE *a = h->A[idx];
-        if (a != NULL) {
+        if (a != NULL && a != &(h->deleted)) {
             a->value = f(a->key, a->value);
         }
     }
@@ -428,7 +443,7 @@ void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f) (key_t, value_t)) {
 void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f) (key_t, value_t, void *), void *arg) {
     for (int64_t idx = 0; idx < h->capacity; idx++) {
         HNODE *a = h->A[idx];
-        if (a != NULL) {
+        if (a != NULL && a != &(h->deleted)) {
             a->value = f(a->key, a->value, arg);
         }
     }
