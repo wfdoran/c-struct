@@ -436,6 +436,7 @@ void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f) (key_t, value_t, vo
 
 #undef HNODE
 #undef HTABLE
+#undef HITER
 #undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
