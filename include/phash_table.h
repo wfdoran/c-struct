@@ -42,6 +42,7 @@ typedef struct HLIST {
     uint64_t (*hash_func) (key_t);
     int (*comp) (key_t, key_t);
     value_t (*update) (value_t, value_t);
+    PHNODE deleted;  // special marker for a deleted entry
     pthread_rwlock_t rwlock;
 } PHTABLE;
 
@@ -202,11 +203,11 @@ void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
     if (h == NULL) {
         return;
     }
-    printf("%s %ld\n", __func__, h->capacity);
     pthread_rwlock_wrlock(&(h->rwlock));
-    printf("  got lock\n"); 
     for (int64_t i = 0; i < h->capacity; i++) {
-        free(h->A[i]);
+      if (h->A[i] != &(h->deleted)) {
+            free(h->A[i]);
+	}
     }
     free(h->A);
 
@@ -246,7 +247,7 @@ static int32_t GLUE3(phash_, prefix, _rehash) (PHTABLE *h) {
 
     for (int64_t i = 0; i < h->capacity; i++) {
         PHNODE *n = h->A[i];
-        if (n == NULL) {
+        if (n == NULL || n == &(h->deleted)) {
             continue;
         }
         uint64_t base = n->hash & mask;
@@ -298,7 +299,7 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
     const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
-        if (h->A[pos] == NULL) {
+        if (h->A[pos] == NULL || h->A[pos] == &(h->deleted)) {
             PHNODE *n = malloc(sizeof(PHNODE));
             if (n == NULL) {
 	        pthread_rwlock_unlock(&(h->rwlock));
@@ -307,8 +308,10 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
             n->hash = hash;
             n->key = key;
             n->value = value;
+	    if (h->A[pos] == NULL) {
+	        h->size++;
+	    }
             h->A[pos] = n;
-            h->size++;
             break;
         } else if (h->A[pos]->hash == hash) {
             if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
@@ -356,7 +359,7 @@ int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, key_t key, value_t *value) {
 	    pthread_rwlock_unlock(&(h->rwlock));
             return 0;
         } else {
-            if (h->A[pos]->hash == hash) {
+	    if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
                 if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
                     if (value != NULL) {
                         *value = h->A[pos]->value;
@@ -396,7 +399,7 @@ int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, key_t key, value_t *value) {
                         *value = h->A[pos]->value;
                     }
                     free(h->A[pos]);
-                    h->A[pos] = NULL;
+                    h->A[pos] = &(h->deleted);
                     h->size--;
 		    pthread_rwlock_unlock(&(h->rwlock));
                     return 1;
