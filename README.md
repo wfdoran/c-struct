@@ -2,6 +2,8 @@
 
 ## array
 
+## [Hash Table](doc/hash_table.md)
+
 ## binary tree
 
 ```c
