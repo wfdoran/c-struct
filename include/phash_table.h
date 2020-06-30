@@ -347,6 +347,70 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
     return 0;
 }
 
+int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, key_t key, value_t value,
+					       value_t (*update) (value_t, value_t)) {
+    if (h == NULL || h->hash_func == NULL) {
+        return -1;
+    }
+    if (update == NULL) {
+      return -1;
+    }
+    pthread_rwlock_wrlock(&(h->rwlock));
+
+    const uint64_t hash = h->hash_func(key);
+    const uint64_t mask = h->capacity - UINT64_C(1);
+    const uint64_t base = hash & mask;
+    const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
+
+    uint64_t first_empty = -1;
+
+    for (uint64_t pos = base;; pos = (pos + step) & mask) {
+         if (h->A[pos] == &(h->deleted)) {
+	    if (first_empty == -1) {
+	        first_empty = pos;
+	    }
+	    continue;
+        }
+      
+        if (h->A[pos] == NULL) {
+	    if (first_empty == -1) {
+	        first_empty = pos;
+	    }
+            PHNODE *n = malloc(sizeof(PHNODE));
+            if (n == NULL) {
+	        pthread_rwlock_unlock(&(h->rwlock));
+                return -1;
+            }
+            n->hash = hash;
+            n->key = key;
+            n->value = value;
+	    if (h->A[first_empty] == NULL) {
+	        h->size++;
+	    }
+            h->A[first_empty] = n;
+            break;
+        }
+
+	if (h->A[pos]->hash == hash) {
+            if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+                h->A[pos]->value = update(h->A[pos]->value, value);
+                break;
+            }
+        }
+    }
+
+    if (h->size > LOAD_FACTOR * h->capacity) {
+        int32_t rc = GLUE3(phash_, prefix, _rehash) (h);
+        if (rc != 0) {
+	    pthread_rwlock_unlock(&(h->rwlock));
+            return rc;
+        }
+    }
+    pthread_rwlock_unlock(&(h->rwlock));
+
+    return 0;
+}
+
 /* int32_T hash_prefix_get(htable_prefix_t *h, key_t key, value_t *value) 
 
    Recovers a value from a hash table.  *value can be NULL if the user 
