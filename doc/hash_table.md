@@ -49,6 +49,16 @@ This allows you have multiple hash table types in the same program.
 
 ### `htable_prefix_t *hash_prefix_init(int64_t expected_size);`
 
+Allocates and initializes a `htable_prefix_t` which stores the hash entries
+and associated information.
+This should be viewed as an opaque structures which the user should never
+need to look into and certainly code should not depend it fields and layout
+as these can change between releases.
+
+The initial size of the table is the first power of 2 larger than or equal to
+`expected_size`, or 16 which ever is larger.  The table will dynamically grow
+once the occupancy hits 75%, doubling in sizes.
+
 ### `void hash_prefix_destroy(htable_prefix_t **h_ptr)`
 
 ### `int32_t hash_prefix_put(htable_prefix_t *h, key_t key, value_t value)`
@@ -69,7 +79,7 @@ This allows you have multiple hash table types in the same program.
 
 ### `int64_t hash_prefix_get_size(const htable_prefix_t *h)`
 
-### 'int64_t hash_prefix_get_capacity(const htable_prefix_t *h)`
+### `int64_t hash_prefix_get_capacity(const htable_prefix_t *h)`
 
 ## Interation
 
