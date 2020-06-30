@@ -298,8 +298,20 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
     const uint64_t base = hash & mask;
     const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
 
+    uint64_t first_empty = -1;
+
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
-        if (h->A[pos] == NULL || h->A[pos] == &(h->deleted)) {
+         if (h->A[pos] == &(h->deleted)) {
+	    if (first_empty == -1) {
+	        first_empty = pos;
+	    }
+	    continue;
+        }
+      
+        if (h->A[pos] == NULL) {
+	    if (first_empty == -1) {
+	        first_empty = pos;
+	    }
             PHNODE *n = malloc(sizeof(PHNODE));
             if (n == NULL) {
 	        pthread_rwlock_unlock(&(h->rwlock));
@@ -308,12 +320,14 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, key_t key, value_t value) {
             n->hash = hash;
             n->key = key;
             n->value = value;
-	    if (h->A[pos] == NULL) {
+	    if (h->A[first_empty] == NULL) {
 	        h->size++;
 	    }
-            h->A[pos] = n;
+            h->A[first_empty] = n;
             break;
-        } else if (h->A[pos]->hash == hash) {
+        }
+
+	if (h->A[pos]->hash == hash) {
             if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
                 h->A[pos]->value = h->update == NULL ? value : h->update(h->A[pos]->value, value);
                 break;
