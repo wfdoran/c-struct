@@ -20,6 +20,9 @@ hash_demo5: hash_demo5.c
 phash_demo1: phash_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) phash_demo1.c -o phash_demo1 -lpthread
 
+chan_demo1: chan_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) chan_demo1.c -o chan_demo1 -lpthread
+
 linked_list_demo1: linked_list_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo1.c -o linked_list_demo1 -lm
 
@@ -132,6 +135,7 @@ clean:
 	rm -rf hash_demo4
 	rm -rf hash_demo5
 	rm -rf phash_demo1
+	rm -rf chan_demo1
 	rm -rf linked_list_demo1
 	rm -rf linked_list_demo2
 	rm -rf linked_list_demo3
