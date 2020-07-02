@@ -59,7 +59,18 @@ CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
   return c;
 }
 
+void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
+  CHAN *c = *c_ptr;
+  if (c == NULL) {
+    return;
+  }
 
+  pthread_rwlock_wrlock(&(c->rwlock));
+  free(c->data);
+  pthread_rwlock_destroy(&(c->rwlock));
+  free(c);
+  c_ptr = NULL;
+}
 
   
 
