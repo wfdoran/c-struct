@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <time.h>
 
 #ifndef data_t
 #error "data_t not defined"
@@ -72,7 +73,70 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
   c_ptr = NULL;
 }
 
-  
+int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
+  if (c == NULL) {
+    return -1;
+  }
+
+  struct timespec sleep = {.tv_sec = 0, .tv_nsec = 500L};
+  int64_t max_sleep_nsec = INT64_C(1000000); // one millisec
+  while (true) {
+    pthread_rwlock_wrlock(&(c->rwlock));
+
+    if (c->closed) {
+      pthread_rwlock_unlock(&(c->rwlock));
+      return -2;
+    }
+
+    if (c->occupancy < c->capacity) {
+      c->data[c->write_pos] = value;
+      c->write_pos = (c->write_pos + 1) % c->capacity;
+      c->occupancy++;
+      pthread_rwlock_unlock(&(c->rwlock));
+      return 0;
+    }
+    pthread_rwlock_unlock(&(c->rwlock));
+
+    sleep.tv_nsec *= 2;
+    if (sleep.tv_nsec > max_sleep_nsec) {
+      sleep.tv_nsec = max_sleep_nsec;
+    }
+    nanosleep(&sleep, NULL);
+  }
+}
+
+int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
+  if (c == NULL) {
+    return -1;
+  }
+
+  struct timespec sleep = {.tv_sec = 0, .tv_nsec = 500L};
+  int64_t max_sleep_nsec = INT64_C(1000000); // one millisec
+  while (true) {
+    pthread_rwlock_wrlock(&(c->rwlock));
+
+    if (c->occupancy > 0) {
+      *value = c->data[c->read_pos];
+      c->read_pos = (c->read_pos + 1) % c->capacity;
+      c->occupancy--;
+      pthread_rwlock_unlock(&(c->rwlock));
+      return 0;
+    }
+
+    if (c->closed) {
+      pthread_rwlock_unlock(&(c->rwlock));
+      return 1;
+    }
+
+    pthread_rwlock_unlock(&(c->rwlock));
+
+    sleep.tv_nsec *= 2;
+    if (sleep.tv_nsec > max_sleep_nsec) {
+      sleep.tv_nsec = max_sleep_nsec;
+    }
+    nanosleep(&sleep, NULL);
+  }
+}
 
 #undef GLUE3
 #undef GLUE
