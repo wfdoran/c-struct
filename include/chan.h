@@ -12,6 +12,14 @@
 #error "prefix not defined"
 #endif
 
+#ifndef CHAN_OPEN
+#define CHAN_OPEN (0)
+#endif
+
+#ifndef CHAN_CLOSED
+#define CHAN_CLOSED (1)
+#endif
+
 
 
 #define GLUE_HELPER(x, y) x##y
@@ -120,12 +128,12 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
       c->read_pos = (c->read_pos + 1) % c->capacity;
       c->occupancy--;
       pthread_rwlock_unlock(&(c->rwlock));
-      return 0;
+      return CHAN_OPEN;
     }
 
     if (c->closed) {
       pthread_rwlock_unlock(&(c->rwlock));
-      return 1;
+      return CHAN_CLOSED;
     }
 
     pthread_rwlock_unlock(&(c->rwlock));
@@ -136,6 +144,17 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
     }
     nanosleep(&sleep, NULL);
   }
+}
+
+int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
+  if (c == NULL) {
+    return -1;
+  }
+  pthread_rwlock_wrlock(&(c->rwlock));
+  int32_t rc = c->closed ? -2 : 0;
+  c->closed = true;
+  pthread_rwlock_unlock(&(c->rwlock));
+  return rc;
 }
 
 #undef GLUE3

@@ -13,11 +13,11 @@ int main(void) {
   for (int i = 0; i < 5; i++) {
     chan_int_send(c, i);
   }
-
+  chan_int_close(c);
+  
 
   int value;
-  for (int i = 0; i < 5; i++) {
-    chan_int_recv(c, &value);
+  while (chan_int_recv(c, &value) == CHAN_OPEN) {
     printf("%d\n", value);
   }
     
