@@ -16,7 +16,7 @@ void produce(chan_int64_t *ch, int64_t n) {
 
 void square_em(chan_int64_t *in, chan_int64_t *out) {
   int64_t x;
-  while (chan_int64_recv(in, &x) == CHAN_OPEN) {
+  while (chan_int64_recv(in, &x) == CHAN_SUCCESS) {
     chan_int64_send(out, x * x);
   }
   chan_int64_close(out);
@@ -25,7 +25,7 @@ void square_em(chan_int64_t *in, chan_int64_t *out) {
 void sum_em(chan_int64_t *in, chan_int64_t *out) {
   int64_t total = 0;
   int64_t x;
-  while (chan_int64_recv(in, &x) == CHAN_OPEN) {
+  while (chan_int64_recv(in, &x) == CHAN_SUCCESS) {
     total += x;
   }
   chan_int64_send(out, total);

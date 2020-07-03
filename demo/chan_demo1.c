@@ -17,7 +17,7 @@ int main(void) {
   
 
   int value;
-  while (chan_int_recv(c, &value) == CHAN_OPEN) {
+  while (chan_int_recv(c, &value) == CHAN_SUCCESS) {
     printf("%d\n", value);
   }
     

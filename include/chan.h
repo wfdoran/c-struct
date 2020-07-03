@@ -12,12 +12,16 @@
 #error "prefix not defined"
 #endif
 
-#ifndef CHAN_OPEN
-#define CHAN_OPEN (0)
-#endif
 
-#ifndef CHAN_CLOSED
+#ifndef CHAN_CONSTS
+#define CHAN_CONSTS
+
+#define CHAN_SUCCESS (0)
 #define CHAN_CLOSED (1)
+
+#define CHAN_ERROR (-1)
+#define CHAN_FULL (2)
+#define CHAN_EMPTY (3)
 #endif
 
 
@@ -83,7 +87,7 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
 
 int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
   if (c == NULL) {
-    return -1;
+    return CHAN_ERROR;
   }
 
   struct timespec sleep = {.tv_sec = 0, .tv_nsec = 500L};
@@ -93,7 +97,7 @@ int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
 
     if (c->closed) {
       pthread_rwlock_unlock(&(c->rwlock));
-      return -2;
+      return CHAN_CLOSED;
     }
 
     if (c->occupancy < c->capacity) {
@@ -101,7 +105,7 @@ int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
       c->write_pos = (c->write_pos + 1) % c->capacity;
       c->occupancy++;
       pthread_rwlock_unlock(&(c->rwlock));
-      return 0;
+      return CHAN_SUCCESS;
     }
     pthread_rwlock_unlock(&(c->rwlock));
 
@@ -115,7 +119,7 @@ int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
 
 int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
   if (c == NULL) {
-    return -1;
+    return CHAN_ERROR;
   }
 
   struct timespec sleep = {.tv_sec = 0, .tv_nsec = 500L};
@@ -128,7 +132,7 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
       c->read_pos = (c->read_pos + 1) % c->capacity;
       c->occupancy--;
       pthread_rwlock_unlock(&(c->rwlock));
-      return CHAN_OPEN;
+      return CHAN_SUCCESS;
     }
 
     if (c->closed) {
@@ -148,10 +152,10 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
 
 int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   if (c == NULL) {
-    return -1;
+    return CHAN_ERROR;
   }
   pthread_rwlock_wrlock(&(c->rwlock));
-  int32_t rc = c->closed ? -2 : 0;
+  int32_t rc = c->closed ? CHAN_CLOSED : CHAN_SUCCESS;
   c->closed = true;
   pthread_rwlock_unlock(&(c->rwlock));
   return rc;
