@@ -117,6 +117,29 @@ int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
   }
 }
 
+int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
+  if (c == NULL) {
+    return CHAN_ERROR;
+  }
+
+  pthread_rwlock_wrlock(&(c->rwlock));
+
+  if (c->closed) {
+    pthread_rwlock_unlock(&(c->rwlock));
+    return CHAN_CLOSED;
+  }
+  
+  if (c->occupancy < c->capacity) {
+      c->data[c->write_pos] = value;
+      c->write_pos = (c->write_pos + 1) % c->capacity;
+      c->occupancy++;
+      pthread_rwlock_unlock(&(c->rwlock));
+      return CHAN_SUCCESS;
+  }
+  pthread_rwlock_unlock(&(c->rwlock));
+  return CHAN_FULL;
+}
+
 int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
   if (c == NULL) {
     return CHAN_ERROR;
@@ -149,6 +172,33 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
     nanosleep(&sleep, NULL);
   }
 }
+
+int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
+  if (c == NULL) {
+    return CHAN_ERROR;
+  }
+
+  pthread_rwlock_wrlock(&(c->rwlock));
+  
+  int32_t rc;
+  if (c->occupancy > 0) {
+    *value = c->data[c->read_pos];
+    c->read_pos = (c->read_pos + 1) % c->capacity;
+    c->occupancy--;
+    rc = CHAN_SUCCESS;
+    pthread_rwlock_unlock(&(c->rwlock));
+    return CHAN_SUCCESS;
+  } else if (c->closed) {
+    rc = CHAN_CLOSED;
+  } else {
+    rc = CHAN_EMPTY;
+  }
+
+ 
+  pthread_rwlock_unlock(&(c->rwlock));
+  return rc;
+}
+
 
 int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   if (c == NULL) {
