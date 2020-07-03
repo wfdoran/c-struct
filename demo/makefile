@@ -23,6 +23,9 @@ phash_demo1: phash_demo1.c
 chan_demo1: chan_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) chan_demo1.c -o chan_demo1 -lpthread
 
+chan_demo2: chan_demo2.c
+	$(CC) $(CFLAGS) $(INCLUDE) chan_demo2.c -o chan_demo2 -lpthread -fopenmp
+
 linked_list_demo1: linked_list_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo1.c -o linked_list_demo1 -lm
 
@@ -136,6 +139,7 @@ clean:
 	rm -rf hash_demo5
 	rm -rf phash_demo1
 	rm -rf chan_demo1
+	rm -rf chan_demo2
 	rm -rf linked_list_demo1
 	rm -rf linked_list_demo2
 	rm -rf linked_list_demo3
