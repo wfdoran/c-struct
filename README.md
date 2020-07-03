@@ -4,6 +4,8 @@
 
 ## [Hash Table](doc/hash_table.md)
 
+## [Channels](doc/chan.md)
+
 ## binary tree
 
 ```c
