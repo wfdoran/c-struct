@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <time.h>
 
 #ifndef data_t
 #error "data_t not defined"
@@ -40,6 +39,7 @@ typedef struct CHAN {
     int64_t write_pos;
     bool closed;
     pthread_mutex_t lock;
+    pthread_cond_t cond;
 } CHAN;
       
 CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
@@ -59,6 +59,7 @@ CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
   }
 
   pthread_mutex_init(&(c->lock), NULL);
+  pthread_cond_init(&(c->cond), NULL);
 
   return c;
 }
@@ -72,6 +73,7 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
   pthread_mutex_lock(&(c->lock));
   free(c->data);
   pthread_mutex_destroy(&(c->lock));
+  pthread_cond_destroy(&(c->cond));
   free(c);
   c_ptr = NULL;
 }
@@ -81,31 +83,24 @@ int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
     return CHAN_ERROR;
   }
 
-  struct timespec sleep = {.tv_sec = 0, .tv_nsec = 500L};
-  int64_t max_sleep_nsec = INT64_C(1000000); // one millisec
-  while (true) {
-    pthread_mutex_lock(&(c->lock));
+  pthread_mutex_lock(&(c->lock));
 
-    if (c->closed) {
-      pthread_mutex_unlock(&(c->lock));
-      return CHAN_CLOSED;
-    }
-
-    if (c->occupancy < c->capacity) {
-      c->data[c->write_pos] = value;
-      c->write_pos = (c->write_pos + 1) % c->capacity;
-      c->occupancy++;
-      pthread_mutex_unlock(&(c->lock));
-      return CHAN_SUCCESS;
-    }
+  if (c->closed) {
+    pthread_cond_signal(&(c->cond));
     pthread_mutex_unlock(&(c->lock));
-
-    sleep.tv_nsec *= 2;
-    if (sleep.tv_nsec > max_sleep_nsec) {
-      sleep.tv_nsec = max_sleep_nsec;
-    }
-    nanosleep(&sleep, NULL);
+    return CHAN_CLOSED;
   }
+
+  while (c->occupancy == c->capacity) {
+    pthread_cond_wait(&(c->cond), &(c->lock));
+  }
+
+  c->data[c->write_pos] = value;
+  c->write_pos = (c->write_pos + 1) % c->capacity;
+  c->occupancy++;
+  pthread_cond_signal(&(c->cond));
+  pthread_mutex_unlock(&(c->lock));
+  return CHAN_SUCCESS;
 }
 
 int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
@@ -119,16 +114,20 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
     pthread_mutex_unlock(&(c->lock));
     return CHAN_CLOSED;
   }
-  
+
+  int32_t rc;
   if (c->occupancy < c->capacity) {
       c->data[c->write_pos] = value;
       c->write_pos = (c->write_pos + 1) % c->capacity;
       c->occupancy++;
-      pthread_mutex_unlock(&(c->lock));
-      return CHAN_SUCCESS;
+      rc = CHAN_SUCCESS;
+  } else {
+    rc = CHAN_FULL;
   }
+
+  pthread_cond_signal(&(c->cond));
   pthread_mutex_unlock(&(c->lock));
-  return CHAN_FULL;
+  return rc;
 }
 
 int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
@@ -136,32 +135,23 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
     return CHAN_ERROR;
   }
 
-  struct timespec sleep = {.tv_sec = 0, .tv_nsec = 500L};
-  int64_t max_sleep_nsec = INT64_C(1000000); // one millisec
-  while (true) {
-    pthread_mutex_lock(&(c->lock));
+  pthread_mutex_lock(&(c->lock));
 
-    if (c->occupancy > 0) {
-      *value = c->data[c->read_pos];
-      c->read_pos = (c->read_pos + 1) % c->capacity;
-      c->occupancy--;
-      pthread_mutex_unlock(&(c->lock));
-      return CHAN_SUCCESS;
-    }
-
+  while (c->occupancy == 0) {
     if (c->closed) {
+      pthread_cond_signal(&(c->cond));
       pthread_mutex_unlock(&(c->lock));
       return CHAN_CLOSED;
-    }
-
-    pthread_mutex_unlock(&(c->lock));
-
-    sleep.tv_nsec *= 2;
-    if (sleep.tv_nsec > max_sleep_nsec) {
-      sleep.tv_nsec = max_sleep_nsec;
-    }
-    nanosleep(&sleep, NULL);
+    }      
+    pthread_cond_wait(&(c->cond), &(c->lock));
   }
+
+  *value = c->data[c->read_pos];
+  c->read_pos = (c->read_pos + 1) % c->capacity;
+  c->occupancy--;
+  pthread_cond_signal(&(c->cond));
+  pthread_mutex_unlock(&(c->lock));
+  return CHAN_SUCCESS;
 }
 
 int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
@@ -185,7 +175,7 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
     rc = CHAN_EMPTY;
   }
 
- 
+  pthread_cond_signal(&(c->cond)); 
   pthread_mutex_unlock(&(c->lock));
   return rc;
 }
@@ -198,6 +188,8 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   pthread_mutex_lock(&(c->lock));
   int32_t rc = c->closed ? CHAN_CLOSED : CHAN_SUCCESS;
   c->closed = true;
+  
+  pthread_cond_signal(&(c->cond)); 
   pthread_mutex_unlock(&(c->lock));
   return rc;
 }
