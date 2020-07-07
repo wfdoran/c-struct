@@ -57,11 +57,38 @@ as these can change between releases.
 
 The initial size of the table is the first power of 2 larger than or equal to
 `expected_size`, or 16 which ever is larger.  The table will dynamically grow
-once the occupancy hits 75%, doubling in sizes.
+once the occupancy hits 75%, doubling in size.
 
 ### `void hash_prefix_destroy(htable_prefix_t **h_ptr)`
 
+Frees the internal hash table, the frees the htable_prefix_t itself, and
+sets the pointer itself to `NULL` to avoid using it after calling this routine.
+To perform the last step, the user passes the address of the pointer to
+the htable_prefix_t.
+
+```c
+htable_prefix_t *h = hash_prefix_init(0);
+...
+hash_prefix_destroy(&h);
+assert(h == NULL);
+```
+
+This routine does not free the keys or values.  It does not know how.
+The routines `hash_prefix_first` and `hash_prefix_next` can be used to
+iterate over the hash table and manually free/destroy the keys and value
+first. 
+
 ### `int32_t hash_prefix_put(htable_prefix_t *h, key_t key, value_t value)`
+
+Inserts a key/value pair into the hash table.
+
+This performs shallow copy of the key and value to the hash table.  In
+particular, if either key_t or value_t is a pointer, the address is stored
+in hash table and along with the (current) hash value of the key.
+Once inserted, the key should not be altered.  
+
+How does the hash table handle cases where the key already exists?
+
 
 ### `int32_t hash_prefix_get(const htable_prefix_t *h, key_t key, value_t *value)`
 
