@@ -293,7 +293,7 @@ void GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
    and the index is out of range, the null value is returned.  Otherwise,
    index out of range results in an assert failure.
 */
-data_t GLUE3(array_, prefix, _get) (TYPE *a, size_t idx) {
+data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
     if (idx < 0 || idx >= a->size) {
         if (a->have_null_value) {
             return a->null_value;
@@ -305,7 +305,6 @@ data_t GLUE3(array_, prefix, _get) (TYPE *a, size_t idx) {
 }
 
 /* 
-
    Pops the last value off of the array.  Using this and array_prefix_append()
    you get a stack.
 */
@@ -367,14 +366,14 @@ void GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
 /* 
    Returns the number of entries in the array. 
 */
-size_t GLUE3(array_, prefix, _size) (TYPE *a) {
+size_t GLUE3(array_, prefix, _size) (const TYPE *a) {
     return a->size;
 }
 
 /* 
    Returns the capacity in the array until a resize is needed.
 */
-size_t GLUE3(array_, prefix, _capacity) (TYPE *a) {
+size_t GLUE3(array_, prefix, _capacity) (const TYPE *a) {
     return a->capacity;
 }
 
@@ -472,7 +471,7 @@ void GLUE3(array_, prefix, _heapify) (TYPE *a) {
     }
 }
 
-size_t GLUE3(array_, prefix, _index) (TYPE *a, data_t v) {
+size_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
     for (size_t i = 0; i < a->size; i++) {
         if (a->comp(&a->data[i], &v) == 0) {
             return i;
