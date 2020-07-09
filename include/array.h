@@ -47,11 +47,11 @@ typedef struct {
 TYPE *GLUE3(array_, prefix, _init) () {
     TYPE *a = malloc(sizeof(TYPE));
     if (a == NULL) {
-      return NULL;
+        return NULL;
     }
     a->alloc = malloc(sizeof(data_t));
     if (a->alloc == NULL) {
-      return NULL;
+        return NULL;
     }
     a->data = a->alloc;
     a->size = 0;
@@ -71,11 +71,11 @@ TYPE *GLUE3(array_, prefix, _init) () {
 TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
     TYPE *a = malloc(sizeof(TYPE));
     if (a == NULL) {
-      return NULL;
+        return NULL;
     }
     a->alloc = malloc(size * sizeof(data_t));
     if (a->alloc == NULL) {
-      return NULL;
+        return NULL;
     }
     a->data = a->alloc;
     a->size = size;
@@ -101,11 +101,11 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
     }
     TYPE *out = malloc(sizeof(TYPE));
     if (out == NULL) {
-      return NULL;
+        return NULL;
     }
     out->alloc = malloc(in->size * sizeof(data_t));
     if (out->alloc == NULL) {
-      return NULL;
+        return NULL;
     }
     out->data = out->alloc;
     out->size = in->size;
@@ -134,11 +134,11 @@ TYPE *GLUE3(array_, prefix, _clone) (const TYPE *in) {
 */
 
 int32_t GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t *)) {
-  if (a == NULL || comp == NULL) {
-    return -1;
-  }
-  a->comp = comp;
-  return 0;
+    if (a == NULL || comp == NULL) {
+        return -1;
+    }
+    a->comp = comp;
+    return 0;
 }
 
 /* 
@@ -147,9 +147,9 @@ int32_t GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t
    array is empty or the request is out of range. 
 */
 int32_t GLUE3(array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
-  if (a == NULL) {
-    return -1;
-  }
+    if (a == NULL) {
+        return -1;
+    }
     a->have_null_value = true;
     a->null_value = null_value;
     return 0;
@@ -163,13 +163,13 @@ int32_t GLUE3(array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
 */
 
 int32_t GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
-  if (a_ptr == NULL) {
-    return -1;
-  }
-  TYPE *a = *a_ptr;
-  if (a == NULL) {
-    return -1;
-  }
+    if (a_ptr == NULL) {
+        return -1;
+    }
+    TYPE *a = *a_ptr;
+    if (a == NULL) {
+        return -1;
+    }
     free(a->alloc);
     a->alloc = NULL;
     a->data = NULL;
@@ -185,12 +185,12 @@ int32_t GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
 */
 
 int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
-  if (a == NULL) {
-    return -1;
-  }
-  if (a->comp == NULL) {
-    return -1;
-  }
+    if (a == NULL) {
+        return -1;
+    }
+    if (a->comp == NULL) {
+        return -1;
+    }
     int (*comp) (const void *, const void *) = (int (*)(const void *, const void *)) a->comp;
     qsort(a->data, a->size, sizeof(data_t), comp);
     return 0;
@@ -283,9 +283,9 @@ size_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
 
 /* Applies a function to every entry in an array */
 int32_t GLUE3(array_, prefix, _map) (TYPE *a, data_t (*f) (data_t)) {
-  if (a == NULL || f == NULL) {
-    return -1;
-  }
+    if (a == NULL || f == NULL) {
+        return -1;
+    }
     for (size_t i = 0; i < a->size; i++) {
         a->data[i] = f(a->data[i]);
     }
@@ -307,8 +307,8 @@ data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t (*f) (data_t, const d
 
 data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
                                       data_t (*f) (data_t, const data_t)) {
-  assert(a != NULL);
-  assert(f != NULL);
+    assert(a != NULL);
+    assert(f != NULL);
     data_t rv = init;
     for (size_t i = 0; i < a->size; i++) {
         rv = f(rv, a->data[i]);
@@ -318,11 +318,11 @@ data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
 
 
 int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
-  assert(a != NULL);
-  assert(f != NULL);
-  if (a == NULL || f == NULL) {
-    return -1;
-  }
+    assert(a != NULL);
+    assert(f != NULL);
+    if (a == NULL || f == NULL) {
+        return -1;
+    }
     for (size_t i = 1; i < a->size; i++) {
         a->data[i] = f(a->data[i - 1], a->data[i]);
     }
@@ -337,7 +337,7 @@ int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
    index out of range results in an assert failure.
 */
 data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
-  assert(a != NULL);
+    assert(a != NULL);
     if (idx < 0 || idx >= a->size) {
         if (a->have_null_value) {
             return a->null_value;
@@ -353,7 +353,7 @@ data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
    you get a stack.
 */
 data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
-  assert(a != NULL);
+    assert(a != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
@@ -371,7 +371,7 @@ data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
    you get a queue.
 */
 data_t GLUE3(array_, prefix, _pop_first) (TYPE *a) {
-  assert(a != NULL);
+    assert(a != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
@@ -388,12 +388,12 @@ data_t GLUE3(array_, prefix, _pop_first) (TYPE *a) {
 }
 
 int32_t GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
-  if (a == NULL) {
-    return -1;
-  }
-  if (idx < 0 || idx >= a->size) {
-    return -1;
-  }
+    if (a == NULL) {
+        return -1;
+    }
+    if (idx < 0 || idx >= a->size) {
+        return -1;
+    }
     assert(idx >= 0 && idx < a->size);
     a->data[idx] = value;
     return 0;
@@ -420,7 +420,7 @@ void GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
    Returns the number of entries in the array. 
 */
 size_t GLUE3(array_, prefix, _size) (const TYPE *a) {
-  assert(a != NULL);
+    assert(a != NULL);
     return a->size;
 }
 
@@ -443,12 +443,12 @@ size_t GLUE3(array_, prefix, _capacity) (const TYPE *a) {
 */
 
 int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
-  if (a == NULL) {
-    return -1;
-  }
-  if (a->comp == NULL) {
-    return -1;
-  }
+    if (a == NULL) {
+        return -1;
+    }
+    if (a->comp == NULL) {
+        return -1;
+    }
     assert(a->comp != NULL);
     GLUE3(array_, prefix, _append) (a, value);
     size_t pos = a->size - 1;
@@ -472,8 +472,8 @@ int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
 */
 
 data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
-  assert(a != NULL);
-  assert(a->comp != NULL);
+    assert(a != NULL);
+    assert(a->comp != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
@@ -526,12 +526,12 @@ data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
 */
 
 int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
-  if (a == NULL) {
-    return -1;
-  }
-  if (a->comp == NULL) {
-    return -1;
-  }
+    if (a == NULL) {
+        return -1;
+    }
+    if (a->comp == NULL) {
+        return -1;
+    }
     size_t size = a->size;
     a->size = 0;
     for (size_t i = 0; i < size; i++) {
@@ -541,8 +541,8 @@ int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
 }
 
 size_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
-  assert(a != NULL);
-  assert(a->comp != NULL);
+    assert(a != NULL);
+    assert(a->comp != NULL);
     for (size_t i = 0; i < a->size; i++) {
         if (a->comp(&a->data[i], &v) == 0) {
             return i;
