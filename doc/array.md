@@ -8,11 +8,11 @@
 
 ### `array_prefix_t *array_prefix_init2(size_t size, data_t default_value)`
 
-### `void array_prefix_destroy(array_prefix_t **a)`
+### `int32_t array_prefix_destroy(array_prefix_t **a)`
 
 ### `data_t array_prefix_get(const array_prefix_t *a, size_t idx)`
 
-### `data_t arary_prefix_set(array_prefix_t *a, data_t value, size_t idx)`
+### `int32_t arary_prefix_set(array_prefix_t *a, data_t value, size_t idx)`
 
 ## Queue
 
@@ -24,9 +24,9 @@
 
 ## Specialize
 
-### `void array_prefix_set_comp(array_prefix_t *a)`
+### `int32_t array_prefix_set_comp(array_prefix_t *a)`
 
-### `void array_prefix_set_null_value(array_prefix_t *a)`
+### `int32_t array_prefix_set_null_value(array_prefix_t *a)`
 
 ## Getters
 
@@ -36,11 +36,11 @@
 
 ## Collective Operations
 
-### `void array_prefix_sort(array_prefix_t *a)`
+### `int32_t array_prefix_sort(array_prefix_t *a)`
 
-### `void array_prefix_map(array_prefix_t *a, data_t (*f)(data_t))`
+### `int32_t array_prefix_map(array_prefix_t *a, data_t (*f)(data_t))`
 
-### `void array_prefix_scan(array_prefix_t *a, data_t (*f)(data_t, data_t))`
+### `int32_t array_prefix_scan(array_prefix_t *a, data_t (*f)(data_t, data_t))`
 
 ### `data_t array_prefix_fold(const array_prefix_t *a, data_t (*f) (data_t, const data_t))`
 
@@ -64,9 +64,9 @@
 
 ## Heap
 
-### `void array_prefix_heappush(array_prefix_t *a, data_t value)`
+### `int32_t array_prefix_heappush(array_prefix_t *a, data_t value)`
 
 ### `data_t array_prefix_heappop(array_prefix_t *a)`
 
-### `void array_prefix_heapify(array_prefix_t *a)`
+### `int32_t array_prefix_heapify(array_prefix_t *a)`
 
