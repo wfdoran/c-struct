@@ -83,6 +83,9 @@ array_demo13: array_demo13.c
 array_demo14: array_demo14.c
 	$(CC) $(CFLAGS) $(INCLUDE) array_demo14.c -o array_demo14
 
+array_demo15: array_demo15.c
+	$(CC) $(CFLAGS) $(INCLUDE) array_demo15.c -o array_demo15
+
 tree_demo1: tree_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_demo1.c -o tree_demo1
 
@@ -135,6 +138,7 @@ clean:
 	rm -rf array_demo12
 	rm -rf array_demo13
 	rm -rf array_demo14
+	rm -rf array_demo15
 	rm -rf hash_demo1
 	rm -rf hash_demo2
 	rm -rf hash_demo3

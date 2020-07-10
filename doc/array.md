@@ -52,6 +52,10 @@
 
 ### `array_prefix_t *array_prefix_deep_clone(const array_prefix_t *a, data_t (*f) (const data_t))`
 
+### `array_prefix_t *array_prefix_slice(const array_prefix_t *a, size_t left, size_t right)`
+
+### `array_prefix_t *array_prefix_deep_slice(const array_prefix_t *a, size_t left, size_t right, data_t (*f) (const data_t))`
+
 ## Search
 
 ### `size_t array_prefix_index(const array_prefix_t *a, data_t v)`

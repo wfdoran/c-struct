@@ -22,8 +22,6 @@
 #define _unused(x) ((void)(x))
 
 // create new array
-// array_prefix_slice
-// array_prefix_deep_slice
 // array_prefix_filter
 
 // update current array
@@ -113,8 +111,10 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
     out->comp = in->comp;
     out->have_null_value = in->have_null_value;
     out->null_value = in->null_value;
-    for (int64_t i = 0; i < in->size; i++) {
-        out->data[i] = f == NULL ? in->data[i] : f(in->data[i]);
+    if (f != NULL) {
+        for (int64_t i = 0; i < in->size; i++) {
+            out->data[i] = f(in->data[i]);
+        }
     }
     return out;
 }
@@ -125,6 +125,41 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
 */
 TYPE *GLUE3(array_, prefix, _clone) (const TYPE *in) {
     return GLUE3(array_, prefix, _deep_clone) (in, NULL);
+}
+
+TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t right,
+					 data_t (*f) (const data_t)) {
+    if (in == NULL) {
+        return NULL;
+    }
+    if (left < 0 || right <= left || right > in->size) {
+        return NULL;
+    }
+    const size_t size = right - left;
+    TYPE *out = malloc(sizeof(TYPE));
+    if (out == NULL) {
+        return NULL;
+    }
+    out->alloc = malloc(size * sizeof(data_t));
+    if (out->alloc == NULL) {
+        return NULL;
+    }
+    out->data = out->alloc;
+    out->size = size;
+    out->capacity = size;
+    out->comp = in->comp;
+    out->have_null_value = in->have_null_value;
+    out->null_value = in->null_value;
+    if (f != NULL) {
+        for (int64_t i = 0; i < size; i++) {
+            out->data[i] = f(in->data[i + left]);
+        }
+    }
+    return out;
+}
+
+TYPE *GLUE3(array_, prefix, _slice) (const TYPE *in, size_t left, size_t right) {
+    return GLUE3(array_, prefix, _deep_slice)(in, left, right, NULL);
 }
 
 /* array_prefix_set_comp(array_prefix_t *a, int (*comp) (data_t*, data_t*)
