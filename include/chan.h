@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdatomic.h>
 #include <pthread.h>
 
 #ifndef data_t
@@ -33,11 +34,11 @@
 
 typedef struct CHAN {
     data_t *data;
-    int64_t capacity;
-    int64_t occupancy;
+    _Atomic int64_t capacity;
+    _Atomic int64_t occupancy;
     int64_t read_pos;
     int64_t write_pos;
-    bool closed;
+    atomic_bool closed;
     pthread_mutex_t lock;
     pthread_cond_t cond;
 } CHAN;
@@ -71,6 +72,7 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
   }
 
   pthread_mutex_lock(&(c->lock));
+  pthread_mutex_unlock(&(c->lock));
   free(c->data);
   pthread_mutex_destroy(&(c->lock));
   pthread_cond_destroy(&(c->cond));
@@ -86,19 +88,25 @@ int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
   pthread_mutex_lock(&(c->lock));
 
   if (c->closed) {
-    pthread_cond_signal(&(c->cond));
+    pthread_cond_broadcast(&(c->cond));
     pthread_mutex_unlock(&(c->lock));
     return CHAN_CLOSED;
   }
 
   while (c->occupancy == c->capacity) {
     pthread_cond_wait(&(c->cond), &(c->lock));
+
+    if (c->closed) {
+      pthread_cond_broadcast(&(c->cond));
+      pthread_mutex_unlock(&(c->lock));
+      return CHAN_CLOSED;
+    }      
   }
 
   c->data[c->write_pos] = value;
   c->write_pos = (c->write_pos + 1) % c->capacity;
   c->occupancy++;
-  pthread_cond_signal(&(c->cond));
+  pthread_cond_broadcast(&(c->cond));
   pthread_mutex_unlock(&(c->lock));
   return CHAN_SUCCESS;
 }
@@ -125,7 +133,7 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
     rc = CHAN_FULL;
   }
 
-  pthread_cond_signal(&(c->cond));
+  pthread_cond_broadcast(&(c->cond));
   pthread_mutex_unlock(&(c->lock));
   return rc;
 }
@@ -137,19 +145,22 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
 
   pthread_mutex_lock(&(c->lock));
 
+  // printf("|");
   while (c->occupancy == 0) {
     if (c->closed) {
-      pthread_cond_signal(&(c->cond));
+      pthread_cond_broadcast(&(c->cond));
       pthread_mutex_unlock(&(c->lock));
       return CHAN_CLOSED;
-    }      
+    }
+    // printf("."); fflush(stdout);
     pthread_cond_wait(&(c->cond), &(c->lock));
+    // printf("_");
   }
 
   *value = c->data[c->read_pos];
   c->read_pos = (c->read_pos + 1) % c->capacity;
   c->occupancy--;
-  pthread_cond_signal(&(c->cond));
+  pthread_cond_broadcast(&(c->cond));
   pthread_mutex_unlock(&(c->lock));
   return CHAN_SUCCESS;
 }
@@ -175,7 +186,7 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
     rc = CHAN_EMPTY;
   }
 
-  pthread_cond_signal(&(c->cond)); 
+  pthread_cond_broadcast(&(c->cond)); 
   pthread_mutex_unlock(&(c->lock));
   return rc;
 }
@@ -189,7 +200,7 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   int32_t rc = c->closed ? CHAN_CLOSED : CHAN_SUCCESS;
   c->closed = true;
   
-  pthread_cond_signal(&(c->cond)); 
+  pthread_cond_broadcast(&(c->cond)); 
   pthread_mutex_unlock(&(c->lock));
   return rc;
 }
