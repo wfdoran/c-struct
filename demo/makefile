@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11 -g -Wall
+CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=thread
 INCLUDE = -I../include
 
 hash_demo1: hash_demo1.c
@@ -28,6 +28,9 @@ chan_demo2: chan_demo2.c
 
 chan_demo3: chan_demo3.c
 	$(CC) $(CFLAGS) $(INCLUDE) chan_demo3.c -o chan_demo3 -lpthread -fopenmp
+
+chan_demo4: chan_demo4.c
+	$(CC) $(CFLAGS) $(INCLUDE) chan_demo4.c -o chan_demo4 -lpthread -lm -fopenmp
 
 linked_list_demo1: linked_list_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo1.c -o linked_list_demo1 -lm
@@ -148,6 +151,7 @@ clean:
 	rm -rf chan_demo1
 	rm -rf chan_demo2
 	rm -rf chan_demo3
+	rm -rf chan_demo4
 	rm -rf linked_list_demo1
 	rm -rf linked_list_demo2
 	rm -rf linked_list_demo3
