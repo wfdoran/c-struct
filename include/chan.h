@@ -145,16 +145,13 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
 
   pthread_mutex_lock(&(c->lock));
 
-  // printf("|");
   while (c->occupancy == 0) {
     if (c->closed) {
       pthread_cond_broadcast(&(c->cond));
       pthread_mutex_unlock(&(c->lock));
       return CHAN_CLOSED;
     }
-    // printf("."); fflush(stdout);
     pthread_cond_wait(&(c->cond), &(c->lock));
-    // printf("_");
   }
 
   *value = c->data[c->read_pos];
@@ -171,7 +168,7 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
   }
 
   pthread_mutex_lock(&(c->lock));
-  
+
   int32_t rc;
   if (c->occupancy > 0) {
     *value = c->data[c->read_pos];
