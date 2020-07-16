@@ -94,6 +94,7 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
         return NULL;
     }
 
+    expected_size /= LOAD_FACTOR;
     h->capacity = expected_size <= 16 ? 16 : GLUE3(hash_, prefix, _roundup_pow2) (expected_size);
     h->size = 0;
     h->A = malloc(h->capacity * sizeof(HNODE *));
@@ -461,6 +462,28 @@ void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f) (key_t, value_t, vo
             a->value = f(a->key, a->value, arg);
         }
     }
+}
+
+HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
+  HTABLE *out = GLUE3(hash_, prefix, _init) (h->size);
+  if (out == NULL) {
+    return NULL;
+  }
+
+  out->hash_func = h->hash_func;
+  out->comp = h->comp;
+  out->update = h->update;
+
+  for (int64_t i = 0; i < h->capacity; i++) {
+    if (h->A[i] != NULL) {
+      int32_t rc = GLUE3(hash_, prefix, _put) (out, h->A[i]->key, h->A[i]->value);
+      if (rc != 0) {
+	return NULL;
+      }
+    }
+  }
+
+  return out;
 }
 
 #undef HNODE

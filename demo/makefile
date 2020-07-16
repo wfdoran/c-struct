@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=thread
+CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=address
 INCLUDE = -I../include
 
 hash_demo1: hash_demo1.c
@@ -16,6 +16,9 @@ hash_demo4: hash_demo4.c
 
 hash_demo5: hash_demo5.c
 	$(CC) $(CFLAGS) $(INCLUDE) hash_demo5.c -o hash_demo5
+
+hash_demo6: hash_demo6.c
+	$(CC) $(CFLAGS) $(INCLUDE) hash_demo6.c -o hash_demo6
 
 phash_demo1: phash_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) phash_demo1.c -o phash_demo1 -lpthread
@@ -147,6 +150,7 @@ clean:
 	rm -rf hash_demo3
 	rm -rf hash_demo4
 	rm -rf hash_demo5
+	rm -rf hash_demo6
 	rm -rf phash_demo1
 	rm -rf chan_demo1
 	rm -rf chan_demo2
