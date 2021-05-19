@@ -115,6 +115,8 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
         for (int64_t i = 0; i < in->size; i++) {
             out->data[i] = f(in->data[i]);
         }
+    } else {
+        memcpy(out->data, in->data, in->size * sizeof(data_t));
     }
     return out;
 }
@@ -154,6 +156,8 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
         for (int64_t i = 0; i < size; i++) {
             out->data[i] = f(in->data[i + left]);
         }
+    } else {
+        memcpy(out->data[i], &in->data[left], size * sizeof(data_t));
     }
     return out;
 }
@@ -330,6 +334,9 @@ int32_t GLUE3(array_, prefix, _map) (TYPE *a, data_t (*f) (data_t)) {
 /* Combines all of the entries in the array using a user provided function.
    Takes the first value as the initial value.  */
 data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t (*f) (data_t, const data_t)) {
+    assert(a != NULL);
+    assert(f != NULL);
+    assert(a->size > 0);
     data_t rv = a->data[0];
     for (size_t i = 1; i < a->size; i++) {
         rv = f(rv, a->data[i]);
@@ -401,7 +408,6 @@ data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
 }
 
 /* 
-
    Pops the first value off of the array.  Using this and array_prefix_append()
    you get a queue.
 */
