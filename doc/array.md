@@ -84,7 +84,9 @@ Applies the function `f` to every element in the array.
 
 ### `int32_t array_prefix_scan(array_prefix_t *a, data_t (*f)(data_t, data_t))`
 
-
+Performs a scan on the array using `f` to combine values.  `a[0]` remains the 
+same.  `a[1]` is replaced by `f(a[0],a[1])`.  `a[2]` is replaced by `f(a[1],a[2])`
+where `a[1]` is the new value.  And so on down the array. 
 
 ### `data_t array_prefix_fold(const array_prefix_t *a, data_t (*f) (data_t, const data_t))`
 
