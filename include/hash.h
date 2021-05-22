@@ -30,7 +30,7 @@ uint64_t hash_str(char *s) {
   uint64_t rv = UINT64_C(0x5555555555555555);
   uint64_t mult = UINT64_C(6364136223846793005);
 
-  for (int i = 0; s[i] != '0'; i++) {
+  for (int i = 0; s[i] != 0; i++) {
     rv += (uint64_t) s[i];
     rv *= mult;
   }
