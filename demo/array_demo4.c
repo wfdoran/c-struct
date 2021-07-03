@@ -14,18 +14,17 @@
 int main(void) {
     srand(time(NULL));
     
-    array_int32_t a;
-    array_int32_init(&a);
+    array_int32_t *a = array_int32_init();
     
     for (int i = 0; i < 10; i++) {
-        array_int32_heappush(&a, rand() % 100);
+        array_int32_heappush(a, rand() % 100);
     }
            
-    
-    while (array_int32_size(&a) > 0) {
-        printf("%d\n", array_int32_heappop(&a));
+    while (array_int32_size(a) > 0) {
+        printf("%d\n", array_int32_heappop(a));
     }
-        
+
+    array_int32_destroy(&a);
     return 0;
 }
    

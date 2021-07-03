@@ -11,10 +11,11 @@
 
 int main(void) {
     srand(time(NULL));
+    int32_t num_items = 100;
     
     tree_int32_t *t = tree_int32_init();
     
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < num_items; i++) {
         int32_t val = (rand() >> 3) & 0xffff;
         tree_int32_insert(t, val, NULL);
     }
@@ -22,10 +23,27 @@ int main(void) {
     printf("Tree Height: %d\n", tree_int32_height(t));
     printf("\n");
     
-    void *state = NULL;
-    tree_int32_postwalk_init(t, &state);
+    void *state;
+    key_int32_value_t pair;
+    int32_t left = 0x3fff;
+    int32_t right = 0xcfff;
+
+    printf("From %d to %d\n", left, right);
+    
+    tree_int32_insert(t, left - 1, NULL);
+    tree_int32_insert(t, left, NULL);   
+    tree_int32_insert(t, left + 1, NULL);
+    tree_int32_insert(t, right - 1, NULL);
+    tree_int32_insert(t, right, NULL);   
+    tree_int32_insert(t, right + 1, NULL);
+   
+    
+    tree_int32_walk_init2(t, left, &state);
     while (state != NULL) {
-        key_int32_value_t pair = tree_int32_postwalk_next(&state);
+        pair = tree_int32_walk_next(&state);
+	if (pair.key > right) {
+	  break;
+	}
         printf("%d ", pair.key);
     }
     printf("\n");

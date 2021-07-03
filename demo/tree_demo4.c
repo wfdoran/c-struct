@@ -26,7 +26,7 @@ int main(void) {
     srand(time(NULL));
     
     tree_int_t *t = tree_int_init();
-	tree_int_set_update(t, &update);
+    tree_int_set_update(t, &update);
     tree_int_set_value_free(t, &free);
     
     int n = 100;
@@ -36,7 +36,7 @@ int main(void) {
 		int v = rand() % n;
 		tree_int_insert(t, v, NULL);
     }
-    printf("Tree Size: %d\n", tree_int_size(t));
+    printf("Tree Size: %zu\n", tree_int_size(t));
     printf("Tree Height: %d\n", tree_int_height(t));
     printf("\n");
     

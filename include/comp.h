@@ -2,6 +2,8 @@
 #define COMP_H
 
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define GENERIC_COMP \
     if (*a > *b) { \
@@ -52,7 +54,15 @@ int comp_str(char **a, char **b) {
     char: &comp_char, \
     char*: &comp_str, \
     default: NULL)
-    
 
+
+int comp_str_data(char *a, char *b) {
+    return strcmp(a, b);
+}
+
+
+#define DEFAULT_COMP_TYPE(x) _Generic((x),	\
+    char*: &comp_str_data, \
+    default: NULL)
     
 #endif
