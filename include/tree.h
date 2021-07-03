@@ -24,7 +24,6 @@
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 
 // rank
-// change subroutines which return KEYVAL* to return KEYVAL.  
 // move routines which the caller should not see to <tree_private.h> 
 // initialize iterator with rank or bound or something
 
@@ -310,6 +309,25 @@ NODE* GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *val
     GLUE3(tree_, prefix, _fillin)(n);
     return n;
 }
+
+/* void tree_prefix_insert(tree_prefix_t *a, data_t key, void *value)
+
+   Inserts a key/value pair into the tree.  The only unclear part is
+   what to do if this key already exists in the tree.  
+     * If the user has provided an update function then 
+     
+            new_value = update(old_value, passed_value)
+            
+     * Otherwise,
+
+            new_value = passed_value
+
+       however if a value_free function has been given, then 
+
+            value_free(old_value) 
+
+       is done. 
+*/       
 
 void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
     a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value);
