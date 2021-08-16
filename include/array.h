@@ -157,7 +157,7 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
             out->data[i] = f(in->data[i + left]);
         }
     } else {
-        memcpy(out->data[i], &in->data[left], size * sizeof(data_t));
+        memcpy(out->data, &in->data[left], size * sizeof(data_t));
     }
     return out;
 }
