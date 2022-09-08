@@ -20,6 +20,9 @@ hash_demo5: hash_demo5.c
 hash_demo6: hash_demo6.c
 	$(CC) $(CFLAGS) $(INCLUDE) hash_demo6.c -o hash_demo6
 
+hash_demo7: hash_demo7.c
+	$(CC) $(CFLAGS) $(INCLUDE) hash_demo7.c -o hash_demo7
+
 phash_demo1: phash_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) phash_demo1.c -o phash_demo1 -lpthread
 
