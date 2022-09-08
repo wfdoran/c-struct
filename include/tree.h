@@ -23,6 +23,8 @@
 #define NODE GLUE3(tnode_, prefix, _t)
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 
+// rank
+// move routines which the caller should not see to <tree_private.h> 
 // initialize iterator with rank or bound or something
 
 // search and replace
@@ -361,16 +363,27 @@ static NODE *GLUE3(tree_, prefix, _insert_node) (TREE *a, NODE *n, data_t key, v
     return n;
 }
 
-/* tree_prefix_insert(TREE *a, data_t key, void *value) 
+/* void tree_prefix_insert(tree_prefix_t *a, data_t key, void *value)
 
-   Inserts a key/value pair into the tree.  If the key already visits,
-   the value is replaced until tree_prefix_set_update() has set an
-   update function.
+   Inserts a key/value pair into the tree.  The only unclear part is
+   what to do if this key already exists in the tree.  
+     * If the user has provided an update function then 
+     
+            new_value = update(old_value, passed_value)
+            
+     * Otherwise,
 
-   Note: because of rotations, the root node might change.
-*/
-void GLUE3(tree_, prefix, _insert) (TREE *a, data_t key, void *value) {
-    a->root = GLUE3(tree_, prefix, _insert_node) (a, a->root, key, value);
+            new_value = passed_value
+
+       however if a value_free function has been given, then 
+
+            value_free(old_value) 
+
+       is done. 
+*/       
+
+void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
+    a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value);
     a->root->parent = NULL;
 }
 

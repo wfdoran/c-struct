@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct {int x[5];} intarr_t;
+typedef struct {
+	int x[5];
+} intarr_t;
 
 #define data_t intarr_t
 #define prefix intarr
