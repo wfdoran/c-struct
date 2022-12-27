@@ -59,5 +59,6 @@ int main(void) {
     array_int64_destroy(&a);
     array_float_destroy(&b);
     array_void_destroy(&c);
+    array_int64_destroy(&d);
     return 0;
 }    
