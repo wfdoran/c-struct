@@ -131,6 +131,10 @@ tree_demo11: tree_demo11.c
 tree_array_demo: tree_array_demo.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_array_demo.c -o tree_array_demo
 
+chan2_demo1: chan2_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) chan2_demo1.c -o chan2_demo1
+
+
 
 clean:
 	rm -rf array_demo1
