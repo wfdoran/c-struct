@@ -79,7 +79,7 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
   c_ptr = NULL;
 }
 
-int32_t GLUE3(chan_, prefix, _tryread) (CHAN *c, data_t *value) {
+int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
@@ -126,9 +126,9 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
   }
 }
 
-int32_t GLUE3(chan_, prefix, _read) (CHAN *c, data_t *value) {
+int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
   while (true) {
-    int32_t rc = GLUE3(chan_, prefix, _tryread)(c, value);
+    int32_t rc = GLUE3(chan_, prefix, _tryrecv)(c, value);
     if (rc != CHAN_EMPTY) {
       return rc;
     }

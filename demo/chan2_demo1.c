@@ -15,16 +15,16 @@ int main(void) {
     if (rc != CHAN_SUCCESS) {
       break;
     }
-    printf("WRITING %d\n", i);
+    printf("Sending %d\n", i);
   }
   
   while (true) {
     int value = -1;
-    int32_t rc = chan_int_tryread(c, &value);
+    int32_t rc = chan_int_tryrecv(c, &value);
     if (rc != CHAN_SUCCESS) {
       break;
     }
-    printf("READING %d\n", value);
+    printf("Receiving %d\n", value);
   }
     
   chan_int_destroy(&c);
