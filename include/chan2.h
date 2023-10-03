@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdatomic.h>
+#include <sched.h>
 
 #ifndef data_t
 #error "data_t not defined"
@@ -17,10 +18,10 @@
 
 #define CHAN_SUCCESS (0)
 #define CHAN_CLOSED (1)
-
-#define CHAN_ERROR (-1)
 #define CHAN_FULL (2)
 #define CHAN_EMPTY (3)
+
+#define CHAN_ERROR (-1)
 #endif
 
 
@@ -123,7 +124,34 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
       return CHAN_SUCCESS;
     }
   }
+}
 
+int32_t GLUE3(chan_, prefix, _read) (CHAN *c, data_t *value) {
+  while (true) {
+    int32_t rc = GLUE3(chan_, prefix, _tryread)(c, value);
+    if (rc != CHAN_EMPTY) {
+      return rc;
+    }
+    sched_yield();
+  }
+}
+
+int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
+  while (true) {
+    int32_t rc = GLUE3(chan_, prefix, _trysend)(c, value);
+    if (rc != CHAN_FULL) {
+      return rc;
+    }
+    sched_yield();
+  }
+}
+
+int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
+  if (c == NULL) {
+    return CHAN_ERROR;
+  }
+  atomic_store(&c->closed, true);
+  return CHAN_CLOSED;
 }
 
 
