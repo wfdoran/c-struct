@@ -134,6 +134,8 @@ tree_array_demo: tree_array_demo.c
 chan2_demo1: chan2_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) chan2_demo1.c -o chan2_demo1
 
+chan2_demo2: chan2_demo2.c
+	$(CC) $(CFLAGS) $(INCLUDE) chan2_demo2.c -o chan2_demo2 -fopenmp
 
 
 clean:
@@ -178,5 +180,7 @@ clean:
 	rm -rf tree_demo10
 	rm -rf tree_demo11
 	rm -rf tree_array_demo
+	rm -rf chan2_demo1
+	rm -rf chan2_demo2
 	rm -rf *~
 
