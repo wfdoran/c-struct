@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdatomic.h>
-#include <pthread.h>
+#include <sched.h>
 
 #ifndef data_t
 #error "data_t not defined"
@@ -18,10 +18,10 @@
 
 #define CHAN_SUCCESS (0)
 #define CHAN_CLOSED (1)
-
-#define CHAN_ERROR (-1)
 #define CHAN_FULL (2)
 #define CHAN_EMPTY (3)
+
+#define CHAN_ERROR (-1)
 #endif
 
 
@@ -32,15 +32,20 @@
 
 #define CHAN GLUE3(chan_, prefix, _t)
 
+/* 
+     assert tail0 <= tail1 <= head0 <= head1
+
+
+*/ 
+
 typedef struct CHAN {
-    data_t *data;
-    _Atomic int64_t capacity;
-    _Atomic int64_t occupancy;
-    int64_t read_pos;
-    int64_t write_pos;
-    atomic_bool closed;
-    pthread_mutex_t lock;
-    pthread_cond_t cond;
+  data_t *data;
+  int64_t capacity;
+  _Atomic int64_t tail0;           
+  _Atomic int64_t tail1;     
+  _Atomic int64_t head0;
+  _Atomic int64_t head1;
+  atomic_bool closed;
 } CHAN;
       
 CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
@@ -49,18 +54,16 @@ CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
     return NULL;
   }
   c->capacity = capacity > 0 ? capacity : 1;
-  c->occupancy = 0;
-  c->read_pos = 0;
-  c->write_pos = 0;
+  c->tail0 = 0;
+  c->tail1 = 0;
+  c->head0 = 0;
+  c->head1 = 0;
   c->closed = false;
 
   c->data = malloc(c->capacity * sizeof(data_t));
   if (c->data == NULL) {
     return NULL;
   }
-
-  pthread_mutex_init(&(c->lock), NULL);
-  pthread_cond_init(&(c->cond), NULL);
 
   return c;
 }
@@ -71,95 +74,9 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
     return;
   }
 
-  pthread_mutex_lock(&(c->lock));
-  pthread_mutex_unlock(&(c->lock));
   free(c->data);
-  pthread_mutex_destroy(&(c->lock));
-  pthread_cond_destroy(&(c->cond));
   free(c);
   c_ptr = NULL;
-}
-
-int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
-  if (c == NULL) {
-    return CHAN_ERROR;
-  }
-
-  pthread_mutex_lock(&(c->lock));
-
-  if (c->closed) {
-    pthread_cond_broadcast(&(c->cond));
-    pthread_mutex_unlock(&(c->lock));
-    return CHAN_CLOSED;
-  }
-
-  while (c->occupancy == c->capacity) {
-    pthread_cond_wait(&(c->cond), &(c->lock));
-
-    if (c->closed) {
-      pthread_cond_broadcast(&(c->cond));
-      pthread_mutex_unlock(&(c->lock));
-      return CHAN_CLOSED;
-    }      
-  }
-
-  c->data[c->write_pos] = value;
-  c->write_pos = (c->write_pos + 1) % c->capacity;
-  c->occupancy++;
-  pthread_cond_broadcast(&(c->cond));
-  pthread_mutex_unlock(&(c->lock));
-  return CHAN_SUCCESS;
-}
-
-int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
-  if (c == NULL) {
-    return CHAN_ERROR;
-  }
-
-  pthread_mutex_lock(&(c->lock));
-
-  if (c->closed) {
-    pthread_mutex_unlock(&(c->lock));
-    return CHAN_CLOSED;
-  }
-
-  int32_t rc;
-  if (c->occupancy < c->capacity) {
-      c->data[c->write_pos] = value;
-      c->write_pos = (c->write_pos + 1) % c->capacity;
-      c->occupancy++;
-      rc = CHAN_SUCCESS;
-  } else {
-    rc = CHAN_FULL;
-  }
-
-  pthread_cond_broadcast(&(c->cond));
-  pthread_mutex_unlock(&(c->lock));
-  return rc;
-}
-
-int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
-  if (c == NULL) {
-    return CHAN_ERROR;
-  }
-
-  pthread_mutex_lock(&(c->lock));
-
-  while (c->occupancy == 0) {
-    if (c->closed) {
-      pthread_cond_broadcast(&(c->cond));
-      pthread_mutex_unlock(&(c->lock));
-      return CHAN_CLOSED;
-    }
-    pthread_cond_wait(&(c->cond), &(c->lock));
-  }
-
-  *value = c->data[c->read_pos];
-  c->read_pos = (c->read_pos + 1) % c->capacity;
-  c->occupancy--;
-  pthread_cond_broadcast(&(c->cond));
-  pthread_mutex_unlock(&(c->lock));
-  return CHAN_SUCCESS;
 }
 
 int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
@@ -167,40 +84,76 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
     return CHAN_ERROR;
   }
 
-  pthread_mutex_lock(&(c->lock));
+  while (true) {
+    int64_t tail1 = atomic_load(&c->tail1);
+    int64_t head0 = atomic_load(&c->head0);
+    if (tail1 == head0) {
+      return c->closed ? CHAN_CLOSED : CHAN_EMPTY;
+    }
 
-  int32_t rc;
-  if (c->occupancy > 0) {
-    *value = c->data[c->read_pos];
-    c->read_pos = (c->read_pos + 1) % c->capacity;
-    c->occupancy--;
-    rc = CHAN_SUCCESS;
-    pthread_mutex_unlock(&(c->lock));
-    return CHAN_SUCCESS;
-  } else if (c->closed) {
-    rc = CHAN_CLOSED;
-  } else {
-    rc = CHAN_EMPTY;
+    if (atomic_compare_exchange_strong(&c->tail1, &tail1, tail1+1)) {
+      int64_t pos = tail1 % c->capacity;
+      *value = c->data[pos];
+      while (!atomic_compare_exchange_strong(&c->tail0, &tail1, tail1+1));
+      return CHAN_SUCCESS;
+    }
   }
-
-  pthread_cond_broadcast(&(c->cond)); 
-  pthread_mutex_unlock(&(c->lock));
-  return rc;
 }
 
+int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
+  if (c == NULL) {
+    return CHAN_ERROR;
+  }
+
+  while (true) {
+    if (c->closed) {
+      return CHAN_CLOSED;
+    }
+
+    int64_t tail0 = atomic_load(&c->tail0);
+    int64_t head1 = atomic_load(&c->head1);
+
+    if (head1 >= tail0 + c->capacity) {
+      return CHAN_FULL;
+    }
+
+    if (atomic_compare_exchange_strong(&c->head1, &head1, head1+1)) {
+      int64_t pos = head1 % c->capacity;
+      c->data[pos] = value;
+      while (!atomic_compare_exchange_strong(&c->head0, &head1, head1 + 1));
+      return CHAN_SUCCESS;
+    }
+  }
+}
+
+int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
+  while (true) {
+    int32_t rc = GLUE3(chan_, prefix, _tryrecv)(c, value);
+    if (rc != CHAN_EMPTY) {
+      return rc;
+    }
+    sched_yield();
+  }
+}
+
+int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
+  while (true) {
+    int32_t rc = GLUE3(chan_, prefix, _trysend)(c, value);
+    if (rc != CHAN_FULL) {
+      return rc;
+    }
+    sched_yield();
+  }
+}
 
 int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
-  pthread_mutex_lock(&(c->lock));
-  int32_t rc = c->closed ? CHAN_CLOSED : CHAN_SUCCESS;
-  c->closed = true;
-  
-  pthread_cond_broadcast(&(c->cond)); 
-  pthread_mutex_unlock(&(c->lock));
-  return rc;
+  atomic_store(&c->closed, true);
+  return CHAN_CLOSED;
 }
+
 
 #undef GLUE3
 #undef GLUE

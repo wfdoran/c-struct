@@ -2,8 +2,8 @@
 
 ## Overview
 
-Provides a C11/pthreads implementation of channels.  The user sets the
-data type and prefix label before including `chan.h`.
+Provides a C11 implementation of channels.  The user sets the data
+type and prefix label before including `chan.h`.
 
 ```c
 #define data_t int
@@ -51,8 +51,8 @@ Tries to put a value into the channel.  Does not block if the channel
 is full.
 
 Returns CHAN_SUCCESS on successfully putting value into the channel,
-CHAN_FULL if the channel is full (value not put into channel), CHAN_CLOSED
-if the channel is closed, or CHAN_ERROR on error.
+CHAN_FULL if the channel is full (value is not put into channel),
+CHAN_CLOSED if the channel is closed, or CHAN_ERROR on error.
 
 ### `int32_t chan_prefix_tryrecv(chan_prefix_t *c, data_t *value)`
 
@@ -61,7 +61,7 @@ empty.
 
 Returns CHAN_SUCCESS on successfully reading a value from the channel,
 CHAN_EMPTY if the channel is empty (no read), CHAN_CLOSED if the
-channel is closed, or CHAN_ERROR on error.
+channel is empyt and closed, or CHAN_ERROR on error.
 
 ### `int32_t chan_prefix_close(chan_prefix_t *c)`
 

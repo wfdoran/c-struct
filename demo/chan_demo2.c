@@ -34,17 +34,19 @@ void sum_em(chan_int64_t *in, chan_int64_t *out) {
 
 int main(void) {
 
-  chan_int64_t *ch1 = chan_int64_init(10);
-  chan_int64_t *ch2 = chan_int64_init(10);
-  chan_int64_t *ch3 = chan_int64_init(10);
+  int32_t capacity = 5;
+  chan_int64_t *ch1 = chan_int64_init(capacity);
+  chan_int64_t *ch2 = chan_int64_init(capacity);
+  chan_int64_t *ch3 = chan_int64_init(capacity);
   
-
+  int64_t n = 1000;
+  
   #pragma omp parallel
   {
     #pragma omp sections
     {
       #pragma omp section
-      produce(ch1, 1000);
+      produce(ch1, n);
 
       #pragma omp section
       square_em(ch1, ch2);
@@ -57,6 +59,7 @@ int main(void) {
   int64_t total;
   chan_int64_recv(ch3, &total);
   printf("%ld\n", total);
+  printf("%ld\n", n * (n - 1) * (2 * n - 1) / 6);
 
   chan_int64_destroy(&ch1);
   chan_int64_destroy(&ch2);
