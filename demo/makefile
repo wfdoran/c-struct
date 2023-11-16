@@ -23,6 +23,9 @@ hash_demo6: hash_demo6.c
 hash_demo7: hash_demo7.c
 	$(CC) $(CFLAGS) $(INCLUDE) hash_demo7.c -o hash_demo7
 
+hash_demo8: hash_demo8.c
+	$(CC) $(CFLAGS) $(INCLUDE) hash_demo8.c -o hash_demo8
+
 phash_demo1: phash_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) phash_demo1.c -o phash_demo1 -lpthread
 
@@ -166,6 +169,8 @@ clean:
 	rm -rf hash_demo4
 	rm -rf hash_demo5
 	rm -rf hash_demo6
+	rm -rf hash_demo7
+	rm -rf hash_demo8
 	rm -rf phash_demo1
 	rm -rf chan_demo1
 	rm -rf chan_demo2
