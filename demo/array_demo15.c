@@ -7,6 +7,10 @@
 #undef prefix
 #undef data_t
 
+char* free_entry(char *s) {
+  free(s);
+  return NULL;
+}
 
 int main(void) {
   
@@ -24,7 +28,9 @@ int main(void) {
   for (int i = 0; i < array_str_size(b); i++) {
     printf("%s\n", array_str_get(b, i));
   }
- 
+
+  array_str_map(b, free_entry);
+
   array_str_destroy(&a);
   array_str_destroy(&b);
   return 0;

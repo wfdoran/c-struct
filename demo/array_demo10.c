@@ -24,6 +24,11 @@ char* append_space(char *s) {
   return rv;
 }
 
+char* free_entry(char *s) {
+  free(s);
+  return NULL;
+}
+
 int main(void) {
 
   array_str_t *a = array_str_init();
@@ -38,11 +43,16 @@ int main(void) {
   array_str_t *b = array_str_deep_clone(a, strdup);
 
   array_str_map(b, append_space);
+  array_str_map(b, append_space);
   char *s = malloc(sizeof(char));
   s[0] = 0;
   s = array_str_fold2(b, s, my_strcat);
   printf("%s\n", s);
+  free(s);
 
+  // strdup malloced the char* used in b.  These need to be freed.  
+  array_str_map(b, free_entry);
+  
   array_str_destroy(&a);
   array_str_destroy(&b);
 }

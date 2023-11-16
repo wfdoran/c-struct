@@ -29,6 +29,8 @@ int main() {
   int64_t sumsqr = 0;
   hash_int_apply_r(h, sum, &sumsqr);
   printf("%ld\n", sumsqr);
+
+  hash_int_destroy(&h);
   return 0;
 }
 

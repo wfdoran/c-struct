@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=address
+CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=address -fsanitize=leak
 INCLUDE = -I../include
 
 hash_demo1: hash_demo1.c
