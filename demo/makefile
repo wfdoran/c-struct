@@ -191,9 +191,9 @@ clean:
 	rm -rf tree_demo10
 	rm -rf tree_demo11
 	rm -rf tree_array_demo
-	rm -rf chan2_demo1
-	rm -rf chan2_demo2
-	rm -rf chan2_demo3
-	rm -rf chan2_demo4
+	rm -rf chan_demo1
+	rm -rf chan_demo2
+	rm -rf chan_demo3
+	rm -rf chan_demo4
 	rm -rf *~
 
