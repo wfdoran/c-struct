@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdatomic.h>
 #include <sched.h>
+#include <assert.h>
 
 #ifndef data_t
 #error "data_t not defined"
@@ -35,11 +36,14 @@
 /* 
      assert tail0 <= tail1 <= head0 <= head1
 
-
+     tail0   been read, ready for overwrite
+     tail1   read position
+     head0   been written, ready for reading
+     head1   write position
 */ 
 
 typedef struct CHAN {
-  data_t *data;
+  data_t * volatile data;
   int64_t capacity;
   _Atomic int64_t tail0;           
   _Atomic int64_t tail1;     
@@ -83,18 +87,25 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
-
+  
   while (true) {
     int64_t tail1 = atomic_load(&c->tail1);
     int64_t head0 = atomic_load(&c->head0);
+    assert(tail1 <= head0);
+    
     if (tail1 == head0) {
       return c->closed ? CHAN_CLOSED : CHAN_EMPTY;
     }
 
-    if (atomic_compare_exchange_strong(&c->tail1, &tail1, tail1+1)) {
+    if (atomic_compare_exchange_strong(&c->tail1, &tail1, tail1 + 1)) {
       int64_t pos = tail1 % c->capacity;
       *value = c->data[pos];
-      while (!atomic_compare_exchange_strong(&c->tail0, &tail1, tail1+1));
+      while (true) {
+        int64_t expect = tail1;
+        if (atomic_compare_exchange_strong(&c->tail0, &expect, tail1 + 1)) {
+          break;
+        }
+      }
       return CHAN_SUCCESS;
     }
   }
@@ -104,23 +115,29 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
-
+  
   while (true) {
     if (c->closed) {
       return CHAN_CLOSED;
     }
 
-    int64_t tail0 = atomic_load(&c->tail0);
     int64_t head1 = atomic_load(&c->head1);
-
-    if (head1 >= tail0 + c->capacity) {
+    int64_t tail0 = atomic_load(&c->tail0);
+    assert(head1 <= tail0 + c->capacity);
+    
+    if (head1 == tail0 + c->capacity) {
       return CHAN_FULL;
     }
 
-    if (atomic_compare_exchange_strong(&c->head1, &head1, head1+1)) {
+    if (atomic_compare_exchange_strong(&c->head1, &head1, head1 + 1)) {
       int64_t pos = head1 % c->capacity;
       c->data[pos] = value;
-      while (!atomic_compare_exchange_strong(&c->head0, &head1, head1 + 1));
+      while (true) {
+        int64_t expect = head1;
+        if (atomic_compare_exchange_strong(&c->head0, &expect, head1 + 1)) {
+          break;
+        }
+      }
       return CHAN_SUCCESS;
     }
   }
