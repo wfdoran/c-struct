@@ -41,6 +41,10 @@ chan_demo3: chan_demo3.c
 chan_demo4: chan_demo4.c
 	$(CC) $(CFLAGS) $(INCLUDE) chan_demo4.c -o chan_demo4 -lpthread -lm -fopenmp
 
+chan_demo5: chan_demo5.c
+#	$(CC) -O2 -std=gnu11 -g $(INCLUDE) -fsanitize=thread chan_demo5.c -o chan_demo5 -lpthread -latomic
+	$(CC) $(CFLAGS) $(INCLUDE) chan_demo5.c -o chan_demo5 -lpthread
+
 linked_list_demo1: linked_list_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo1.c -o linked_list_demo1 -lm
 
