@@ -1,0 +1,20 @@
+Possible Future Additions
+
+* Parallel HashTable
+
+* select for channels
+
+* option
+
+* locality sensitve hashing
+
+* hyper log log
+
+* skip list
+
+* bloom filter
+
+* count-min sketch
+
+* cucko hashing
+
