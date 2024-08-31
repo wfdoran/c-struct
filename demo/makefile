@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=address -fsanitize=leak
+#CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=address -fsanitize=leak
+CFLAGS = -O2 -std=gnu11 -g -Wall
 INCLUDE = -I../include
 
 hash_demo1: hash_demo1.c
@@ -138,17 +139,8 @@ tree_demo11: tree_demo11.c
 tree_array_demo: tree_array_demo.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_array_demo.c -o tree_array_demo
 
-chan2_demo1: chan2_demo1.c
-	$(CC) $(CFLAGS) $(INCLUDE) chan2_demo1.c -o chan2_demo1
-
-chan2_demo2: chan2_demo2.c
-	$(CC) $(CFLAGS) $(INCLUDE) chan2_demo2.c -o chan2_demo2 -fopenmp
-
-chan2_demo3: chan2_demo3.c
-	$(CC) $(CFLAGS) $(INCLUDE) chan2_demo3.c -o chan2_demo3 -fopenmp
-
-chan2_demo4: chan2_demo4.c
-	$(CC) $(CFLAGS) $(INCLUDE) chan2_demo4.c -o chan2_demo4 -fopenmp -lm
+option_demo1: option_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) option_demo1.c -o option_demo1
 
 
 clean:
@@ -195,5 +187,6 @@ clean:
 	rm -rf tree_demo10
 	rm -rf tree_demo11
 	rm -rf tree_array_demo
+	rm -rf option_demo1
 	rm -rf *~
 
