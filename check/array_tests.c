@@ -17,8 +17,24 @@ CHECK(a == NULL);
 
 END_TEST
 
+START_TEST(array_test2)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+array_int_append(a, 5);
+array_int_append(a, 6);
+CHECK(array_int_size(a) == 2);
+CHECK(array_int_pop(a) == 6);
+CHECK(array_int_pop(a) == 5);
+CHECK(array_int_size(a) == 0);
+array_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
+
 int main(void) {
   array_test1();
+  array_test2();
   return 0;
 }
 
