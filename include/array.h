@@ -215,7 +215,7 @@ int32_t GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
     a->size = 0;
     a->capacity = 0;
     free(a);
-    a_ptr = NULL;
+    *a_ptr = NULL;
     return 0;
 }
 
