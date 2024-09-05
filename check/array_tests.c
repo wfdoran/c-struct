@@ -47,10 +47,33 @@ CHECK(a == NULL);
 
 END_TEST
 
+START_TEST(array_test4)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+array_int_append(a, 1);
+array_int_append(a, 2);
+array_int_t *b = array_int_clone(a);
+CHECK(b != NULL);
+CHECK(array_int_size(a) == array_int_size(b));
+for (int i = 0; i < array_int_size(a); i++) {
+  CHECK(array_int_get(a, i) == array_int_get(b, i));
+}
+array_int_set(a, 5, 0);
+CHECK(array_int_get(b, 0) == 1);
+array_int_destroy(&a);
+CHECK(a == NULL);
+CHECK(b != NULL);
+array_int_destroy(&b);
+CHECK(b == NULL);
+
+END_TEST
+
 int main(void) {
   array_test1();
   array_test2();
   array_test3();
+  array_test4();
   return 0;
 }
 
