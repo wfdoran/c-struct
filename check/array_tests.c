@@ -8,6 +8,12 @@
 #undef data_t
 #undef prefix
 
+#define data_t char*
+#define prefix str
+#include <array.h>
+#undef data_t
+#undef data_t
+
 START_TEST(array_test1)
 
 array_int_t *a = array_int_init();
@@ -69,11 +75,38 @@ CHECK(b == NULL);
 
 END_TEST
 
+
+START_TEST(array_test5)
+
+array_str_t *a = array_str_init();
+CHECK(a != NULL);
+char h[] = "Hello";
+array_str_append(a, h);
+array_str_t *b = array_str_clone(a);
+CHECK(b != NULL);
+array_str_t *c = array_str_deep_clone(a, strdup);
+
+h[0] = 'B';
+
+CHECK(strcmp(array_str_get(a, 0), "Bello") == 0);
+CHECK(strcmp(array_str_get(b, 0), "Bello") == 0);
+CHECK(strcmp(array_str_get(c, 0), "Hello") == 0);
+
+array_str_destroy(&a);
+CHECK(a == NULL);
+array_str_destroy(&b);
+CHECK(b == NULL);
+array_str_destroy(&c);
+CHECK(c == NULL);
+
+END_TEST
+
 int main(void) {
   array_test1();
   array_test2();
   array_test3();
   array_test4();
+  array_test5();
   return 0;
 }
 
