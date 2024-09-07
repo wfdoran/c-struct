@@ -101,12 +101,36 @@ CHECK(c == NULL);
 
 END_TEST
 
+START_TEST(array_test6)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+for (int i = 0; i < 5; i++) {
+  array_int_append(a, i);
+}
+array_int_t *b = array_int_slice(a, 1, 4);
+CHECK(b != NULL);
+
+for (int i = 0; i < 5; i++) {
+  array_int_set(a, i, -1);
+}
+for (int i = 0; i < 3; i++) {
+  CHECK(array_int_get(b, i) == i + 1);
+}
+array_int_destroy(&a);
+CHECK(a == NULL);
+array_int_destroy(&b);
+CHECK(b == NULL);
+
+END_TEST
+
 int main(void) {
   array_test1();
   array_test2();
   array_test3();
   array_test4();
   array_test5();
+  array_test6();
   return 0;
 }
 
