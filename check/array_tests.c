@@ -124,6 +124,39 @@ CHECK(b == NULL);
 
 END_TEST
 
+START_TEST(array_test7)
+
+char s1[] = "hello";
+char s2[] = "world";
+char s3[] = "all!";
+
+array_str_t *a = array_str_init();
+CHECK(a != NULL);
+array_str_append(a, s1);
+array_str_append(a, s2);
+array_str_append(a, s3);
+
+array_str_t *b = array_str_slice(a, 1, 2);
+CHECK(b != NULL);
+
+array_str_t *c = array_str_deep_slice(a, 1, 2, strdup);
+CHECK(c != NULL);
+
+s2[0] = 'W';
+
+CHECK(strcmp(array_str_get(b,0), "World") == 0);
+CHECK(strcmp(array_str_get(c,0), "world") == 0);
+
+array_str_destroy(&a);
+array_str_destroy(&b);
+array_str_destroy(&c);
+
+CHECK(a == NULL);
+CHECK(b == NULL);
+CHECK(c == NULL);
+
+END_TEST
+
 int main(void) {
   array_test1();
   array_test2();
@@ -131,6 +164,7 @@ int main(void) {
   array_test4();
   array_test5();
   array_test6();
+  array_test7();
   return 0;
 }
 
