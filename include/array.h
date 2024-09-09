@@ -57,7 +57,13 @@ TYPE *GLUE3(array_, prefix, _init) () {
     data_t temp;
     a->comp = DEFAULT_COMP(temp);
     _unused(temp);
+
+#ifdef default_null_value
+    a->null_value = default_null_value;
+    a->have_null_value = true;
+#else
     a->have_null_value = false;
+#endif
     return a;
 }
 
@@ -81,7 +87,12 @@ TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
     data_t temp;
     a->comp = DEFAULT_COMP(temp);
     _unused(temp);
+#ifdef default_null_value
+    a->null_value = default_null_value;
+    a->have_null_value = true;
+#else
     a->have_null_value = false;
+#endif
     for (int64_t i = 0; i < size; i++) {
         a->data[i] = default_value;
     }

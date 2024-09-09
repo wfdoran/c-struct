@@ -10,9 +10,11 @@
 
 #define data_t char*
 #define prefix str
+#define default_null_value NULL
 #include <array.h>
+#undef default_null_value
 #undef data_t
-#undef data_t
+#undef prefix
 
 char* free_str(char *s) {
   free(s);
@@ -175,6 +177,13 @@ CHECK(array_int_pop(a) == null_value);
 CHECK(array_int_pop_first(a) == null_value);
 array_int_destroy(&a);
 CHECK(a == NULL);
+
+array_str_t *b = array_str_init();
+CHECK(b != NULL);
+CHECK(array_str_pop(b) == NULL);
+CHECK(array_str_pop_first(b) == NULL);
+array_str_destroy(&b);
+CHECK(b == NULL);
 
 END_TEST
 
