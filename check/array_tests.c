@@ -165,6 +165,19 @@ CHECK(c == NULL);
 
 END_TEST
 
+START_TEST(array_test8)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+int null_value = -1;
+array_int_set_null_value(a, null_value);
+CHECK(array_int_pop(a) == null_value);
+CHECK(array_int_pop_first(a) == null_value);
+array_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
+
 int main(void) {
   array_test1();
   array_test2();
@@ -173,6 +186,7 @@ int main(void) {
   array_test5();
   array_test6();
   array_test7();
+  array_test8();
   return 0;
 }
 
