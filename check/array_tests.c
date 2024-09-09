@@ -14,6 +14,11 @@
 #undef data_t
 #undef data_t
 
+char* free_str(char *s) {
+  free(s);
+  return NULL;
+}
+
 START_TEST(array_test1)
 
 array_int_t *a = array_int_init();
@@ -96,6 +101,8 @@ array_str_destroy(&a);
 CHECK(a == NULL);
 array_str_destroy(&b);
 CHECK(b == NULL);
+
+array_str_map(c, free_str);
 array_str_destroy(&c);
 CHECK(c == NULL);
 
@@ -149,6 +156,7 @@ CHECK(strcmp(array_str_get(c,0), "world") == 0);
 
 array_str_destroy(&a);
 array_str_destroy(&b);
+array_str_map(c, free_str);
 array_str_destroy(&c);
 
 CHECK(a == NULL);
