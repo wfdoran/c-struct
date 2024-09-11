@@ -187,6 +187,27 @@ CHECK(b == NULL);
 
 END_TEST
 
+START_TEST(array_test9)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+
+int n = 10;
+seed_rand(1);
+for (int i = 0; i < n; i++) {
+  int v = (get_rand() >> 8) & 0xffff;
+  array_int_append(a, v);
+}
+array_int_sort(a);
+for (int i = 0; i < n - 1; i++) {
+  CHECK(array_int_get(a, i) <= array_int_get(a, i + 1));
+}  
+array_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
+
+
 int main(void) {
   array_test1();
   array_test2();
@@ -196,6 +217,7 @@ int main(void) {
   array_test6();
   array_test7();
   array_test8();
+  array_test9();
   return 0;
 }
 
