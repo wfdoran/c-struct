@@ -121,7 +121,9 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
     out->capacity = in->size;
     out->comp = in->comp;
     out->have_null_value = in->have_null_value;
-    out->null_value = in->null_value;
+    if (out->have_null_value) {
+      out->null_value = in->null_value;
+    }
     if (f != NULL) {
         for (int64_t i = 0; i < in->size; i++) {
             out->data[i] = f(in->data[i]);
@@ -162,7 +164,9 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
     out->capacity = size;
     out->comp = in->comp;
     out->have_null_value = in->have_null_value;
-    out->null_value = in->null_value;
+    if (out->have_null_value) {
+      out->null_value = in->null_value;
+    }
     if (f != NULL) {
         for (int64_t i = 0; i < size; i++) {
             out->data[i] = f(in->data[i + left]);
