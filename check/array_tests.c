@@ -16,6 +16,36 @@
 #undef data_t
 #undef prefix
 
+
+typedef struct {
+  int x;
+  int y;
+} pair_t;
+    
+
+#define data_t pair_t
+#define prefix pair
+#include <array.h>
+#undef prefix
+#undef data_t
+
+int comp_pair(pair_t *a, pair_t *b) {
+  if (a->x < b->x) {
+    return -1;
+  }
+  if (a->x > b->x) {
+    return 1;
+  }
+  if (a->y < b->y) {
+    return -1;
+  }
+  if (a->y > b->y) {
+    return 1;
+  }
+  return 0;
+}
+
+
 char* free_str(char *s) {
   free(s);
   return NULL;
@@ -208,6 +238,36 @@ CHECK(a == NULL);
 END_TEST
 
 
+START_TEST(array_test10)
+
+array_pair_t *a = array_pair_init();
+CHECK(a != NULL);
+
+int n = 10;
+seed_rand(2);
+for (int i = 0; i < n; i++) {
+  pair_t q = {
+    .x = (get_rand() >> 4) & 0xf,
+    .y = (get_rand() >> 8) & 0xffff,
+  };
+  array_pair_append(a, q);
+}
+array_pair_set_comp(a, &comp_pair);
+array_pair_sort(a);
+for (int i = 0; i < n - 1; i++) {
+  pair_t s = array_pair_get(a, i);
+  pair_t t = array_pair_get(a, i + 1);
+  CHECK(s.x < t.x || (s.x == t.x && s.y <= t.y));
+}
+
+array_pair_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
+
+
+
+
 int main(void) {
   array_test1();
   array_test2();
@@ -218,6 +278,7 @@ int main(void) {
   array_test7();
   array_test8();
   array_test9();
+  array_test10();
   return 0;
 }
 
