@@ -257,7 +257,7 @@ int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
   If such index exists, returns -1.
 */
 
-size_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
+ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
     size_t lo = -1;
     size_t hi = a->size;
 
