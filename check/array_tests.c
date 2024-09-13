@@ -265,7 +265,35 @@ CHECK(a == NULL);
 
 END_TEST
 
+START_TEST(array_test11)
 
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+
+int n = 10;
+seed_rand(3);
+for (int i = 0; i < n; i++) {
+  int v = (get_rand() >> 8) & 0xffff;
+  if ((v % 5) == 0) {
+    v++;
+  }
+  array_int_append(a, v);
+}
+array_int_sort(a);
+
+for (int i = 0; i < n; i++) {
+  int v = array_int_get(a, i);
+  CHECK(array_int_bisect(a, v) == i);
+}
+
+int mid = (array_int_get(a, 0) + array_int_get(a, n - 1)) / 2;
+mid += (5 - (mid % 5));
+CHECK(array_int_bisect(a, mid) == -1);
+
+array_int_destroy(&a);
+CHECK(a == NULL);
+     
+END_TEST     
 
 
 int main(void) {
@@ -279,6 +307,7 @@ int main(void) {
   array_test8();
   array_test9();
   array_test10();
+  array_test11();
   return 0;
 }
 
