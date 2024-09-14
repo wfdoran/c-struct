@@ -293,8 +293,33 @@ CHECK(array_int_bisect(a, mid) == -1);
 array_int_destroy(&a);
 CHECK(a == NULL);
      
-END_TEST     
+END_TEST
 
+int square(int x) {
+  return x * x;
+}
+int add(int x, int y) {
+  return x + y;
+}
+
+START_TEST(array_test12)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+
+int n = 10;
+for (int i = 1; i <= n; i++) {
+  array_int_append(a, i);
+}
+array_int_map(a, square);
+int sum_sqrs = array_int_fold(a, add);
+
+CHECK(sum_sqrs == n * (n + 1) * (2 * n + 1) / 6);
+
+array_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
 
 int main(void) {
   array_test1();
@@ -308,6 +333,7 @@ int main(void) {
   array_test9();
   array_test10();
   array_test11();
+  array_test12();
   return 0;
 }
 
