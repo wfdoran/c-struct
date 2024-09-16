@@ -320,3 +320,35 @@ array_int_destroy(&a);
 CHECK(a == NULL);
 
 END_TEST
+
+START_TEST(array_test13)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+
+array_int_t *b = array_int_init();
+CHECK(a != NULL);
+
+
+int n = 10;
+seed_rand(4);
+for (int i = 0; i < n; i++) {
+  int v = (get_rand() >> 8) & 0xffff;
+  array_int_append(a, v);
+  array_int_heappush(b, v);
+}
+array_int_sort(a);
+
+for (int i = 0; i < n; i++) {
+  int v1 = array_int_get(a, n - 1 - i);
+  int v2 = array_int_heappop(b);
+  CHECK(v1 == v2);
+}
+
+CHECK(array_int_size(b) == 0);
+
+array_int_destroy(&b);
+array_int_destroy(&a);
+
+END_TEST
+
