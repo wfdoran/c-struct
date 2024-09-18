@@ -20,10 +20,10 @@
   } while(0)
 
 
-uint32_t _rng_state = 0;
+static uint32_t _rng_state = 0;
 
 // https://en.wikipedia.org/wiki/Linear_congruential_generator
-uint32_t get_rand() {
+static uint32_t get_rand() {
   uint32_t a = 1664525;
   uint32_t c = 1013904223;
 
@@ -36,7 +36,7 @@ uint32_t get_rand() {
   return rv;
 }
 
-void seed_rand(uint32_t seed) {
+static void seed_rand(uint32_t seed) {
   _rng_state = seed;
 }
 
