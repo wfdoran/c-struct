@@ -320,20 +320,3 @@ array_int_destroy(&a);
 CHECK(a == NULL);
 
 END_TEST
-
-int main(void) {
-  array_test1();
-  array_test2();
-  array_test3();
-  array_test4();
-  array_test5();
-  array_test6();
-  array_test7();
-  array_test8();
-  array_test9();
-  array_test10();
-  array_test11();
-  array_test12();
-  return 0;
-}
-
