@@ -72,7 +72,7 @@ void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
     a->tail = NULL;
     a->size = 0;
     free(a);
-    a_ptr = NULL;
+    *a_ptr = NULL;
 }
 
 /* ----------------------------------------------------------------------- */
