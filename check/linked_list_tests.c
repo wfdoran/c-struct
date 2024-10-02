@@ -119,3 +119,26 @@ llist_int_destroy(&a);
 CHECK(a == NULL);
 
 END_TEST
+
+START_TEST(linked_list_test7)
+
+llist_int_t *a = llist_int_init();
+CHECK(a != NULL);
+
+int n = 10;
+for (int i = 0; i < 10; i++) {
+  llist_int_add_end(a, i);
+}
+
+int y = n;
+lnode_int_t *nn = NULL;
+for (int x = llist_int_walk_init_end(a, &nn); x != -1; x = llist_int_walk_backwards(&nn)) {
+  y--;
+  CHECK(x == y);
+}
+CHECK(y == 0);
+
+llist_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
