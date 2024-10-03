@@ -182,7 +182,7 @@ void GLUE3(tree_, prefix, _destroy) (TREE **a_ptr) {
     a->update = NULL;
     a->value_free = NULL;
     free(a);
-    a_ptr = NULL;
+    *a_ptr = NULL;
 }
 
 /* NODE* tree_prefix_init_node(data_t key);
