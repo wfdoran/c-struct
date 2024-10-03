@@ -14,34 +14,34 @@
     }\
     return 0;    
     
-int comp_int64(int64_t *a, int64_t *b) {
+static int comp_int64(int64_t *a, int64_t *b) {
     GENERIC_COMP
 }
 
-int comp_int32(int32_t *a, int32_t *b) {
+static int comp_int32(int32_t *a, int32_t *b) {
     GENERIC_COMP
 }
 
-int comp_int16(int16_t *a, int16_t *b) {
+static int comp_int16(int16_t *a, int16_t *b) {
     GENERIC_COMP
 }
 
-int comp_float(float *a, float *b) {
+static int comp_float(float *a, float *b) {
     GENERIC_COMP
 }
 
-int comp_double(double *a, double *b) {
+static int comp_double(double *a, double *b) {
     GENERIC_COMP
 }
 
 
-int comp_char(char *a, char *b) {
+static int comp_char(char *a, char *b) {
     GENERIC_COMP
 }
 
 #undef GENERIC_COMP
 
-int comp_str(char **a, char **b) {
+static int comp_str(char **a, char **b) {
     return strcmp(*a, *b);
 }
 
@@ -56,7 +56,7 @@ int comp_str(char **a, char **b) {
     default: NULL)
 
 
-int comp_str_data(char *a, char *b) {
+static int comp_str_data(char *a, char *b) {
     return strcmp(a, b);
 }
 
