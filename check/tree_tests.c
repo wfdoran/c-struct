@@ -36,3 +36,43 @@ CHECK(a == NULL);
 END_TEST
 
 
+START_TEST(tree_test3)
+
+tree_int_t *a = tree_int_init();
+CHECK(a != NULL);
+
+int n = 10;
+for (int i = 0; i < n; i++) {
+  tree_int_insert(a, i, NULL);
+}
+
+{
+  key_int_value_t x = tree_int_retrieve(a, n+1);
+  CHECK(!x.found);
+}
+
+{
+  key_int_value_t x = tree_int_delete(a, n+1);
+  CHECK(!x.found);
+}
+
+for (int i = 0; i < n; i++) {
+  key_int_value_t x = tree_int_retrieve(a, i);
+  CHECK(x.key == i);
+  CHECK(x.found);
+}
+
+CHECK(tree_int_size(a) == n);
+
+for (int i = 0; i < n; i++) {
+  key_int_value_t x = tree_int_delete(a, i);
+  CHECK(x.key == i);
+  CHECK(x.found);
+}
+
+CHECK(tree_int_size(a) == 0);
+
+tree_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
