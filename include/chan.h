@@ -80,7 +80,7 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
 
   free(c->data);
   free(c);
-  c_ptr = NULL;
+  *c_ptr = NULL;
 }
 
 int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
