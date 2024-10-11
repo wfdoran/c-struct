@@ -43,3 +43,40 @@ CHECK(a == NULL);
 
 END_TEST
 
+START_TEST(chan_test3)
+
+int n = 10;
+chan_int_t *a = chan_int_init(1);
+CHECK(a != NULL);
+bool good_send = true;
+bool good_recv = true;
+
+#pragma omp parallel
+{
+  #pragma omp sections
+  {
+    #pragma omp section
+    for (int i = 0; i < n; i++) {
+      int32_t rc = chan_int_send(a, i);
+      if (rc != CHAN_SUCCESS) {
+	good_send = false;
+	break;
+      }
+    }
+
+    #pragma omp section
+    for (int i = 0; i < n; i++) {
+      int value;
+      int32_t rc = chan_int_recv(a, &value);
+      if (rc != CHAN_SUCCESS || value != i) {
+	good_recv = false;
+	break;
+      }
+    }
+  }  
+}
+
+CHECK(good_send);
+CHECK(good_recv);
+
+END_TEST

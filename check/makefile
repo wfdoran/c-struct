@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11 -g -Wall -Wno-unused-function
+CFLAGS = -O2 -std=gnu11 -g -Wall -Wno-unused-function -fopenmp
 INCLUDE = -I../include -I./
 
 SRC = array_tests.c linked_list_tests.c tree_tests.c chan_tests.c
