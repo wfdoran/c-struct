@@ -80,3 +80,67 @@ CHECK(good_send);
 CHECK(good_recv);
 
 END_TEST
+
+START_TEST(chan_test4)
+
+int32_t rc;
+int n = 10;
+chan_int_t *a = chan_int_init(1);
+CHECK(a != NULL);
+bool good_send = true;
+bool good_recv = true;
+
+#pragma omp parallel
+{
+  #pragma omp sections
+  {
+    #pragma omp section
+    {
+      int i = 0;
+      while (true) {
+	if (i == n) {
+	  rc = chan_int_close(a);
+	  if (rc != CHAN_CLOSED) {
+	    good_send = false;
+	  }
+	  break;
+	}
+
+	rc = chan_int_trysend(a, i);
+	if (rc == CHAN_CLOSED) {
+	  good_send = false;
+	  break;
+	}
+	if (rc == CHAN_SUCCESS) {
+	  i++;
+	}
+      }
+    }
+
+    #pragma omp section
+    {
+      int j = 0;
+      while (true) {
+	int value;
+	rc = chan_int_tryrecv(a, &value);
+	if (rc == CHAN_CLOSED) {
+	  break;
+	}
+	if (rc == CHAN_SUCCESS) {
+	  if (value != j) {
+	    good_recv = false;
+	    break;
+	  }
+	  j++;
+	}
+      }
+    }
+  }
+}
+	  
+
+CHECK(good_send);
+CHECK(good_recv);
+
+END_TEST
+
