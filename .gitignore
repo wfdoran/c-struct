@@ -49,7 +49,10 @@ chan2_demo2
 chan2_demo3
 chan2_demo4
 option_demo1
-array_tests
+unit_tests
+unit_tests.c
+unit_tests.h
+*.o
 
 
 
