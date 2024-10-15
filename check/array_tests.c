@@ -29,7 +29,7 @@ typedef struct {
 #undef prefix
 #undef data_t
 
-int comp_pair(pair_t *a, pair_t *b) {
+static int comp_pair(pair_t *a, pair_t *b) {
   if (a->x < b->x) {
     return -1;
   }
