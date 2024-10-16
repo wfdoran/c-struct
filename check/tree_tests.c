@@ -34,6 +34,20 @@ static int comp_pair(pair_t *a, pair_t *b) {
   return 0;
 }
 
+static void* add_one(void *current, void *new) {
+  int *a = (int*) current;
+
+  if (a == NULL) {
+    int *rv = malloc(sizeof(int));
+    *rv = 1;
+    return (void*) rv;
+  }
+
+  int x = *a;
+  *a = (x + 1);
+  return a;
+}
+
 
 
 START_TEST(tree_test1)
@@ -174,3 +188,32 @@ CHECK(a == NULL);
 
 END_TEST
 
+START_TEST(tree_test6) 
+
+tree_int_t *a = tree_int_init();
+CHECK(a != NULL);
+
+tree_int_set_update(a, &add_one);
+
+int n = 10;
+int m = 5;
+
+for (int i = 0; i < m; i++) {
+  for (int j = 0; j < n; j++) {
+    tree_int_insert(a, j, NULL);
+  }
+}
+
+for (int j = 0; j < n; j++) {
+  key_int_value_t x = tree_int_retrieve(a, j);
+  CHECK(x.found);
+  CHECK(*((int*) x.value) == m);
+}
+
+tree_int_set_value_free(a, free);
+
+tree_int_destroy(&a);
+CHECK(a == NULL);
+
+
+END_TEST
