@@ -217,3 +217,33 @@ CHECK(a == NULL);
 
 
 END_TEST
+
+
+START_TEST(tree_test7) 
+
+seed_rand(446);
+
+tree_int_t *a = tree_int_init();
+CHECK(a != NULL);
+
+int n = 100;
+int pivot_value = 0;
+int num_less = 0;
+
+for (int i = 0; i < n; i++) {
+  int key = get_rand() & 0xffffff;
+  tree_int_insert(a, key, NULL);
+  if (i == 0) {
+    pivot_value = key;
+  } else if (key < pivot_value) {
+    num_less++;
+  }
+}
+
+CHECK(tree_int_num_less(a, pivot_value) == num_less);
+
+tree_int_destroy(&a);
+CHECK(a == NULL);
+
+
+END_TEST
