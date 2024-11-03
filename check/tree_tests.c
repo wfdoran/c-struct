@@ -247,3 +247,39 @@ CHECK(a == NULL);
 
 
 END_TEST
+
+
+START_TEST(tree_test8)
+
+tree_int_t *a = tree_int_init();
+CHECK(a != NULL);
+
+int n = 100;
+int mult = 7;
+int add = 23;
+
+for (int i = 0; i < n; i++) {
+  int key = ((mult * i) + add) % n;
+  tree_int_insert(a, key, NULL);
+}
+
+CHECK(tree_int_size(a) == n);
+
+
+{
+  key_int_value_t kv = tree_int_delete(a, n + 3);
+  CHECK(!kv.found);
+}
+
+for (int i = 0; i < n; i++) {
+  key_int_value_t kv = tree_int_delete(a, i);
+  CHECK(kv.found);
+}
+
+CHECK(tree_int_size(a) == 0);
+
+tree_int_destroy(&a);
+CHECK(a == NULL);
+
+
+END_TEST
