@@ -221,7 +221,7 @@ END_TEST
 
 START_TEST(tree_test7) 
 
-seed_rand(446);
+seed_rand(447);
 
 tree_int_t *a = tree_int_init();
 CHECK(a != NULL);
@@ -281,5 +281,38 @@ CHECK(tree_int_size(a) == 0);
 tree_int_destroy(&a);
 CHECK(a == NULL);
 
+
+END_TEST
+
+
+START_TEST(tree_test9)
+
+seed_rand(448);
+
+tree_int_t *a = tree_int_init();
+CHECK(a != NULL);
+
+int n = 10;
+for (int i = 0; i < n; i++) {
+  int key = get_rand() & 0xffff;
+  tree_int_insert(a, key, NULL);
+}
+
+int prev = 0x10000;
+while (true) {
+  key_int_value_t x = tree_int_delete_max(a);
+  if (!x.found) {
+    break;
+  }
+
+  int key = x.key;
+  CHECK(key <= prev);
+  prev = key;
+}
+
+CHECK(tree_int_size(a) == 0);
+
+tree_int_destroy(&a);
+CHECK(a == NULL);
 
 END_TEST
