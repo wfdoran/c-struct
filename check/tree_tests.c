@@ -316,3 +316,33 @@ tree_int_destroy(&a);
 CHECK(a == NULL);
 
 END_TEST
+
+
+START_TEST(tree_test10)
+
+seed_rand(449);
+
+tree_int_t *a = tree_int_init();
+CHECK(a != NULL);
+
+int n = 10;
+for (int i = 0; i < n; i++) {
+  int key = get_rand() & 0xffff;
+  tree_int_insert(a, key, NULL);
+}
+
+void *state;
+int prev = -1;
+tree_int_walk_init(a, &state);
+while (state != NULL) {
+  key_int_value_t kv = tree_int_walk_next(&state);
+  CHECK(kv.found);
+  CHECK(kv.key > prev);
+  prev = kv.key;
+}
+
+
+tree_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST
