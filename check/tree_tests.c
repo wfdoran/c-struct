@@ -346,3 +346,42 @@ tree_int_destroy(&a);
 CHECK(a == NULL);
 
 END_TEST
+
+
+START_TEST(tree_test11)
+
+seed_rand(450);
+     
+tree_int_t *a = tree_int_init();
+CHECK(a != NULL);
+
+
+int n = 100;
+int *keys = malloc(n * sizeof(int));
+CHECK(keys != NULL);
+
+keys[0] = get_rand() % 0xffff;
+for (int i = 1; i < n; i++) {
+  keys[i] = keys[i - 1] + 1 + get_rand() % 0xffff;
+}
+
+int mult = 57;
+
+for (int i = 0; i < n; i++) {
+  int idx = (i * mult) % n;
+  tree_int_insert(a, keys[idx], NULL);
+}
+
+
+for (int quant = 1; quant <= 3; quant++) {
+  int rank = quant * n / 4;
+  key_int_value_t kv = tree_int_get_rank(a, rank);
+  CHECK(kv.found);
+  CHECK(kv.key == keys[rank]);
+}
+
+tree_int_destroy(&a);
+CHECK(a == NULL);
+free(keys);
+      
+END_TEST
