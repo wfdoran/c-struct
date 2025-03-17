@@ -142,6 +142,9 @@ tree_array_demo: tree_array_demo.c
 option_demo1: option_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) option_demo1.c -o option_demo1
 
+option_demo2: option_demo2.c
+	$(CC) $(CFLAGS) $(INCLUDE) option_demo2.c -o option_demo2
+
 
 clean:
 	rm -rf array_demo1
@@ -188,5 +191,6 @@ clean:
 	rm -rf tree_demo11
 	rm -rf tree_array_demo
 	rm -rf option_demo1
+	rm -rf option_demo2
 	rm -rf *~
 

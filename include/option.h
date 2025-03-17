@@ -29,6 +29,14 @@ TYPE GLUE3(option_, prefix, _init_empty) () {
   return rv;
 }
 
+bool GLUE3(option_, prefix, _is_set) (TYPE x) {
+  return x.set;
+}
+
+data_t GLUE3(option_, prefix, _force_get) (TYPE x) {
+  return x.value;
+}
+
 bool GLUE3(option_, prefix, _get)(TYPE x, data_t *value) {
   if (x.set) {
     if (value != NULL) {
@@ -48,6 +56,11 @@ bool GLUE3(option_, prefix, _get_clear)(TYPE *x, data_t *value) {
     return true;
   }
   return false;
+}
+
+void GLUE3(option_, prefix, _set)(TYPE *x, data_t value) {
+  x->value = value;
+  x->set = true;
 }
 
 

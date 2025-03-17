@@ -21,14 +21,18 @@ void option_int_print(option_int_t x) {
 
 int main(void) {
   option_int_t x = option_int_init(5);
+  option_int_print(x);
+  int z;
+  option_int_get_clear(&x, &z);
+  printf("%d\n", z);
+  option_int_print(x);
+  printf("\n");
+
   option_int_t y = option_int_init_empty();
-
-  option_int_print(x);
   option_int_print(y);
-
-  option_int_get_clear(&x, NULL);
-  option_int_print(x);
-
+  option_int_set(&y, 8);
+  option_int_print(y);
+  
   return 0;
 }  
 
