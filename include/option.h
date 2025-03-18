@@ -25,7 +25,11 @@ TYPE GLUE3(option_, prefix, _init) (data_t value) {
 }
 
 TYPE GLUE3(option_, prefix, _init_empty) () {
+#ifdef sentinel_value
+  TYPE rv = {.set = false, .value = sentinel_value};
+#else
   TYPE rv = {.set = false};
+#endif
   return rv;
 }
 
@@ -34,6 +38,11 @@ bool GLUE3(option_, prefix, _is_set) (TYPE x) {
 }
 
 data_t GLUE3(option_, prefix, _force_get) (TYPE x) {
+#ifdef sentinel_value
+  if (!x.set) {
+    return sentinel_value;
+  }
+#endif
   return x.value;
 }
 
