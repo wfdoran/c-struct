@@ -19,12 +19,14 @@ typedef struct {
   data_t value;
 } TYPE;
 
+/* Initializers */
+
 TYPE GLUE3(option_, prefix, _init) (data_t value) {
   TYPE rv = {.set = true, .value = value};
   return rv;
 }
 
-TYPE GLUE3(option_, prefix, _init_empty) () {
+TYPE GLUE3(option_, prefix, _init_empty) (void) {
 #ifdef sentinel_value
   TYPE rv = {.set = false, .value = sentinel_value};
 #else
@@ -33,8 +35,38 @@ TYPE GLUE3(option_, prefix, _init_empty) () {
   return rv;
 }
 
+TYPE GLUE3(option_, prefix, _deep_clone) (TYPE x, data_t (*f) (data_t)) {
+  if (x.set && f != NULL) {
+    TYPE rv = {.set = true, .value = f(x.value)};
+    return rv;
+  } else {
+    return x;
+  }
+}
+
+/* setters */
+
+void GLUE3(option_, prefix, _set)(TYPE *x, data_t value) {
+  x->value = value;
+  x->set = true;
+}
+
+
+// Note: option_prefix_is_set(x) == option_prefix_get(x, NULL)
 bool GLUE3(option_, prefix, _is_set) (TYPE x) {
   return x.set;
+}
+
+/* getters */
+
+bool GLUE3(option_, prefix, _get)(TYPE x, data_t *value) {
+  if (x.set) {
+    if (value != NULL) {
+      *value = x.value;
+    }
+    return true;
+  }
+  return false;
 }
 
 data_t GLUE3(option_, prefix, _force_get) (TYPE x) {
@@ -46,14 +78,12 @@ data_t GLUE3(option_, prefix, _force_get) (TYPE x) {
   return x.value;
 }
 
-bool GLUE3(option_, prefix, _get)(TYPE x, data_t *value) {
+data_t GLUE3(option_, prefix, _get_or_else)(TYPE x, data_t other) {
   if (x.set) {
-    if (value != NULL) {
-      *value = x.value;
-    }
-    return true;
+    return x.value;
+  } else {
+    return other;
   }
-  return false;
 }
 
 bool GLUE3(option_, prefix, _get_clear)(TYPE *x, data_t *value) {
@@ -67,9 +97,12 @@ bool GLUE3(option_, prefix, _get_clear)(TYPE *x, data_t *value) {
   return false;
 }
 
-void GLUE3(option_, prefix, _set)(TYPE *x, data_t value) {
-  x->value = value;
-  x->set = true;
+/* modifiers */
+
+void GLUE3(option_, prefix, _map)(TYPE *x, data_t (*f) (data_t)) {
+  if (x->set) {
+    x->value = f(x->value);
+  }
 }
 
 
