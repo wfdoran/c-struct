@@ -1,3 +1,5 @@
+//  gcc interval.c -I ../include -o interval -lm
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <fenv.h>
@@ -9,6 +11,7 @@ typedef struct {
   double hi;
   bool valid;
 } interval_t;
+
 
 interval_t
 interval_from_double(double x) {
@@ -180,6 +183,16 @@ interal_neg(interval_t a) {
   return rv;
 }
 
+#define data_t double
+#define prefix ival
+#include <tree.h>
+#undef prefix
+#undef data_t
+
+static double 
+interval_get_key(interval_t a) {
+  return fabs(a.lo + (a.hi - a.lo) / 2.0);
+}
 
 void
 interval_print(interval_t a) {
@@ -189,6 +202,67 @@ interval_print(interval_t a) {
     printf("[%.20f, %.20f]\n", a.lo, a.hi);
   }
 }
+
+
+interval_t
+interval_add_many(int n, interval_t *a) {
+  if (n <= 0 || a == NULL) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  
+  for (int i = 0; i < n; i++) {
+    if (!a[i].valid) {
+      interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+      return bad;
+    }
+  }
+
+  if (n == 1) {
+    return a[0];
+  }
+  
+  tree_ival_t *t = tree_ival_init();
+  for (int i = 0; i < n; i++) {
+    tree_ival_insert(t, interval_get_key(a[i]), &a[i]);
+  }
+
+  interval_t temp[n - 1];
+  for (int i = 0; i < n-1; i++) {
+    key_ival_value_t x = tree_ival_delete_min(t);
+    key_ival_value_t y = tree_ival_delete_min(t);
+
+    interval_t xx = *(interval_t*) x.value;
+    interval_t yy = *(interval_t*) y.value;
+    temp[i] = interval_add(xx, yy);
+
+    tree_ival_insert(t, interval_get_key(temp[i]), &temp[i]);
+  }
+  
+  tree_ival_destroy(&t);
+  return temp[n - 2];
+}
+
+
+int main(void) {
+  int n = 10;
+
+  interval_t a[n];
+  for (int i = 0; i < n; i++) {
+    a[i] = interval_from_double(1.0 + i * i);
+  }
+
+  interval_t sum = interval_add_many(n, a);
+  interval_print(sum);
+
+  for (int i = 1; i < n; i++) {
+    a[0] = interval_add(a[0], a[i]);
+  }
+  interval_print(a[0]);
+}
+
+
+#if(0)
 
 int main(void) {
   interval_t a = interval_from_double(4.0);
@@ -224,3 +298,5 @@ int main(void) {
 
   return 0;
 }
+
+#endif
