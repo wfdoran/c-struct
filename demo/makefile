@@ -151,6 +151,9 @@ option_demo3: option_demo3.c
 option_demo4: option_demo4.c
 	$(CC) $(CFLAGS) $(INCLUDE) option_demo4.c -o option_demo4
 
+option_demo5: option_demo5.c
+	$(CC) $(CFLAGS) $(INCLUDE) option_demo5.c -o option_demo5 -lm
+
 
 clean:
 	rm -rf array_demo1
