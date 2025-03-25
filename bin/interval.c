@@ -175,6 +175,11 @@ interval_log(interval_t a) {
 
   
     
+interal_neg(interval_t a) {
+  interval_t rv = {.lo = -a.hi, .hi = -a.lo, .valid = true};
+  return rv;
+}
+
 
 void
 interval_print(interval_t a) {
