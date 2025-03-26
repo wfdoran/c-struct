@@ -243,8 +243,21 @@ interval_add_many(int n, interval_t *a) {
   return temp[n - 2];
 }
 
+interval_t interval_pow(interval_t a, uint32_t e) {
+  interval_t rv = interval_from_double(1.0);
 
-int main(void) {
+  while (e > 0) {
+    if ((e & 1) == 1) {
+      rv = interval_mul(rv, a);
+    }
+    a = interval_mul(a,a);
+    e >>= 1;
+  }
+
+  return rv;
+}
+
+void demo_interval_add_many(void) {
   int n = 10;
 
   interval_t a[n];
@@ -259,6 +272,21 @@ int main(void) {
     a[0] = interval_add(a[0], a[i]);
   }
   interval_print(a[0]);
+  printf("\n");
+}
+
+void demo_interval_pow(void) {
+  interval_t x = interval_from_double(1.7);
+  interval_t y = interval_pow(x, 10);
+  interval_print(y);
+
+
+}
+
+int main(void) {
+  // demo_interval_add_many();
+  demo_interval_pow();
+
 }
 
 
