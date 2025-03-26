@@ -191,7 +191,7 @@ interval_neg(interval_t a) {
 
 static double 
 interval_get_key(interval_t a) {
-  return fabs(a.lo + (a.hi - a.lo) / 2.0);
+  return fmax(fabs(a.lo), fabs(a.hi));
 }
 
 void
