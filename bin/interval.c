@@ -279,20 +279,10 @@ void demo_interval_pow(void) {
   interval_t x = interval_from_double(1.7);
   interval_t y = interval_pow(x, 10);
   interval_print(y);
-
-
+  printf("\n");
 }
 
-int main(void) {
-  // demo_interval_add_many();
-  demo_interval_pow();
-
-}
-
-
-#if(0)
-
-int main(void) {
+void demo_interval_arith(void) {
   interval_t a = interval_from_double(4.0);
   interval_t b = interval_from_double(2.1);
   interval_t c = interval_add(a, b);
@@ -303,28 +293,13 @@ int main(void) {
   interval_print(e);
   interval_t f = interval_div(a,b);
   interval_print(f);
+  printf("\n");
 
-  interval_t x = interval_from_double(10.0);
-  interval_t y = interval_from_double(100.0);
-  interval_t z = interval_from_double(1000.0);
-
-  interval_t w1 = interval_add(x, interval_add(y, z));
-  interval_t w2 = interval_add(interval_add(x, y), z);
-  interval_t w3 = interval_add(interval_add(y, x), z);
-  interval_print(w1);
-  interval_print(w2);
-  interval_print(w3);
-
-
-  {
-    interval_t g = interval_from_double(3.3838);
-    for (int i = 0; i < 10; i++) {
-      g = interval_log(interval_exp(g));
-      interval_print(g);
-    }
-  }
-
-  return 0;
 }
 
-#endif
+int main(void) {
+  // demo_interval_arith();
+  // demo_interval_add_many();
+  demo_interval_pow();
+
+}
