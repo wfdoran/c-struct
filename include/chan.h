@@ -23,6 +23,10 @@
 #define CHAN_EMPTY (3)
 
 #define CHAN_ERROR (-1)
+
+#define SELECT_SEND (0)
+#define SELECT_RECV (1)
+#define SELECT_OMIT (2)
 #endif
 
 
@@ -51,7 +55,16 @@ typedef struct CHAN {
   _Atomic int64_t head1;
   atomic_bool closed;
 } CHAN;
-      
+
+#define SELECT GLUE3(select_, prefix, _t)
+
+typedef struct SELECT {
+  CHAN *c;
+  int select_type;
+  data_t send_value;
+  data_t *recv_value;
+} SELECT;
+
 CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
   CHAN *c = malloc(sizeof(CHAN));
   if (c == NULL) {
@@ -171,6 +184,39 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   return CHAN_CLOSED;
 }
 
+int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
+  int32_t rc;
+  for (int32_t i = 0; i < num_select; i++) {
+    switch(s[i].select_type) {
+      case SELECT_SEND:
+        rc = GLUE3(chan_, prefix, _trysend)(s[i].c, s[i].send_value);
+        if (rc == CHAN_SUCCESS) {
+          return i;
+        }
+        if (rc == CHAN_ERROR) {
+          return CHAN_ERROR;
+        }
+        break;  // CHAN_FULL or CHAN_CLOSED
+      case SELECT_RECV:
+        rc = GLUE3(chan_, prefix, _tryrecv)(s[i].c, s[i].recv_value);
+        if (rc == CHAN_SUCCESS) {
+          return i;
+        }
+        if (rc == CHAN_ERROR) {
+          return CHAN_ERROR;
+        }
+        break;  // CHAN_EMPTY or CHAN_CLOSED
+
+      default:
+        break;
+
+    }
+
+  }
+
+
+  return num_select;
+}
 
 #undef GLUE3
 #undef GLUE
