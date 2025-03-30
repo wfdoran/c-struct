@@ -46,6 +46,9 @@ chan_demo5: chan_demo5.c
 #	$(CC) -O2 -std=gnu11 -g $(INCLUDE) -fsanitize=thread chan_demo5.c -o chan_demo5 -lpthread -latomic
 	$(CC) $(CFLAGS) $(INCLUDE) chan_demo5.c -o chan_demo5 -lpthread
 
+chan_demo6: chan_demo6.c
+	$(CC) $(CFLAGS) $(INCLUDE) chan_demo6.c -o chan_demo6 -lpthread -lm -fopenmp
+
 linked_list_demo1: linked_list_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) linked_list_demo1.c -o linked_list_demo1 -lm
 
@@ -155,6 +158,7 @@ option_demo5: option_demo5.c
 	$(CC) $(CFLAGS) $(INCLUDE) option_demo5.c -o option_demo5 -lm
 
 
+
 clean:
 	rm -rf array_demo1
 	rm -rf array_demo2
@@ -184,6 +188,8 @@ clean:
 	rm -rf chan_demo2
 	rm -rf chan_demo3
 	rm -rf chan_demo4
+	rm -rf chan_demo5
+	rm -rf chan_demo6
 	rm -rf linked_list_demo1
 	rm -rf linked_list_demo2
 	rm -rf linked_list_demo3

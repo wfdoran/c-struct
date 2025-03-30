@@ -23,6 +23,7 @@
 #define CHAN_EMPTY (3)
 
 #define CHAN_ERROR (-1)
+#define SELECT_DONE (-2)
 
 #define SELECT_SEND (0)
 #define SELECT_RECV (1)
@@ -61,8 +62,7 @@ typedef struct CHAN {
 typedef struct SELECT {
   CHAN *c;
   int select_type;
-  data_t send_value;
-  data_t *recv_value;
+  data_t *value;
 } SELECT;
 
 CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
@@ -186,10 +186,12 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
 
 int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
   int32_t rc;
+  bool all_omits = true;
   for (int32_t i = 0; i < num_select; i++) {
     switch(s[i].select_type) {
       case SELECT_SEND:
-        rc = GLUE3(chan_, prefix, _trysend)(s[i].c, s[i].send_value);
+        all_omits = false;
+        rc = GLUE3(chan_, prefix, _trysend)(s[i].c, *s[i].value);
         if (rc == CHAN_SUCCESS) {
           return i;
         }
@@ -198,24 +200,36 @@ int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
         }
         break;  // CHAN_FULL or CHAN_CLOSED
       case SELECT_RECV:
-        rc = GLUE3(chan_, prefix, _tryrecv)(s[i].c, s[i].recv_value);
+        all_omits = false;
+        rc = GLUE3(chan_, prefix, _tryrecv)(s[i].c, s[i].value);
         if (rc == CHAN_SUCCESS) {
           return i;
         }
         if (rc == CHAN_ERROR) {
           return CHAN_ERROR;
         }
+        if (rc == CHAN_CLOSED) {
+          s[i].select_type = SELECT_OMIT;
+        }
         break;  // CHAN_EMPTY or CHAN_CLOSED
 
       default:
         break;
-
     }
-
   }
-
-
+  if (all_omits) {
+    return SELECT_DONE;
+  }
   return num_select;
+}
+
+int32_t GLUE3(select_, prefix, _option_done)(SELECT *s, int32_t i) {
+  s[i].select_type = SELECT_OMIT;
+  int32_t rc = GLUE3(chan_, prefix, _close)(s[i].c);
+  if (rc == CHAN_ERROR) {
+    return CHAN_ERROR;
+  }
+  return 0;
 }
 
 #undef GLUE3
