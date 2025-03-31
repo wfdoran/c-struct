@@ -185,9 +185,23 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
 }
 
 int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
+  if (num_select == 0) {
+    return 0;
+  }
   int32_t rc;
   bool all_omits = true;
+  int32_t perm[num_select];
   for (int32_t i = 0; i < num_select; i++) {
+    perm[i] = i;
+  }
+  for (int32_t i = 1; i < num_select; i++) {
+    int32_t j = lrand48() % (i + 1);
+    int32_t temp = perm[i];
+    perm[i] = perm[j];
+    perm[j] = temp;
+  }
+  for (int32_t i_idx = 0; i_idx < num_select; i_idx++) {
+    int32_t i = perm[i_idx];
     switch(s[i].select_type) {
       case SELECT_SEND:
         all_omits = false;
