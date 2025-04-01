@@ -155,6 +155,58 @@ interval_exp(interval_t a) {
 }
 
 interval_t
+interval_sqrt(interval_t a) {
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
+  interval_t rv;
+  int save = fegetround();
+
+  fesetround(FE_UPWARD);
+  rv.hi = sqrt(a.hi);
+
+  fesetround(FE_DOWNWARD);
+  rv.lo = sqrt(a.lo);
+
+  fesetround(save);
+
+  rv.valid = true;
+  return rv;
+}
+
+interval_t
+interval_floor(interval_t a) {
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  int save = fegetround();
+
+  double x = floor(a.lo);
+
+  fesetround(save);
+  return interval_from_double(x);
+}
+  
+interval_t
+interval_ceil(interval_t a) {
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  int save = fegetround();
+
+  double x = ceil(a.hi);
+
+  fesetround(save);
+  return interval_from_double(x);
+}
+  
+ 
+
+interval_t
 interval_log(interval_t a) {
   if (!a.valid || a.lo <= 0.0) {
     interval_t bad = {.lo = 0.0, .hi = 0.0, .valid = false};
@@ -179,9 +231,39 @@ interval_log(interval_t a) {
   
 interval_t
 interval_neg(interval_t a) {
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  
   interval_t rv = {.lo = -a.hi, .hi = -a.lo, .valid = true};
   return rv;
 }
+
+interval_t
+interval_fabs(interval_t a) {
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
+  if (a.lo >= 0.0) {
+    return a;
+  }
+
+  if (a.hi <= 0.0) {
+    return interval_neg(a);
+  }
+
+  int save = fegetround();
+
+  fesetround(FE_UPWARD);
+  interval_t rv = {.lo = 0.0, .hi = fmax(fabs(a.lo), a.hi), .valid = true};
+  
+  fesetround(save);
+  return rv;
+}
+
 
 #define data_t double
 #define prefix ival
@@ -193,6 +275,7 @@ static double
 interval_get_key(interval_t a) {
   return fmax(fabs(a.lo), fabs(a.hi));
 }
+
 
 void
 interval_print(interval_t a) {
@@ -309,11 +392,26 @@ void demo_interval_arith(void) {
   interval_t f = interval_div(a,b);
   interval_print(f);
   printf("\n");
+}
 
+void demo_sqrt(void) {
+  interval_t a = interval_from_double(2.0);
+  interval_t b = interval_sqrt(a);
+  interval_t c = interval_mul(b,b);
+  interval_t d = interval_sub(c, a);
+  interval_t e = interval_fabs(d);
+  interval_print(b);
+  interval_print(c);
+  interval_print(d);
+  interval_print(e);
+  printf("\n");
 }
 
 int main(void) {
   // demo_interval_arith();
   // demo_interval_add_many();
-  demo_interval_pow();
+  // demo_interval_pow();
+  demo_sqrt();
+
+  return 0;
 }
