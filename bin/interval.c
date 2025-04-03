@@ -133,6 +133,67 @@ interval_div(interval_t a, interval_t b) {
 }
 
 interval_t
+interval_fmax(interval_t a, interval_t b) {
+  if (!a.valid || !b.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
+  if (a.lo > b.hi) {
+    return a;
+  }
+
+  if (b.lo > b.hi) {
+    return b;
+  }
+
+  interval_t rv;
+  int save = fegetround();
+
+  fesetround(FE_UPWARD);
+  rv.hi = fmax(a.hi, b.hi);
+
+  fesetround(FE_DOWNWARD);
+  rv.lo = fmax(a.lo, b.lo);
+  fesetround(save);
+
+  rv.valid = true;
+  return rv;  
+}
+
+interval_t
+interval_fmin(interval_t a, interval_t b) {
+  if (!a.valid || !b.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
+  if (a.hi < b.lo) {
+    return a;
+  }
+
+  if (b.hi < a.lo) {
+    return b;
+  }
+  
+
+  interval_t rv;
+  int save = fegetround();
+
+  fesetround(FE_UPWARD);
+  rv.hi = fmin(a.hi, b.hi);
+
+  fesetround(FE_DOWNWARD);
+  rv.lo = fmin(a.lo, b.lo);
+  fesetround(save);
+
+  rv.valid = true;
+  return rv;  
+}
+
+
+
+interval_t
 interval_exp(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
