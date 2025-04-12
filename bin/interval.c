@@ -413,6 +413,121 @@ interval_t interval_pow_dbl(interval_t a, interval_t b) {
   interval_t: interval_pow_dbl            \
 )(x,e)
 
+
+interval_t interval_sin(interval_t a) {
+  // sin(k * 2pi + 0 * pi/2) = 0
+  // sin(k * 2pi + 1 * pi/2) = 1
+  // sin(k * 2pi + 2 * pi/2) = 0
+  // sin(k * 2pi + 3 * pi/2) = -1
+
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
+  interval_t rv;
+  
+  int save = fegetround();
+
+  /* start with the min and max of values from a. */
+  fesetround(FE_UPWARD);
+  rv.hi = fmax(sin(a.lo), sin(a.hi));
+
+  double mult_hi = a.hi / M_PI_2;
+  
+  fesetround(FE_DOWNWARD);
+  rv.lo = fmin(sin(a.lo), sin(a.hi));
+
+  double mult_lo = a.lo / M_PI_2;
+
+  {
+    long x = lrint(trunc((mult_lo - 1.0) / 4.0));
+    long y = lrint(trunc((mult_hi - 1.0) / 4.0));
+    if (x != y) {
+      rv.hi = 1.0;
+    }
+  }
+
+  {
+    long x = lrint(trunc((mult_lo - 3.0) / 4.0));
+    long y = lrint(trunc((mult_hi - 3.0) / 4.0));
+    if (x != y) {
+      rv.lo = -1.0;
+    }
+  }
+
+  fesetround(save);
+  rv.valid = true;
+       
+  return rv;
+}
+
+interval_t interval_cos(interval_t a) {
+  // cos(k * 2pi + 0 * pi/2) = 1
+  // cos(k * 2pi + 1 * pi/2) = 0
+  // cos(k * 2pi + 2 * pi/2) = -1
+  // cos(k * 2pi + 3 * pi/2) = 0
+
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
+  interval_t rv;
+  
+  int save = fegetround();
+
+  /* start with the min and max of values from a. */
+  fesetround(FE_UPWARD);
+  rv.hi = fmax(cos(a.lo), cos(a.hi));
+
+  double mult_hi = a.hi / M_PI_2;
+  
+  fesetround(FE_DOWNWARD);
+  rv.lo = fmin(cos(a.lo), cos(a.hi));
+
+  double mult_lo = a.lo / M_PI_2;
+
+  {
+    long x = lrint(trunc((mult_lo - 0.0) / 4.0));
+    long y = lrint(trunc((mult_hi - 0.0) / 4.0));
+    if (x != y) {
+      rv.hi = 1.0;
+    }
+  }
+
+  {
+    long x = lrint(trunc((mult_lo - 2.0) / 4.0));
+    long y = lrint(trunc((mult_hi - 2.0) / 4.0));
+    if (x != y) {
+      rv.lo = -1.0;
+    }
+  }
+
+  fesetround(save);
+  rv.valid = true;
+       
+  return rv;
+}
+
+void demo_interval_sin_cos(void) {
+  interval_t a = interval_from_double(M_PI_4);
+
+  for (int32_t i = 0; i < 10; i++) {
+    interval_t m = interval_from_double((double) i);
+    interval_t b = interval_mul(a, m);
+    interval_print(interval_sin(b));
+  }
+  printf("\n");
+
+  for (int32_t i = 0; i < 10; i++) {
+    interval_t m = interval_from_double((double) i);
+    interval_t b = interval_mul(a, m);
+    interval_print(interval_cos(b));
+  }
+  printf("\n");
+}
+
 void demo_interval_add_many(void) {
   int n = 10;
 
@@ -472,7 +587,8 @@ int main(void) {
   // demo_interval_arith();
   // demo_interval_add_many();
   // demo_interval_pow();
-  demo_sqrt();
-
+  // demo_sqrt();
+  demo_interval_sin_cos();
+  
   return 0;
 }
