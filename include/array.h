@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <comp.h>
 
@@ -605,6 +606,31 @@ size_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
         }
     }
     return -1;
+}
+
+int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) {
+  FILE *fp = fopen(filename, "wb");
+  if (fp == NULL) {
+    return -1;
+  }
+
+  const char *header = "Array===";
+  fwrite(header, sizeof(char), 8, fp);
+
+  const size_t data_size = sizeof(data_t);
+  fwrite(&data_size, 1, sizeof(size_t), fp);
+  
+  const size_t arr_size = a->size;
+  fwrite(&arr_size, 1, sizeof(size_t), fp);
+
+  size_t num_written = fwrite(a->data, data_size, arr_size, fp);
+  if (num_written != arr_size) {
+    return -1;
+  }
+
+  fflush(fp);
+  fclose(fp);
+  return 0;
 }
 
 #undef HEAP_RIGHT_CHILD

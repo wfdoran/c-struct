@@ -41,6 +41,8 @@ array_demo12
 array_demo13
 array_demo14
 array_demo15
+array_demo16
+array_demo16.bin
 tree_array_demo
 linked_list_demo1
 linked_list_demo2
@@ -58,6 +60,7 @@ unit_tests.c
 unit_tests.h
 *.o
 array_tests
+interval
 
 
 
