@@ -608,7 +608,13 @@ size_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
     return -1;
 }
 
+static char *GLUE(get_, prefix)() {
+  return strdup(&__func__[4]);
+}
+
 int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) {
+  char *prefix_str = GLUE(get_, prefix)();
+  
   FILE *fp = fopen(filename, "wb");
   if (fp == NULL) {
     return -1;
@@ -630,6 +636,7 @@ int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) 
 
   fflush(fp);
   fclose(fp);
+  free(prefix_str);
   return 0;
 }
 
