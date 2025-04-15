@@ -13,8 +13,16 @@ int main(void) {
     array_int32_append(a, i * i);
   }
 
-  array_int32_serialize(a, "array_demo16.bin");
+  const char *filename = "array_demo16.bin";
+  array_int32_serialize(a, filename);
 
+  array_int32_t *b = array_int32_deserialize(filename);
+
+  for (int32_t i = 0; i < 10; i++) {
+    printf("%3d %8d %8d\n", i, array_int32_get(a, i), array_int32_get(b, i));
+  }
+  
+  array_int32_destroy(&b);
   array_int32_destroy(&a);
   return 0;
 }

@@ -618,10 +618,10 @@ int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) 
   fwrite(header, sizeof(char), 8, fp);
 
   const size_t data_size = sizeof(data_t);
-  fwrite(&data_size, 1, sizeof(size_t), fp);
+  fwrite(&data_size, sizeof(size_t), 1, fp);
   
   const size_t arr_size = a->size;
-  fwrite(&arr_size, 1, sizeof(size_t), fp);
+  fwrite(&arr_size, sizeof(size_t), 1, fp);
 
   size_t num_written = fwrite(a->data, data_size, arr_size, fp);
   if (num_written != arr_size) {
@@ -631,6 +631,63 @@ int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) 
   fflush(fp);
   fclose(fp);
   return 0;
+}
+
+TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
+  if (filename == NULL) {
+    return NULL;
+  }
+  
+  FILE *fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return NULL;
+  }
+  
+  char header[8];
+  size_t num_read = fread(header, sizeof(char), 8, fp);
+  if (num_read != 8) {
+    return NULL;
+  }
+
+  if (strncmp(header, "Array===", 8) != 0) {
+    return NULL;
+  }
+
+  size_t data_size;
+  num_read = fread(&data_size, sizeof(size_t), 1, fp);
+
+  if (num_read != 1 || data_size != sizeof(data_t)) {
+    return NULL;
+  }
+
+  size_t arr_size;
+  num_read = fread(&arr_size, sizeof(size_t), 1, fp);
+  if (num_read != 1) {
+    return NULL;
+  }
+
+  TYPE *a = GLUE3(array_, prefix, _init)();
+  if (a == NULL) {
+    return NULL;
+  }
+
+  free(a->alloc);
+  a->alloc = malloc(arr_size * data_size);
+  if (a->alloc == NULL) {
+    return NULL;
+  }
+  a->data = a->alloc;
+  a->capacity = arr_size;
+
+  num_read = fread(a->data, data_size, arr_size, fp);
+  if (num_read != arr_size) {
+    return NULL;
+  }
+  a->size = arr_size;
+
+  fclose(fp);
+
+  return a;
 }
 
 #undef HEAP_RIGHT_CHILD
