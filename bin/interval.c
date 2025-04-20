@@ -250,6 +250,29 @@ interval_exp(interval_t a) {
 }
 
 interval_t
+interval_erf(interval_t a) {
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
+  interval_t rv;
+  int save = fegetround();
+
+  fesetround(FE_UPWARD);
+  rv.hi = erf(a.hi);
+
+  fesetround(FE_DOWNWARD);
+  rv.lo = erf(a.lo);
+
+  fesetround(save);
+
+  rv.valid = true;
+  return rv;
+}
+
+
+interval_t
 interval_sqrt(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
