@@ -97,6 +97,40 @@ interval_mul(interval_t a, interval_t b) {
 }
 
 interval_t
+interval_fma(interval_t a, interval_t b, interval_t c) {
+  if (!a.valid || !b.valid || !c.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  
+  double temp[4];
+
+  interval_t rv;
+  int save = fegetround();
+
+  fesetround(FE_UPWARD);
+  temp[0] = fma(a.lo, b.lo, c.hi);
+  temp[1] = fma(a.lo, b.hi, c.hi);
+  temp[2] = fma(a.hi, b.lo, c.hi);
+  temp[3] = fma(a.hi, b.hi, c.hi);
+  rv.hi = fmax(fmax(fmax(temp[0],temp[1]), temp[2]), temp[3]);
+
+  fesetround(FE_DOWNWARD);
+  temp[0] = fma(a.lo, b.lo, c.lo);
+  temp[1] = fma(a.lo, b.hi, c.lo);
+  temp[2] = fma(a.hi, b.lo, c.lo);
+  temp[3] = fma(a.hi, b.hi, c.lo);
+  rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
+
+  fesetround(save);
+
+  rv.valid = true;
+  return rv;  
+  
+  
+}
+
+interval_t
 interval_div(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -583,12 +617,26 @@ void demo_sqrt(void) {
   printf("\n");
 }
 
+void demo_interval_fma() {
+  interval_t a = interval_from_double(2000000000000000.0);
+  interval_t b = interval_from_double(0.0000000000000005);
+  interval_t c = interval_from_double(-1.0);
+
+  interval_t x = interval_fma(a,b,c);
+  interval_t y = interval_add(interval_mul(a,b), c);
+
+  interval_print(x);
+  interval_print(y);
+  printf("\n");
+}
+
 int main(void) {
   // demo_interval_arith();
   // demo_interval_add_many();
   // demo_interval_pow();
   // demo_sqrt();
-  demo_interval_sin_cos();
+  // demo_interval_sin_cos();
+  demo_interval_fma();
   
   return 0;
 }
