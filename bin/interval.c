@@ -302,10 +302,14 @@ interval_floor(interval_t a) {
   }
   int save = fegetround();
 
-  double x = floor(a.lo);
-
+  fesetround(FE_DOWNWARD);
+  interval_t rv = {
+    .hi = floor(a.hi),
+    .lo = floor(a.lo),
+    .valid = true
+  };
   fesetround(save);
-  return interval_from_double(x);
+  return rv;
 }
   
 interval_t
@@ -316,10 +320,14 @@ interval_ceil(interval_t a) {
   }
   int save = fegetround();
 
-  double x = ceil(a.hi);
-
+  fesetround(FE_UPWARD);
+  interval_t rv = {
+    .hi = ceil(a.hi),
+    .lo = ceil(a.lo),
+    .valid = true
+  };
   fesetround(save);
-  return interval_from_double(x);
+  return rv;
 }
   
  
@@ -653,13 +661,43 @@ void demo_interval_fma() {
   printf("\n");
 }
 
+
+/* 
+   https://oeis.org/A001203
+
+   3, 7, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 2, 1, 1, 2, 2, 2, 2, 1,
+ */
+void demo_continued_fraction() {
+  interval_t x = interval_from_double(M_PI);
+  interval_t one = interval_from_double(1.0);
+
+  int32_t should_be[] = {3, 7, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 2, 1, 1, 2, 2, 2, 2, 1};
+  int32_t max_steps = sizeof(should_be) / sizeof(should_be[0]);
+
+  for (int i = 0; i < max_steps; i++) {
+    interval_t a = interval_floor(x);
+    if (x.hi - x.lo > .5) {
+      printf("%4d %8d : %8.0f %8.0f\n", i, should_be[i], rint(a.lo), rint(a.hi));
+      printf("Lost accuracy\n");
+      break;
+    } else {
+      printf("%4d %8d : %8.0f\n", i, should_be[i], rint(a.lo));
+    }
+
+    x = interval_sub(x, a);
+    x = interval_div(one, x);
+  }
+
+}
+
 int main(void) {
   // demo_interval_arith();
   // demo_interval_add_many();
   // demo_interval_pow();
   // demo_sqrt();
   // demo_interval_sin_cos();
-  demo_interval_fma();
+  // demo_interval_fma();
+  demo_continued_fraction();
   
   return 0;
 }
