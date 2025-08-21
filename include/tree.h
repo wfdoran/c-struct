@@ -80,6 +80,8 @@ TREE *GLUE3(tree_, prefix, _init) () {
     a->update = NULL;
     a->value_free = NULL;
 
+    _unused(DEFAULT_COMP_TYPE(temp));
+
     return a;
 }
 

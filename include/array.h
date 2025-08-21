@@ -60,6 +60,7 @@ TYPE *GLUE3(array_, prefix, _init) () {
     data_t temp;
     a->comp = DEFAULT_COMP(temp);
     _unused(temp);
+    _unused(DEFAULT_COMP_TYPE(temp));
 
 #ifdef default_null_value
     a->null_value = default_null_value;

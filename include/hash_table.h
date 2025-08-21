@@ -110,6 +110,8 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
     _unused(temp);
     h->update = NULL;
 
+    _unused(DEFAULT_COMP(temp));
+
     return h;
 }
 
