@@ -8,10 +8,10 @@
 
 #include <stdint.h>
 
-typedef enum {i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, ptr} data_type_t;
+typedef enum {i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, ptr} any_type_t;
 
 typedef struct {
-  data_type_t type;
+  any_type_t type;
   union {
     int8_t i8_value;
     int16_t i16_value;
@@ -85,6 +85,15 @@ any_t any_init_ptr(void *v) {
     void*: any_init_ptr                         \
     )(X)
 
+any_type_t any_get_type(any_t x) {
+  return x.type;
+}
+
+int32_t* any_get_i32(any_t *x) {
+  return &x->i32_value;
+}
+
+#define ANY_VALUE(x,y) x.y##_value
 
 
 #endif
