@@ -1,10 +1,27 @@
 //  gcc interval.c -I ../include -o interval -lm
 
+/* 
+https://www.w3schools.com/c/c_ref_math.php
+
+     cbrt
+     fmod
+     log10
+     modf
+     tan
+
+     acos
+     asin
+     atan
+     cosh
+     sinh
+ */
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <fenv.h>
 #include <math.h>
 #include <float.h>
+#include <stdint.h>
 
 typedef struct {
   double lo;
@@ -17,6 +34,25 @@ interval_t
 interval_from_double(double x) {
   interval_t rv = {.lo = nextafter(x, -DBL_MAX), .hi = nextafter(x,DBL_MAX), .valid = true};
   return rv;
+}
+
+interval_t
+interval_from_int64(int64_t x) {
+  interval_t rv;
+  int save = fegetround();
+  
+  fesetround(FE_UPWARD);
+  rv.hi = (double) x;
+
+  fesetround(FE_DOWNWARD);
+  rv.lo = (double) x;
+
+  fesetround(save);
+
+  rv.valid = true;
+  return rv;
+  
+  
 }
 
 interval_t
@@ -687,7 +723,17 @@ void demo_continued_fraction() {
     x = interval_sub(x, a);
     x = interval_div(one, x);
   }
+}
 
+void demo_int_init() {
+  int64_t base = UINT64_C(1) << 53;
+  int64_t delta = UINT64_C(1);
+  
+  interval_t a = interval_from_int64(base - delta);
+  interval_t b = interval_from_int64(base + delta);
+
+  interval_print(a);
+  interval_print(b);
 }
 
 int main(void) {
@@ -697,7 +743,8 @@ int main(void) {
   // demo_sqrt();
   // demo_interval_sin_cos();
   // demo_interval_fma();
-  demo_continued_fraction();
+  // demo_continued_fraction();
+  demo_int_init();
   
   return 0;
 }
