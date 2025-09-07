@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include <comp.h>
 
@@ -32,7 +33,7 @@ typedef struct {
     LNODE *head;
     LNODE *tail;
     size_t size;
-  int (*comp) (data_t *, data_t *);
+    int (*comp) (data_t *, data_t *);
 } LLIST;
 
 /* 
@@ -333,6 +334,52 @@ int32_t GLUE3(llist_, prefix, _insert_after) (LLIST *a, LNODE **n_ptr, data_t d)
 
     *n_ptr = new_node;
     return 0;
+}
+
+/* ----------------------------------------------------------------------- */
+/*                        sort nodes                                       */
+/* ----------------------------------------------------------------------- */
+
+bool GLUE3(llist_, prefix, _sort_pass)(LLIST *a) {
+  LNODE *n = a->head;
+  bool change = false;
+
+  while (n->next != NULL) {
+    LNODE *m = n->next;
+
+    if (a->comp(&m->data, &n->data) < 0) {
+      if (n->prev == NULL) {
+	a->head = m;
+      } else {
+	n->prev->next = m;
+      }
+
+      if (m->next == NULL) {
+	a->tail = n;
+      } else {
+	m->next->prev = n;
+      }
+      
+      m->prev = n->prev;
+      n->next = m->next;
+
+      m->next = n;
+      n->prev = m;
+      change = true;
+    } else {
+      n = m;
+    }
+  }
+  return change;
+}
+
+void GLUE3(llist_, prefix, _sort)(LLIST *a) {
+  while (true) {
+    bool change = GLUE3(llist_, prefix, _sort_pass)(a);
+    if (!change) {
+      break;
+    }
+  }
 }
 
 
