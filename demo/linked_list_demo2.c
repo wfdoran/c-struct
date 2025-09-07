@@ -26,7 +26,7 @@ int main(void) {
   printf("\n");
 
   
-  llist_int_sort(a);
+  llist_int_qsort(a);
 
   for (int d = llist_int_walk_init_start(a, &n); n != NULL; d = llist_int_walk_forward(&n)) {
     printf("%8d\n", d);

@@ -374,12 +374,90 @@ bool GLUE3(llist_, prefix, _sort_pass)(LLIST *a) {
 }
 
 void GLUE3(llist_, prefix, _sort)(LLIST *a) {
+  if (a->size <= 1) {
+    return;
+  }
+		   
   while (true) {
     bool change = GLUE3(llist_, prefix, _sort_pass)(a);
     if (!change) {
       break;
     }
   }
+}
+
+void GLUE3(llist_, prefix, _add_node)(LLIST *a, LNODE *n) {
+  if (a->head == NULL) {
+    n->prev = NULL;
+    n->next = NULL;
+    
+    a->head = n;
+    a->tail = n;
+    a->size = 1;
+  } else {
+    n->prev = a->tail;
+    a->tail->next = n;
+    n->next = NULL;
+    
+    a->tail = n;
+    a->size += 1;
+  }
+}
+
+void GLUE3(llist_, prefix, _qsort)(LLIST *a) {
+  if (a->size <= 6) {
+    GLUE3(llist_, prefix, _sort)(a);
+    return;
+  }
+
+  LNODE *pivot = a->head;
+
+  LLIST *sub_lo = GLUE3(llist_, prefix, _init)();
+  LLIST *sub_hi = GLUE3(llist_, prefix, _init)();
+
+  GLUE3(llist_, prefix, _set_comp)(sub_lo, a->comp);
+  GLUE3(llist_, prefix, _set_comp)(sub_hi, a->comp);
+
+  LNODE *save_next = NULL;
+  for (LNODE *n = pivot->next; n != NULL; n = save_next) {
+    save_next = n->next;
+    if (a->comp(&pivot->data, &n->data) > 0) {
+      GLUE3(llist_, prefix, _add_node)(sub_lo, n);
+    } else {
+      GLUE3(llist_, prefix, _add_node)(sub_hi, n);
+    }
+  }
+
+  GLUE3(llist_, prefix, _qsort)(sub_lo);
+  GLUE3(llist_, prefix, _qsort)(sub_hi);
+
+  if (sub_lo->size == 0) {
+    a->head = pivot;
+    a->tail = sub_hi->tail;
+
+    pivot->prev = NULL;
+    pivot->next = sub_hi->head;
+    sub_hi->head->prev = pivot;
+  } else if (sub_hi->size == 0) {
+    a->head = sub_lo->head;
+    a->tail = pivot;
+
+    pivot->next = NULL;
+    pivot->prev = sub_lo->tail;
+    sub_lo->tail->next = pivot;
+  } else {
+    a->head = sub_lo->head;
+    a->tail = sub_hi->tail;
+
+    pivot->prev = sub_lo->tail;
+    sub_lo->tail->next = pivot;
+
+    pivot->next = sub_hi->head;
+    sub_hi->head->prev = pivot;
+  }
+
+  free(sub_lo);
+  free(sub_hi);  
 }
 
 
