@@ -63,6 +63,10 @@ LLIST *GLUE3(llist_, prefix, _init) () {
     return a;
 }
 
+void GLUE3(llist_, prefix, _set_comp) (LLIST *a, int (*comp) (data_t *, data_t *)) {
+  a->comp = comp;
+}
+
 void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
     LLIST *a = *a_ptr;
     if (a == NULL) {
