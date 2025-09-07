@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include <comp.h>
+
 #ifndef data_t
 #error "data_t not defined"
 #endif
@@ -30,6 +32,7 @@ typedef struct {
     LNODE *head;
     LNODE *tail;
     size_t size;
+  int (*comp) (data_t *, data_t *);
 } LLIST;
 
 /* 
@@ -40,6 +43,8 @@ typedef struct {
 /*                  constructors / destructor                              */
 /* ----------------------------------------------------------------------- */
 
+#define _unused(x) ((void) (x))
+
 LLIST *GLUE3(llist_, prefix, _init) () {
     LLIST *a = malloc(sizeof(LLIST));
     if (a == NULL) {
@@ -49,6 +54,11 @@ LLIST *GLUE3(llist_, prefix, _init) () {
     a->head = NULL;
     a->tail = NULL;
     a->size = 0;
+
+    data_t temp;
+    a->comp = DEFAULT_COMP(temp);
+    _unused(temp);
+    _unused(DEFAULT_COMP_TYPE(temp));
 
     return a;
 }
@@ -71,6 +81,7 @@ void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
     a->head = NULL;
     a->tail = NULL;
     a->size = 0;
+    a->comp = NULL;
     free(a);
     *a_ptr = NULL;
 }
