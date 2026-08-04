@@ -111,12 +111,12 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
       return c->closed ? CHAN_CLOSED : CHAN_EMPTY;
     }
 
-    if (atomic_compare_exchange_strong(&c->tail1, &tail1, tail1 + 1)) {
+    if (atomic_compare_exchange_weak(&c->tail1, &tail1, tail1 + 1)) {
       int64_t pos = tail1 % c->capacity;
       *value = c->data[pos];
       while (true) {
         int64_t expect = tail1;
-        if (atomic_compare_exchange_strong(&c->tail0, &expect, tail1 + 1)) {
+        if (atomic_compare_exchange_weak(&c->tail0, &expect, tail1 + 1)) {
           break;
         }
       }
@@ -143,12 +143,12 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
       return CHAN_FULL;
     }
 
-    if (atomic_compare_exchange_strong(&c->head1, &head1, head1 + 1)) {
+    if (atomic_compare_exchange_weak(&c->head1, &head1, head1 + 1)) {
       int64_t pos = head1 % c->capacity;
       c->data[pos] = value;
       while (true) {
         int64_t expect = head1;
-        if (atomic_compare_exchange_strong(&c->head0, &expect, head1 + 1)) {
+        if (atomic_compare_exchange_weak(&c->head0, &expect, head1 + 1)) {
           break;
         }
       }
