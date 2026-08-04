@@ -79,6 +79,7 @@ CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
 
   c->data = malloc(c->capacity * sizeof(data_t));
   if (c->data == NULL) {
+    free(c);
     return NULL;
   }
 
@@ -180,8 +181,8 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
-  atomic_store(&c->closed, true);
-  return CHAN_CLOSED;
+  bool was_closed = atomic_exchange(&c->closed, true);
+  return was_closed ? CHAN_CLOSED : CHAN_SUCCESS;
 }
 
 int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
@@ -195,7 +196,7 @@ int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
     perm[i] = i;
   }
   for (int32_t i = 1; i < num_select; i++) {
-    int32_t j = lrand48() % (i + 1);
+    int32_t j = arc4random() % (i + 1);
     int32_t temp = perm[i];
     perm[i] = perm[j];
     perm[j] = temp;
@@ -212,6 +213,9 @@ int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
         if (rc == CHAN_ERROR) {
           return CHAN_ERROR;
         }
+	if (rc == CHAN_CLOSED) {
+	  s[i].select_type = SELECT_OMIT;
+	}
         break;  // CHAN_FULL or CHAN_CLOSED
       case SELECT_RECV:
         all_omits = false;

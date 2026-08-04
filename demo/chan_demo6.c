@@ -29,7 +29,7 @@ int main(void) {
     switch(select_int64_one(num_select, s)) {
         case 0:
             if (v == n) {
-                select_int64_option_done(s, 0);
+	      chan_int64_close(ch);
             } else {
                 v++;
             }    
