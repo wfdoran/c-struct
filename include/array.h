@@ -258,7 +258,7 @@ int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
 
   Assumes the array is sorted.  Finds the index rv such that
      a->data[rv] == v
-  If such index exists, returns -1.
+  If no such index exists, returns -1.
 */
 
 ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
@@ -300,7 +300,7 @@ ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
    Also, this handles empty ranges as well.  
 */
 
-size_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
+ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
     size_t lo = -1;
     size_t hi = a->size;
 
@@ -323,7 +323,7 @@ size_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
    Returns the size of the array if all of the values are less than v.
 */
 
-size_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
+ssize_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
     size_t lo = -1;
     size_t hi = a->size;
 
@@ -464,13 +464,14 @@ int32_t GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
 */
 void GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
     if (a->size == a->capacity) {
-        data_t *tmp = malloc(2 * a->capacity * sizeof(data_t));
+        size_t new_capacity = a->capacity == 0 ? 1 : 2 * a->capacity;
+        data_t *tmp = malloc(new_capacity * sizeof(data_t));
         assert(tmp != NULL);
         memcpy(tmp, a->data, a->capacity * sizeof(data_t));
         free(a->alloc);
         a->alloc = tmp;
         a->data = a->alloc;
-        a->capacity *= 2;
+        a->capacity = new_capacity;
     }
     a->data[a->size] = value;
     a->size++;
@@ -600,7 +601,7 @@ int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
     return 0;
 }
 
-size_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
+ssize_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
     assert(a != NULL);
     assert(a->comp != NULL);
     for (size_t i = 0; i < a->size; i++) {
@@ -650,7 +651,7 @@ TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
     return NULL;
   }
   
-  FILE *fp = fopen(filename, "r");
+  FILE *fp = fopen(filename, "rb");
   if (fp == NULL) {
     return NULL;
   }
@@ -667,10 +668,14 @@ TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
 
   char *prefix_str1 = GLUE(get_, prefix)();
   char *prefix_str2 = deserialize_string(fp);
-  if (strcmp(prefix_str1, prefix_str2) != 0) {
+  int comp = strcmp(prefix_str1, prefix_str2);
+  free(prefix_str1);
+  free(prefix_str2);
+  if (comp != 0) {
     printf("XXX\n");
     return NULL;
   }
+  
 
   size_t data_size;
   num_read = fread(&data_size, sizeof(size_t), 1, fp);

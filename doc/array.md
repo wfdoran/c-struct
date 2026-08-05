@@ -104,13 +104,13 @@ where `a[1]` is the new value.  And so on down the array.
 
 ## Search
 
-### `size_t array_prefix_index(const array_prefix_t *a, data_t v)`
+### `ssize_t array_prefix_index(const array_prefix_t *a, data_t v)`
 
-### `size_t array_prefix_bisect(const array_prefix_t *a, data_t v)`
+### `ssize_t array_prefix_bisect(const array_prefix_t *a, data_t v)`
 
-### `size_t array_prefix_bisect_upper(const array_prefix_t *a, data_t v)`
+### `ssize_t array_prefix_bisect_upper(const array_prefix_t *a, data_t v)`
 
-### `size_t array_prefix_bisect_lower(const array_prefix_t *a, data_t v)`
+### `ssize_t array_prefix_bisect_lower(const array_prefix_t *a, data_t v)`
 
 ## Heap
 
