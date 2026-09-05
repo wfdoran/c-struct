@@ -215,6 +215,7 @@ clean:
 	rm -rf option_demo2
 	rm -rf option_demo3
 	rm -rf option_demo4
+	rm -rf option_demo5
 	rm -rf any_demo1
 	rm -rf *~
 

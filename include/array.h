@@ -105,7 +105,7 @@ TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
 
 /* array_prefix_deep_clone(const array_prefix_t*, data_t(*f)(const data_t)); 
 
-   Makes a deep copy of an array.  The user provided f is uses to
+   Makes a deep copy of an array.  The user provided f is used to
    create/initialize each entry in the clone.
 */
 TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const data_t)) {

@@ -13,12 +13,14 @@ int square(int a) {
 }
 
 int main(void) {
+  option_int_t z = option_int_init_empty();
   option_int_t x = option_int_init(4);
   option_int_t y = x;
   option_int_map(&x, square);
   
   printf("%d\n", option_int_force_get(x));
   printf("%d\n", option_int_force_get(y));
+  printf("%d\n", option_int_force_get(z));
   
   return 0;
 }  
