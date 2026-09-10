@@ -62,6 +62,9 @@ unit_tests.h
 *.o
 array_tests
 interval
+pqueue_demo1
+pqueue_demo2
+pqueue_demo3
 
 
 

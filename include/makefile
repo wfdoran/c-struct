@@ -12,6 +12,9 @@ hash_table: hash_table.h
 linked_list: linked_list.h
 	indent $(DEFAULT) -T LNODE -T LLIST -T data_t linked_list.h -o linked_list_indent.h
 
+pqueue: pqueue.h
+	indent $(DEFAULT) -T PNODE -T PQUEUE -T PQKV -T data_t pqueue.h -o pqueue_indent.h
+
 clean:
 	rm -f *_indent.h
 	rm -f *~

@@ -163,6 +163,15 @@ option_demo5: option_demo5.c
 any_demo1: any_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) any_demo1.c -o any_demo1
 
+pqueue_demo1: pqueue_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) pqueue_demo1.c -o pqueue_demo1
+
+pqueue_demo2: pqueue_demo2.c
+	$(CC) $(CFLAGS) $(INCLUDE) pqueue_demo2.c -o pqueue_demo2
+
+pqueue_demo3: pqueue_demo3.c
+	$(CC) $(CFLAGS) $(INCLUDE) pqueue_demo3.c -o pqueue_demo3
+
 clean:
 	rm -rf array_demo1
 	rm -rf array_demo2
@@ -217,5 +226,8 @@ clean:
 	rm -rf option_demo4
 	rm -rf option_demo5
 	rm -rf any_demo1
+	rm -rf pqueue_demo1
+	rm -rf pqueue_demo2
+	rm -rf pqueue_demo3
 	rm -rf *~
 
