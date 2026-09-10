@@ -67,7 +67,7 @@ typedef struct {
    comp function.  To get min-first behavior, supply a comp function
    via pqueue_prefix_set_comp() which reverses the usual ordering.
 */
-PQUEUE *GLUE3(pqueue_, prefix, _init) () {
+static inline PQUEUE *GLUE3(pqueue_, prefix, _init) () {
     PQUEUE *q = malloc(sizeof(PQUEUE));
     if (q == NULL) {
         return q;
@@ -98,7 +98,7 @@ PQUEUE *GLUE3(pqueue_, prefix, _init) () {
    must define the comparison function.  See comp.h for details and
    the C11 generics which deal with the basic data_ts.
 */
-void GLUE3(pqueue_, prefix, _set_comp) (PQUEUE *q, int (*comp) (data_t *, data_t *)) {
+static inline void GLUE3(pqueue_, prefix, _set_comp) (PQUEUE *q, int (*comp) (data_t *, data_t *)) {
     q->comp = comp;
 }
 
@@ -110,7 +110,7 @@ void GLUE3(pqueue_, prefix, _set_comp) (PQUEUE *q, int (*comp) (data_t *, data_t
    free() for the value_free assuming the values were allocated by the
    system malloc().
 */
-void GLUE3(pqueue_, prefix, _set_value_free) (PQUEUE *q, void (*value_free) (void *)) {
+static inline void GLUE3(pqueue_, prefix, _set_value_free) (PQUEUE *q, void (*value_free) (void *)) {
     q->value_free = value_free;
 }
 
@@ -124,7 +124,7 @@ void GLUE3(pqueue_, prefix, _set_value_free) (PQUEUE *q, void (*value_free) (voi
    function to the value of every remaining entry, frees the
    underlying storage, and sets the pointer to NULL.
 */
-void GLUE3(pqueue_, prefix, _destroy) (PQUEUE **q_ptr) {
+static inline void GLUE3(pqueue_, prefix, _destroy) (PQUEUE **q_ptr) {
     PQUEUE *q = *q_ptr;
     // in case a user tries a double destroy
     if (q == NULL) {
@@ -160,7 +160,7 @@ void GLUE3(pqueue_, prefix, _destroy) (PQUEUE **q_ptr) {
      -1 => error (q is NULL or no comp function has been set)
       0 => ok
 */
-int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void *value) {
+static inline int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void *value) {
     if (q == NULL || q->comp == NULL) {
         return -1;
     }
@@ -199,7 +199,7 @@ int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void *value) {
    queue (the largest key, using the default comp).  If the queue is
    empty, the returned pqkv_prefix_t has found set to false.
 */
-PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
+static inline PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
     assert(q != NULL);
     assert(q->comp != NULL);
 
@@ -253,7 +253,7 @@ PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
    removing it.  If the queue is empty, the returned pqkv_prefix_t has
    found set to false.
 */
-PQKV GLUE3(pqueue_, prefix, _peek) (const PQUEUE *q) {
+static inline PQKV GLUE3(pqueue_, prefix, _peek) (const PQUEUE *q) {
     assert(q != NULL);
 
     if (q->size == 0) {
@@ -269,7 +269,7 @@ PQKV GLUE3(pqueue_, prefix, _peek) (const PQUEUE *q) {
 
   Returns the number of entries in the priority queue.
 */
-size_t GLUE3(pqueue_, prefix, _size) (const PQUEUE *q) {
+static inline size_t GLUE3(pqueue_, prefix, _size) (const PQUEUE *q) {
     assert(q != NULL);
     return q->size;
 }
@@ -278,7 +278,7 @@ size_t GLUE3(pqueue_, prefix, _size) (const PQUEUE *q) {
 
   Returns true if the priority queue has no entries.
 */
-bool GLUE3(pqueue_, prefix, _is_empty) (const PQUEUE *q) {
+static inline bool GLUE3(pqueue_, prefix, _is_empty) (const PQUEUE *q) {
     assert(q != NULL);
     return q->size == 0;
 }
