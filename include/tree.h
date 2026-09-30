@@ -889,10 +889,10 @@ static void GLUE3(tree_, prefix, _print_node) (void (*node_print) (data_t, void 
         s = ' ';
     } else if (n->parent->left == n) {
         lmask = mask;
-        rmask = mask | (1UL << depth);
+        rmask = mask | (UINT64_C(1) << depth);
         s = '/';
     } else {
-        lmask = mask | (1UL << depth);
+        lmask = mask | (UINT64_C(1) << depth);
         rmask = mask;
         s = '\\';
     }

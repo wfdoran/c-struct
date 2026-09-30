@@ -44,9 +44,11 @@ Retrieves but does not delete the key-value pair for a given key.
 Returns the number of nodes in the tree.  This implementation does not
 have a fictitious root node.  
 
-### `size_t tree_prefix_height(tree_prefix_t *t);`
+### `int tree_prefix_height(tree_prefix_t *t);`
 
-Returns the height of the tree which is always ceil(log2(num_nodes)).  
+Returns the height of the tree, the number of nodes on the longest path from the root
+(0 for an empty tree, 1 for a single node).  The tree is kept balanced (AVL), so for `n`
+nodes the height is at least ceil(log2(n + 1)) and at most about 1.44 log2(n + 2).
 
 ### `void tree_prefix_walk_init(tree_prefix_t *t, void **state);`
 
