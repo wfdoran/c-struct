@@ -1,4 +1,11 @@
-//  gcc interval.c -I ../include -o interval -lm
+//  gcc -O2 -frounding-math interval.c -I ../include -o interval -lm
+//
+//  Every operation computes the upper bound under FE_UPWARD and the lower
+//  bound under FE_DOWNWARD.  An optimizer that treats the two computations as
+//  identical and shares them would make the result stop containing the exact
+//  answer, so each operation goes through iv_fence() to keep it in place, and
+//  -frounding-math is passed as an additional precaution.  main() checks at
+//  startup that the rounding modes are honored and refuses to run if not.
 
 /* 
 https://www.w3schools.com/c/c_ref_math.php
@@ -23,6 +30,30 @@ https://www.w3schools.com/c/c_ref_math.php
 #include <float.h>
 #include <stdint.h>
 
+#ifdef __clang__
+#pragma STDC FENV_ACCESS ON
+#endif
+
+/* The math library functions are not guaranteed to honor the rounding mode
+   or to be correctly rounded, so results from them are widened by one ulp. */
+static double interval_ulp_up(double x) {
+  return nextafter(x, INFINITY);
+}
+
+static double interval_ulp_down(double x) {
+  return nextafter(x, -INFINITY);
+}
+
+/* Passing a value through a volatile object forces it to be computed at this
+   point in the program.  The compiler may not move the operation above the
+   fesetround() call before it or below the one after it, and may not share
+   it with an identical operation done under another rounding mode.  (Neither
+   -frounding-math nor FENV_ACCESS is enough for gcc to guarantee this.) */
+static inline double iv_fence(double x) {
+  volatile double v = x;
+  return v;
+}
+
 typedef struct {
   double lo;
   double hi;
@@ -41,11 +72,13 @@ interval_from_int64(int64_t x) {
   interval_t rv;
   int save = fegetround();
   
+  volatile int64_t vx = x;
+
   fesetround(FE_UPWARD);
-  rv.hi = (double) x;
+  rv.hi = iv_fence((double) vx);
 
   fesetround(FE_DOWNWARD);
-  rv.lo = (double) x;
+  rv.lo = iv_fence((double) vx);
 
   fesetround(save);
 
@@ -66,10 +99,10 @@ interval_add(interval_t a, interval_t b) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  rv.hi = a.hi + b.hi;
+  rv.hi = iv_fence(iv_fence(a.hi) + iv_fence(b.hi));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = a.lo + b.lo;
+  rv.lo = iv_fence(iv_fence(a.lo) + iv_fence(b.lo));
 
   fesetround(save);
 
@@ -89,10 +122,10 @@ interval_sub(interval_t a, interval_t b) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  rv.hi = a.hi - b.lo;
+  rv.hi = iv_fence(iv_fence(a.hi) - iv_fence(b.lo));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = a.lo - b.hi;
+  rv.lo = iv_fence(iv_fence(a.lo) - iv_fence(b.hi));
 
   fesetround(save);
 
@@ -113,17 +146,17 @@ interval_mul(interval_t a, interval_t b) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  temp[0] = a.lo * b.lo;
-  temp[1] = a.lo * b.hi;
-  temp[2] = a.hi * b.lo;
-  temp[3] = a.hi * b.hi;
+  temp[0] = iv_fence(iv_fence(a.lo) * iv_fence(b.lo));
+  temp[1] = iv_fence(iv_fence(a.lo) * iv_fence(b.hi));
+  temp[2] = iv_fence(iv_fence(a.hi) * iv_fence(b.lo));
+  temp[3] = iv_fence(iv_fence(a.hi) * iv_fence(b.hi));
   rv.hi = fmax(fmax(fmax(temp[0],temp[1]), temp[2]), temp[3]);
 
   fesetround(FE_DOWNWARD);
-  temp[0] = a.lo * b.lo;
-  temp[1] = a.lo * b.hi;
-  temp[2] = a.hi * b.lo;
-  temp[3] = a.hi * b.hi;
+  temp[0] = iv_fence(iv_fence(a.lo) * iv_fence(b.lo));
+  temp[1] = iv_fence(iv_fence(a.lo) * iv_fence(b.hi));
+  temp[2] = iv_fence(iv_fence(a.hi) * iv_fence(b.lo));
+  temp[3] = iv_fence(iv_fence(a.hi) * iv_fence(b.hi));
   rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
 
   fesetround(save);
@@ -145,17 +178,17 @@ interval_fma(interval_t a, interval_t b, interval_t c) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  temp[0] = fma(a.lo, b.lo, c.hi);
-  temp[1] = fma(a.lo, b.hi, c.hi);
-  temp[2] = fma(a.hi, b.lo, c.hi);
-  temp[3] = fma(a.hi, b.hi, c.hi);
+  temp[0] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.lo), iv_fence(c.hi)));
+  temp[1] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.hi), iv_fence(c.hi)));
+  temp[2] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.lo), iv_fence(c.hi)));
+  temp[3] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.hi), iv_fence(c.hi)));
   rv.hi = fmax(fmax(fmax(temp[0],temp[1]), temp[2]), temp[3]);
 
   fesetround(FE_DOWNWARD);
-  temp[0] = fma(a.lo, b.lo, c.lo);
-  temp[1] = fma(a.lo, b.hi, c.lo);
-  temp[2] = fma(a.hi, b.lo, c.lo);
-  temp[3] = fma(a.hi, b.hi, c.lo);
+  temp[0] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.lo), iv_fence(c.lo)));
+  temp[1] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.hi), iv_fence(c.lo)));
+  temp[2] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.lo), iv_fence(c.lo)));
+  temp[3] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.hi), iv_fence(c.lo)));
   rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
 
   fesetround(save);
@@ -183,17 +216,17 @@ interval_div(interval_t a, interval_t b) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  temp[0] = a.lo / b.lo;
-  temp[1] = a.lo / b.hi;
-  temp[2] = a.hi / b.lo;
-  temp[3] = a.hi / b.hi;
+  temp[0] = iv_fence(iv_fence(a.lo) / iv_fence(b.lo));
+  temp[1] = iv_fence(iv_fence(a.lo) / iv_fence(b.hi));
+  temp[2] = iv_fence(iv_fence(a.hi) / iv_fence(b.lo));
+  temp[3] = iv_fence(iv_fence(a.hi) / iv_fence(b.hi));
   rv.hi = fmax(fmax(fmax(temp[0],temp[1]), temp[2]), temp[3]);
 
   fesetround(FE_DOWNWARD);
-  temp[0] = a.lo / b.lo;
-  temp[1] = a.lo / b.hi;
-  temp[2] = a.hi / b.lo;
-  temp[3] = a.hi / b.hi;
+  temp[0] = iv_fence(iv_fence(a.lo) / iv_fence(b.lo));
+  temp[1] = iv_fence(iv_fence(a.lo) / iv_fence(b.hi));
+  temp[2] = iv_fence(iv_fence(a.hi) / iv_fence(b.lo));
+  temp[3] = iv_fence(iv_fence(a.hi) / iv_fence(b.hi));
   rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
 
   fesetround(save);
@@ -274,10 +307,10 @@ interval_exp(interval_t a) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  rv.hi = exp(a.hi);
+  rv.hi = interval_ulp_up(exp(a.hi));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = exp(a.lo);
+  rv.lo = interval_ulp_down(exp(a.lo));
 
   fesetround(save);
 
@@ -296,10 +329,10 @@ interval_erf(interval_t a) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  rv.hi = erf(a.hi);
+  rv.hi = fmin(interval_ulp_up(erf(a.hi)), 1.0);
 
   fesetround(FE_DOWNWARD);
-  rv.lo = erf(a.lo);
+  rv.lo = fmax(interval_ulp_down(erf(a.lo)), -1.0);
 
   fesetround(save);
 
@@ -319,10 +352,10 @@ interval_sqrt(interval_t a) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  rv.hi = sqrt(a.hi);
+  rv.hi = iv_fence(sqrt(iv_fence(a.hi)));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = sqrt(a.lo);
+  rv.lo = iv_fence(sqrt(iv_fence(a.lo)));
 
   fesetround(save);
 
@@ -379,10 +412,10 @@ interval_log(interval_t a) {
   int save = fegetround();
 
   fesetround(FE_UPWARD);
-  rv.hi = log(a.hi);
+  rv.hi = interval_ulp_up(log(a.hi));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = log(a.lo);
+  rv.lo = interval_ulp_down(log(a.lo));
 
   fesetround(save);
 
@@ -534,12 +567,12 @@ interval_t interval_sin(interval_t a) {
   fesetround(FE_UPWARD);
   rv.hi = fmax(sin(a.lo), sin(a.hi));
 
-  double mult_hi = a.hi / M_PI_2;
+  double mult_hi = iv_fence(iv_fence(a.hi) / M_PI_2);
   
   fesetround(FE_DOWNWARD);
   rv.lo = fmin(sin(a.lo), sin(a.hi));
 
-  double mult_lo = a.lo / M_PI_2;
+  double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
 
   {
     long x = lrint(trunc((mult_lo - 1.0) / 4.0));
@@ -558,6 +591,8 @@ interval_t interval_sin(interval_t a) {
   }
 
   fesetround(save);
+  rv.hi = fmin(interval_ulp_up(rv.hi), 1.0);
+  rv.lo = fmax(interval_ulp_down(rv.lo), -1.0);
   rv.valid = true;
        
   return rv;
@@ -582,12 +617,12 @@ interval_t interval_cos(interval_t a) {
   fesetround(FE_UPWARD);
   rv.hi = fmax(cos(a.lo), cos(a.hi));
 
-  double mult_hi = a.hi / M_PI_2;
+  double mult_hi = iv_fence(iv_fence(a.hi) / M_PI_2);
   
   fesetround(FE_DOWNWARD);
   rv.lo = fmin(cos(a.lo), cos(a.hi));
 
-  double mult_lo = a.lo / M_PI_2;
+  double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
 
   {
     long x = lrint(trunc((mult_lo - 0.0) / 4.0));
@@ -606,6 +641,8 @@ interval_t interval_cos(interval_t a) {
   }
 
   fesetround(save);
+  rv.hi = fmin(interval_ulp_up(rv.hi), 1.0);
+  rv.lo = fmax(interval_ulp_down(rv.lo), -1.0);
   rv.valid = true;
        
   return rv;
@@ -736,7 +773,24 @@ void demo_int_init() {
   interval_print(b);
 }
 
+/* Returns false if the compiler ignored the rounding mode changes: for
+   inputs whose product is not exactly representable, the lower bound of
+   [x,x]*[y,y] must be strictly below the upper bound. */
+static bool rounding_is_honored(void) {
+  volatile double x = 1.1;
+  volatile double y = 1.3;
+  interval_t a = {.lo = x, .hi = x, .valid = true};
+  interval_t b = {.lo = y, .hi = y, .valid = true};
+  interval_t p = interval_mul(a, b);
+  return p.lo < p.hi;
+}
+
 int main(void) {
+  if (!rounding_is_honored()) {
+    fprintf(stderr, "interval: rounding modes are being ignored; compile with -frounding-math\n");
+    return 1;
+  }
+
   // demo_interval_arith();
   // demo_interval_add_many();
   // demo_interval_pow();
