@@ -7,8 +7,13 @@
 #define ANY_H
 
 #include <stdint.h>
+#include <stddef.h>
 
-typedef enum {i8, i16, i32, i64, u8, u16, u32, u64, f32, f64, ptr} any_type_t;
+typedef enum {
+  ANY_I8, ANY_I16, ANY_I32, ANY_I64,
+  ANY_U8, ANY_U16, ANY_U32, ANY_U64,
+  ANY_F32, ANY_F64, ANY_PTR
+} any_type_t;
 
 typedef struct {
   any_type_t type;
@@ -27,48 +32,48 @@ typedef struct {
   };
 } any_t;
 
-any_t any_init_i8(int8_t v) {
-  return (any_t) {.type = i8, .i8_value = v};
+static inline any_t any_init_i8(int8_t v) {
+  return (any_t) {.type = ANY_I8, .i8_value = v};
 }
 
-any_t any_init_i16(int16_t v) {
-  return (any_t) {.type = i16, .i16_value = v};
+static inline any_t any_init_i16(int16_t v) {
+  return (any_t) {.type = ANY_I16, .i16_value = v};
 }
 
-any_t any_init_i32(int32_t v) {
-  return (any_t) {.type = i32, .i32_value = v};
+static inline any_t any_init_i32(int32_t v) {
+  return (any_t) {.type = ANY_I32, .i32_value = v};
 }
 
-any_t any_init_i64(int64_t v) {
-  return (any_t) {.type = i64, .i64_value = v};
+static inline any_t any_init_i64(int64_t v) {
+  return (any_t) {.type = ANY_I64, .i64_value = v};
 }
 
-any_t any_init_u8(uint8_t v) {
-  return (any_t) {.type = i8, .u8_value = v};
+static inline any_t any_init_u8(uint8_t v) {
+  return (any_t) {.type = ANY_U8, .u8_value = v};
 }
 
-any_t any_init_u16(uint16_t v) {
-  return (any_t) {.type = i16, .u16_value = v};
+static inline any_t any_init_u16(uint16_t v) {
+  return (any_t) {.type = ANY_U16, .u16_value = v};
 }
 
-any_t any_init_u32(uint32_t v) {
-  return (any_t) {.type = i32, .u32_value = v};
+static inline any_t any_init_u32(uint32_t v) {
+  return (any_t) {.type = ANY_U32, .u32_value = v};
 }
 
-any_t any_init_u64(uint64_t v) {
-  return (any_t) {.type = i64, .u64_value = v};
+static inline any_t any_init_u64(uint64_t v) {
+  return (any_t) {.type = ANY_U64, .u64_value = v};
 }
 
-any_t any_init_f32(float v) {
-  return (any_t) {.type = f32, .f32_value = v};
+static inline any_t any_init_f32(float v) {
+  return (any_t) {.type = ANY_F32, .f32_value = v};
 }
 
-any_t any_init_f64(double v) {
-  return (any_t) {.type = f64, .f64_value = v};
+static inline any_t any_init_f64(double v) {
+  return (any_t) {.type = ANY_F64, .f64_value = v};
 }
 
-any_t any_init_ptr(void *v) {
-  return (any_t) {.type = ptr, .ptr_value = v};
+static inline any_t any_init_ptr(void *v) {
+  return (any_t) {.type = ANY_PTR, .ptr_value = v};
 }
 
 #define any_init(X) _Generic((X),               \
@@ -82,18 +87,23 @@ any_t any_init_ptr(void *v) {
     uint64_t: any_init_u64,                     \
     float: any_init_f32,                        \
     double: any_init_f64,                       \
-    void*: any_init_ptr                         \
+    void*: any_init_ptr,                        \
+    char*: any_init_ptr                         \
     )(X)
 
-any_type_t any_get_type(any_t x) {
+static inline any_type_t any_get_type(any_t x) {
   return x.type;
 }
 
-int32_t* any_get_i32(any_t *x) {
+/* Returns a pointer to the value, or NULL if x is NULL or does not hold an int32_t. */
+static inline int32_t* any_get_i32(any_t *x) {
+  if (x == NULL || x->type != ANY_I32) {
+    return NULL;
+  }
   return &x->i32_value;
 }
 
-#define ANY_VALUE(x,y) x.y##_value
+#define ANY_VALUE(x,y) ((x).y##_value)
 
 
 #endif
