@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdalign.h>
 #include <stdatomic.h>
 #include <sched.h>
 #include <assert.h>
@@ -30,6 +31,19 @@
 #define SELECT_SEND (0)
 #define SELECT_RECV (1)
 #define SELECT_OMIT (2)
+
+/* size of a cache line; producer and consumer counters live on separate ones */
+#define CHAN_CACHE_LINE (64)
+
+/* Called in the loops that wait for an earlier sender or receiver to publish
+   its slot.  That wait is normally very short, so spin first, but if the
+   thread being waited for has been descheduled, give up the processor. */
+static inline void chan_wait(int32_t *spins) {
+  if (++*spins >= 64) {
+    *spins = 0;
+    sched_yield();
+  }
+}
 
 /* Random numbers for select_prefix_one, which tries its cases in random
    order so that no ready case can starve the others.  This only needs
@@ -97,12 +111,17 @@ static inline uint32_t chan_rng_below(uint32_t n) {
 
 typedef struct CHAN {
   data_t *data;
-  int64_t capacity;
-  _Atomic int64_t tail0;           
-  _Atomic int64_t tail1;     
-  _Atomic int64_t head0;
-  _Atomic int64_t head1;
+  int64_t capacity;           /* most values the channel holds at once */
+  int64_t mask;               /* the slot array has mask + 1 entries, a power of two >= capacity */
   atomic_bool closed;
+
+  /* written by the producers, on their own cache line */
+  alignas(CHAN_CACHE_LINE) _Atomic int64_t head1;
+  _Atomic int64_t head0;
+
+  /* written by the consumers, on their own cache line */
+  alignas(CHAN_CACHE_LINE) _Atomic int64_t tail1;
+  _Atomic int64_t tail0;
 } CHAN;
 
 #define SELECT GLUE3(select_, prefix, _t)
@@ -120,18 +139,36 @@ typedef struct SELECT {
    provided.
 */
 CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
-  CHAN *c = malloc(sizeof(CHAN));
+  if (capacity < 1) {
+    capacity = 1;
+  }
+
+  /* slots are found with a mask, so round the slot array up to a power of two */
+  int64_t slots = 1;
+  while (slots < capacity) {
+    if (slots > INT64_MAX / 2) {
+      return NULL;
+    }
+    slots *= 2;
+  }
+  if ((uint64_t) slots > SIZE_MAX / sizeof(data_t)) {
+    return NULL;
+  }
+
+  /* sizeof(CHAN) is a multiple of its alignment, as aligned_alloc requires */
+  CHAN *c = aligned_alloc(alignof(CHAN), sizeof(CHAN));
   if (c == NULL) {
     return NULL;
   }
-  c->capacity = capacity > 0 ? capacity : 1;
+  c->capacity = capacity;
+  c->mask = slots - 1;
   c->tail0 = 0;
   c->tail1 = 0;
   c->head0 = 0;
   c->head1 = 0;
   c->closed = false;
 
-  c->data = malloc(c->capacity * sizeof(data_t));
+  c->data = malloc(slots * sizeof(data_t));
   if (c->data == NULL) {
     free(c);
     return NULL;
@@ -174,15 +211,17 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
     }
 
     if (atomic_compare_exchange_weak(&c->tail1, &tail1, tail1 + 1)) {
-      int64_t pos = tail1 % c->capacity;
+      int64_t pos = tail1 & c->mask;
       if (value != NULL) {
         *value = c->data[pos];
       }
+      int32_t spins = 0;
       while (true) {
         int64_t expect = tail1;
         if (atomic_compare_exchange_weak(&c->tail0, &expect, tail1 + 1)) {
           break;
         }
+        chan_wait(&spins);
       }
       return CHAN_SUCCESS;
     }
@@ -208,13 +247,15 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
     }
 
     if (atomic_compare_exchange_weak(&c->head1, &head1, head1 + 1)) {
-      int64_t pos = head1 % c->capacity;
+      int64_t pos = head1 & c->mask;
       c->data[pos] = value;
+      int32_t spins = 0;
       while (true) {
         int64_t expect = head1;
         if (atomic_compare_exchange_weak(&c->head0, &expect, head1 + 1)) {
           break;
         }
+        chan_wait(&spins);
       }
       return CHAN_SUCCESS;
     }
