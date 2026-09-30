@@ -29,6 +29,7 @@ https://www.w3schools.com/c/c_ref_math.php
 #include <math.h>
 #include <float.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #ifdef __clang__
 #pragma STDC FENV_ACCESS ON
@@ -463,13 +464,19 @@ interval_fabs(interval_t a) {
 
 #define data_t double
 #define prefix ival
-#include <tree.h>
+#include <pqueue.h>
 #undef prefix
 #undef data_t
 
 static double 
 interval_get_key(interval_t a) {
   return fmax(fabs(a.lo), fabs(a.hi));
+}
+
+/* pqueue pops the largest key first; this reverses the order. */
+static int
+interval_key_min_first(double *a, double *b) {
+  return comp_double(b, a);
 }
 
 
@@ -501,25 +508,41 @@ interval_add_many(int n, interval_t *a) {
     return a[0];
   }
   
-  tree_ival_t *t = tree_ival_init();
+  /* Repeatedly add the two intervals of smallest magnitude.  A priority queue
+     is used rather than a tree because several intervals can have the same key. */
+  interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+  interval_t rv = bad;
+
+  pqueue_ival_t *q = pqueue_ival_init();
+  interval_t *temp = malloc((n - 1) * sizeof(interval_t));
+  if (q == NULL || temp == NULL || pqueue_ival_set_comp(q, interval_key_min_first) != 0) {
+    goto done;
+  }
+
   for (int i = 0; i < n; i++) {
-    tree_ival_insert(t, interval_get_key(a[i]), &a[i]);
+    if (pqueue_ival_push(q, interval_get_key(a[i]), &a[i]) != 0) {
+      goto done;
+    }
   }
 
-  interval_t temp[n - 1];
-  for (int i = 0; i < n-1; i++) {
-    key_ival_value_t x = tree_ival_delete_min(t);
-    key_ival_value_t y = tree_ival_delete_min(t);
+  for (int i = 0; i < n - 1; i++) {
+    pqkv_ival_t x = pqueue_ival_pop(q);
+    pqkv_ival_t y = pqueue_ival_pop(q);
+    if (!x.found || !y.found) {
+      goto done;
+    }
 
-    interval_t xx = *(interval_t*) x.value;
-    interval_t yy = *(interval_t*) y.value;
-    temp[i] = interval_add(xx, yy);
-
-    tree_ival_insert(t, interval_get_key(temp[i]), &temp[i]);
+    temp[i] = interval_add(*(interval_t *) x.value, *(interval_t *) y.value);
+    if (pqueue_ival_push(q, interval_get_key(temp[i]), &temp[i]) != 0) {
+      goto done;
+    }
   }
-  
-  tree_ival_destroy(&t);
-  return temp[n - 2];
+  rv = temp[n - 2];
+
+done:
+  pqueue_ival_destroy(&q);
+  free(temp);
+  return rv;
 }
 
 interval_t interval_pow_int(interval_t a, uint32_t e) {
