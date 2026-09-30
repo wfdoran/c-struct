@@ -299,7 +299,7 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, hkey_t key, value_t value) {
     }
     pthread_rwlock_wrlock(&(h->rwlock));
 
-    const uint64_t hash = h->hash_func(key);
+    const uint64_t hash = hash_mix64(h->hash_func(key));
     const uint64_t mask = h->capacity - UINT64_C(1);
     const uint64_t base = hash & mask;
     const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
@@ -364,7 +364,7 @@ int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, hkey_t key, value_t v
     }
     pthread_rwlock_wrlock(&(h->rwlock));
 
-    const uint64_t hash = h->hash_func(key);
+    const uint64_t hash = hash_mix64(h->hash_func(key));
     const uint64_t mask = h->capacity - UINT64_C(1);
     const uint64_t base = hash & mask;
     const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
@@ -435,7 +435,7 @@ int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, hkey_t key, value_t *value) {
         return -1;
     }
     pthread_rwlock_rdlock(&(h->rwlock));
-    uint64_t hash = h->hash_func(key);
+    uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
     uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
@@ -469,7 +469,7 @@ int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, value_t *value) 
     }
     pthread_rwlock_wrlock(&(h->rwlock));
 
-    uint64_t hash = h->hash_func(key);
+    uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
     uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);

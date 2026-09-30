@@ -5,6 +5,17 @@
 #include <string.h>
 #include <stdlib.h>
 
+/* Finalizer (splitmix64) applied by the hash tables to every hash value, so
+   that identity-like hashes (integers, doubles) still spread over the low bits. */
+static inline uint64_t hash_mix64(uint64_t x) {
+  x ^= x >> 30;
+  x *= UINT64_C(0xbf58476d1ce4e5b9);
+  x ^= x >> 27;
+  x *= UINT64_C(0x94d049bb133111eb);
+  x ^= x >> 31;
+  return x;
+}
+
 static inline uint64_t hash_uint64_t(uint64_t x) {
   return x;
 }
@@ -35,14 +46,26 @@ static inline uint64_t hash_str(const char *s) {
   return rv;
 }
 
-/* ToDo: clean with -0.0, NaN, and inf better */
+/* Equal keys must hash equally: fold -0.0 into +0.0 and give every NaN the same hash. */
 static inline uint64_t hash_double(double x) {
+  if (x == 0.0) {
+    return 0;
+  }
+  if (x != x) {
+    return UINT64_C(0x7ff8000000000000);
+  }
   uint64_t bits = 0;
   memcpy(&bits, &x, sizeof(double));
   return bits;
 }
 
 static inline uint64_t hash_float(float x) {
+  if (x == 0.0f) {
+    return 0;
+  }
+  if (x != x) {
+    return UINT64_C(0x7fc00000);
+  }
   uint64_t bits = 0;
   memcpy(&bits, &x, sizeof(float));
   return bits;

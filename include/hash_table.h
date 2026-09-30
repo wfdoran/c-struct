@@ -295,7 +295,7 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, hkey_t key, value_t value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
-    const uint64_t hash = h->hash_func(key);
+    const uint64_t hash = hash_mix64(h->hash_func(key));
     const uint64_t mask = h->capacity - UINT64_C(1);
     const uint64_t base = hash & mask;
     const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
@@ -361,7 +361,7 @@ int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, hkey_t key, value_t *value)
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
-    uint64_t hash = h->hash_func(key);
+    uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
     uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
@@ -391,7 +391,7 @@ int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, hkey_t key, value_t *value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
-    uint64_t hash = h->hash_func(key);
+    uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
     uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
