@@ -775,7 +775,7 @@ KEYVAL GLUE3(tree_, prefix, _walk_next) (void **state) {
 
 KEYVAL GLUE3(tree_, prefix, _get_rank) (TREE *a, size_t rank) {
     NODE *n = a->root;
-    if (rank >= n->size) {
+    if (n == NULL || rank >= n->size) {
         KEYVAL rv = {.value = NULL,.found = false };
         return rv;
     }
