@@ -79,11 +79,13 @@ bool good_recv = true;
 CHECK(good_send);
 CHECK(good_recv);
 
+chan_int_destroy(&a);
+CHECK(a == NULL);
+
 END_TEST
 
 START_TEST(chan_test4)
 
-int32_t rc;
 int n = 10;
 chan_int_t *a = chan_int_init(1);
 CHECK(a != NULL);
@@ -96,9 +98,15 @@ bool good_recv = true;
   {
     #pragma omp section
     {
+      int32_t rc;
       int i = 0;
       while (true) {
 	if (i == n) {
+	  /* the first close succeeds, a second close reports CHAN_CLOSED */
+	  rc = chan_int_close(a);
+	  if (rc != CHAN_SUCCESS) {
+	    good_send = false;
+	  }
 	  rc = chan_int_close(a);
 	  if (rc != CHAN_CLOSED) {
 	    good_send = false;
@@ -119,11 +127,16 @@ bool good_recv = true;
 
     #pragma omp section
     {
+      int32_t rc;
       int j = 0;
       while (true) {
 	int value;
 	rc = chan_int_tryrecv(a, &value);
 	if (rc == CHAN_CLOSED) {
+	  /* everything sent before the close must have been received */
+	  if (j != n) {
+	    good_recv = false;
+	  }
 	  break;
 	}
 	if (rc == CHAN_SUCCESS) {
@@ -141,6 +154,9 @@ bool good_recv = true;
 
 CHECK(good_send);
 CHECK(good_recv);
+
+chan_int_destroy(&a);
+CHECK(a == NULL);
 
 END_TEST
 
