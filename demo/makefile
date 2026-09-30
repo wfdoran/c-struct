@@ -229,5 +229,6 @@ clean:
 	rm -rf pqueue_demo1
 	rm -rf pqueue_demo2
 	rm -rf pqueue_demo3
+	rm -rf comp_demo
 	rm -rf *~
 

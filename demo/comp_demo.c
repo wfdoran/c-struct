@@ -8,7 +8,7 @@ int main(void) {
     int (*comp) (data_t *a, data_t *b) = DEFAULT_COMP(temp);
     
     printf("%p\n", comp);
-    printf("%p\n", &comp_int);
+    printf("%p\n", &comp_int32);
     printf("%p\n", &comp_float);
     
     return 0;
