@@ -574,20 +574,16 @@ interval_t interval_sin(interval_t a) {
 
   double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
 
-  {
-    long x = lrint(trunc((mult_lo - 1.0) / 4.0));
-    long y = lrint(trunc((mult_hi - 1.0) / 4.0));
-    if (x != y) {
-      rv.hi = 1.0;
-    }
+  /* The interval contains an extremum if it spans a point c + 4k in units of
+     pi/2 (c = 1 and 3 for the sin maximum and minimum).  That is the case when
+     floor((x - c) / 4) differs at the two ends; floor, not trunc, so that this
+     also holds for negative arguments. */
+  if (floor((mult_lo - 1.0) / 4.0) != floor((mult_hi - 1.0) / 4.0)) {
+    rv.hi = 1.0;
   }
 
-  {
-    long x = lrint(trunc((mult_lo - 3.0) / 4.0));
-    long y = lrint(trunc((mult_hi - 3.0) / 4.0));
-    if (x != y) {
-      rv.lo = -1.0;
-    }
+  if (floor((mult_lo - 3.0) / 4.0) != floor((mult_hi - 3.0) / 4.0)) {
+    rv.lo = -1.0;
   }
 
   fesetround(save);
@@ -624,20 +620,14 @@ interval_t interval_cos(interval_t a) {
 
   double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
 
-  {
-    long x = lrint(trunc((mult_lo - 0.0) / 4.0));
-    long y = lrint(trunc((mult_hi - 0.0) / 4.0));
-    if (x != y) {
-      rv.hi = 1.0;
-    }
+  /* Same test as in interval_sin, with c = 0 and 2 for the cos maximum and
+     minimum. */
+  if (floor((mult_lo - 0.0) / 4.0) != floor((mult_hi - 0.0) / 4.0)) {
+    rv.hi = 1.0;
   }
 
-  {
-    long x = lrint(trunc((mult_lo - 2.0) / 4.0));
-    long y = lrint(trunc((mult_hi - 2.0) / 4.0));
-    if (x != y) {
-      rv.lo = -1.0;
-    }
+  if (floor((mult_lo - 2.0) / 4.0) != floor((mult_hi - 2.0) / 4.0)) {
+    rv.lo = -1.0;
   }
 
   fesetround(save);
