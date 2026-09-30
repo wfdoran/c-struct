@@ -7,13 +7,13 @@ typedef struct {
   int32_t x[3];
 } triple_t;
 
-#define key_t triple_t
+#define hkey_t triple_t
 #define value_t bool
 #define prefix trip
 #include <hash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
 
 uint64_t triple_hash(triple_t t) {
   uint64_t rv = UINT64_C(0x5555555555555555);

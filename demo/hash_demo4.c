@@ -3,13 +3,13 @@
 #include <assert.h>
 #include <math.h>
 
-#define key_t int
+#define hkey_t int
 #define value_t double
 #define prefix int
 #include <hash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
 
 double f(int key, double value) {
   return key + sqrt(value);

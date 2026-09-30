@@ -7,13 +7,13 @@ The user provides the type for the keys and values, along with a prefix label us
 The following adds functions for hash table from strings (`char*`) to integers (`int`).
 
 ```c
-#define key_t char*
+#define hkey_t char*
 #define value_t int
 #define prefix string
 #include <hash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
 ```
 
 The hash table functions and types for this type all contain the prefix value `string` in their name.
@@ -78,27 +78,27 @@ The routines `hash_prefix_first` and `hash_prefix_next` can be used to
 iterate over the hash table and manually free/destroy the keys and value
 first. 
 
-### `int32_t hash_prefix_put(htable_prefix_t *h, key_t key, value_t value)`
+### `int32_t hash_prefix_put(htable_prefix_t *h, hkey_t key, value_t value)`
 
 Inserts a key/value pair into the hash table.
 
 This performs shallow copy of the key and value to the hash table.  In
-particular, if either key_t or value_t is a pointer, the address is stored
+particular, if either hkey_t or value_t is a pointer, the address is stored
 in hash table and along with the (current) hash value of the key.
 Once inserted, the key should not be altered.  
 
 How does the hash table handle cases where the key already exists?
 
 
-### `int32_t hash_prefix_get(const htable_prefix_t *h, key_t key, value_t *value)`
+### `int32_t hash_prefix_get(const htable_prefix_t *h, hkey_t key, value_t *value)`
 
-### `int32_t hash_prefix_remove(htable_prefix_t *h, key_t key, value_t *value)`
+### `int32_t hash_prefix_remove(htable_prefix_t *h, hkey_t key, value_t *value)`
 
 ## Specializing  
 
-### `void hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func) (key_t))`
+### `void hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func) (hkey_t))`
 
-### `void hash_prefix_set_comp(htable_prefix_t *h, int (*comp) (key_t, key_t))`
+### `void hash_prefix_set_comp(htable_prefix_t *h, int (*comp) (hkey_t, hkey_t))`
 
 ### `void hash_prefix_set_update(htable_prefix_t *h, value_t (*update) (value_t, value_t))`
 
@@ -110,14 +110,14 @@ How does the hash table handle cases where the key already exists?
 
 ## Interation
 
-### `int32_t hash_prefix_first(const htable_prefix_t *h, hiter_prefix_t **iter_state, key_t *key, value_t *value)`
+### `int32_t hash_prefix_first(const htable_prefix_t *h, hiter_prefix_t **iter_state, hkey_t *key, value_t *value)`
 
-### `int32_t hash_prefix_next(hiter_prefix_t **iter_state, key_t *key, value_t *value);`
+### `int32_t hash_prefix_next(hiter_prefix_t **iter_state, hkey_t *key, value_t *value);`
 
 ## Global Operations
 
-### `void hash_prefix_apply(htable_prefix_t *h, value_t (*f)(key_t, value_t))`
+### `void hash_prefix_apply(htable_prefix_t *h, value_t (*f)(hkey_t, value_t))`
 
-### `void hash_prefix_apply_r(htable_prefix_t *h, value_t (*f)(key_t, value_t, void*), void *arg)`
+### `void hash_prefix_apply_r(htable_prefix_t *h, value_t (*f)(hkey_t, value_t, void*), void *arg)`
 
 ## Technical Details

@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define key_t int
+#define hkey_t int
 #define value_t int64_t
 #define prefix int
 #include <hash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
 
 int64_t sqr(int key, int64_t value) {
   return value * value;

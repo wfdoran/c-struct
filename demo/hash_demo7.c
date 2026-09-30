@@ -8,13 +8,13 @@
 #undef prefix
 #undef data_t
 
-#define key_t int
+#define hkey_t int
 #define value_t array_int_t*
 #define prefix intp
 #include <hash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
 
 array_int_t* update(array_int_t *curr, array_int_t *new) {
   for (int i = 0; i < array_int_size(new); i++) {

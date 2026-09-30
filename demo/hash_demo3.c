@@ -3,13 +3,13 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#define key_t char*
+#define hkey_t char*
 #define value_t int
 #define prefix count
 #include <hash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
 
 int update(int current, int adder) {
   return current + adder;

@@ -17,13 +17,13 @@ typedef struct {
   };
 } vals_t;
 
-#define key_t char*
+#define hkey_t char*
 #define value_t vals_t
 #define prefix vals
 #include <hash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
   
 
 int main(void) {

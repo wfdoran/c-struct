@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define key_t int
+#define hkey_t int
 #define value_t int
 #define prefix int
 #include <phash_table.h>
 #undef prefix
 #undef value_t
-#undef key_t
+#undef hkey_t
 
 int main() {
 
