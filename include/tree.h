@@ -391,6 +391,26 @@ void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
     a->root->parent = NULL;
 }
 
+/* NODE* tree_prefix_delete_min_node(NODE *n, NODE **min)
+
+   Removes the minimum node from the non-empty subtree rooted at n.  The
+   removed node is returned in min, and the return value is the new root
+   of the subtree (rebalanced).
+*/
+static NODE *GLUE3(tree_, prefix, _delete_min_node) (NODE *n, NODE **min) {
+    if (n->left == NULL) {
+        *min = n;
+        return n->right;
+    }
+    n->left = GLUE3(tree_, prefix, _delete_min_node) (n->left, min);
+    if (n->left != NULL) {
+        n->left->parent = n;
+    }
+    n = GLUE3(tree_, prefix, _balance) (n);
+    GLUE3(tree_, prefix, _fillin) (n);
+    return n;
+}
+
 /* tree_prefix_delete_node(int (*comp) (data_t *, data_t *), NODE *n, data_t key, NODE **rv)
 
    Deletes the node with key value key from the subtree rooted at n.
@@ -435,8 +455,24 @@ static NODE *GLUE3(tree_, prefix, _delete_node) (int (*comp) (data_t *, data_t *
         return n->left;
     }
 
-    n = GLUE3(tree_, prefix, _rotate_right) (n, false);
-    return GLUE3(tree_, prefix, _delete_node) (comp, n, key, rv);
+    /* two children: splice in the in-order successor */
+    NODE *m = NULL;
+    NODE *new_right = GLUE3(tree_, prefix, _delete_min_node) (n->right, &m);
+    m->left = n->left;
+    m->right = new_right;
+    if (m->left != NULL) {
+        m->left->parent = m;
+    }
+    if (m->right != NULL) {
+        m->right->parent = m;
+    }
+    *rv = n;
+    n->left = NULL;
+    n->right = NULL;
+    n->parent = NULL;
+    m = GLUE3(tree_, prefix, _balance) (m);
+    GLUE3(tree_, prefix, _fillin) (m);
+    return m;
 }
 
 /* KEYVAL tree_prefix_delete(TREE *a, data_t key) 
