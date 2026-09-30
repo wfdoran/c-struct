@@ -33,8 +33,8 @@ int main(void) {
   hash_intp_set_update(h, update);
 
 
-  int v_sum = 0;
-  int v_xor = 0;
+  unsigned int v_sum = 0;   /* unsigned: the running sum wraps around */
+  unsigned int v_xor = 0;
   int items = 0;
   
   for (int trial = 0; trial < 3000; trial++) {
@@ -68,6 +68,6 @@ int main(void) {
     array_int_destroy(&value);
   }
 
-  printf("totals = %d %d %d\n", items, v_sum, v_xor);
+  printf("totals = %d %u %u\n", items, v_sum, v_xor);
   hash_intp_destroy(&h);
 }

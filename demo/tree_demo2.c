@@ -16,11 +16,11 @@ int main(void) {
     tree_int64_t *t = tree_int64_init();
     
     for (int i = 0; i < num_items; i++) {
-        int64_t val = 0;
+        uint64_t bits = 0;   /* unsigned: the shifts push bits off the top */
         for (int j = 0; j < 5; j++) {
-            val = (val << 13) + rand();
+            bits = (bits << 13) + (uint64_t) rand();
         }
-        tree_int64_insert(t, val, NULL);
+        tree_int64_insert(t, (int64_t) bits, NULL);
     }
     printf("Tree Size: %zu\n", tree_int64_size(t));
     printf("Tree Height: %d\n", tree_int64_height(t));
