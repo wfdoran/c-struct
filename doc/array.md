@@ -101,6 +101,9 @@ where `a[1]` is the new value.  And so on down the array.
 
 ### `array_prefix_t *array_prefix_slice(const array_prefix_t *a, size_t left, size_t right)`
 
+Copies the half-open range `[left, right)` into a new array, so `left == right` gives an empty array.
+Returns `NULL` if `left > right`, `right` is larger than the size of `a`, or memory could not be allocated.
+
 ### `array_prefix_t *array_prefix_deep_slice(const array_prefix_t *a, size_t left, size_t right, data_t (*f) (const data_t))`
 
 ## Search

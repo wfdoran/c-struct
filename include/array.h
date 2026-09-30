@@ -154,12 +154,20 @@ TYPE *GLUE3(array_, prefix, _clone) (const TYPE *in) {
     return GLUE3(array_, prefix, _deep_clone) (in, NULL);
 }
 
+/* array_prefix_deep_slice(const array_prefix_t *in, size_t left, size_t right,
+                           data_t (*f)(const data_t));
+
+   Makes a new array from the half-open range [left, right) of in, so
+   left == right gives an empty array.  Returns NULL if in is NULL,
+   left > right, right > size, or memory is exhausted.  The user
+   provided f, if not NULL, is used to create each entry.
+*/
 TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t right,
 					 data_t (*f) (const data_t)) {
     if (in == NULL) {
         return NULL;
     }
-    if (right <= left || right > in->size) {
+    if (right < left || right > in->size) {
         return NULL;
     }
     const size_t size = right - left;
@@ -167,7 +175,7 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
     if (out == NULL) {
         return NULL;
     }
-    out->alloc = malloc(size * sizeof(data_t));
+    out->alloc = malloc((size > 0 ? size : 1) * sizeof(data_t));
     if (out->alloc == NULL) {
         free(out);
         return NULL;
