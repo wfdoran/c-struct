@@ -157,6 +157,8 @@ data_t GLUE3(llist_, prefix, _remove_start) (LLIST *a) {
     a->head = n->next;
     if (a->head == NULL) {
         a->tail = NULL;
+    } else {
+        a->head->prev = NULL;
     }
     a->size -= 1;
     free(n);
@@ -173,6 +175,8 @@ data_t GLUE3(llist_, prefix, _remove_end) (LLIST *a) {
     a->tail = n->prev;
     if (a->tail == NULL) {
         a->head = NULL;
+    } else {
+        a->tail->next = NULL;
     }
     a->size -= 1;
     free(n);
