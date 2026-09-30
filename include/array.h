@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #include <comp.h>
 
@@ -643,30 +644,22 @@ ssize_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
     return -1;
 }
 
-static char *GLUE(get_, prefix)() {
-  return strdup(&__func__[4]);
-}
+#define ARRAY_STR_HELPER(x) #x
+#define ARRAY_STR(x) ARRAY_STR_HELPER(x)
 
 int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) {
   if (a == NULL || filename == NULL) {
     return -1;
   }
 
-  char *prefix_str = GLUE(get_, prefix)();
-  if (prefix_str == NULL) {
-    return -1;
-  }
-
   FILE *fp = fopen(filename, "wb");
   if (fp == NULL) {
-    free(prefix_str);
     return -1;
   }
 
   const char *header = "Array===";
   fwrite(header, sizeof(char), 8, fp);
-  serialize_string(prefix_str, fp);
-  free(prefix_str);
+  serialize_string(ARRAY_STR(prefix), fp);
 
   const size_t data_size = sizeof(data_t);
   fwrite(&data_size, sizeof(size_t), 1, fp);
@@ -694,16 +687,15 @@ TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
   }
 
   TYPE *a = NULL;
-  char *prefix_str1 = GLUE(get_, prefix)();
-  char *prefix_str2 = NULL;
+  char *prefix_str = NULL;
 
   char header[8];
   if (fread(header, sizeof(char), 8, fp) != 8 || strncmp(header, "Array===", 8) != 0) {
     goto fail;
   }
 
-  prefix_str2 = deserialize_string(fp);
-  if (prefix_str1 == NULL || prefix_str2 == NULL || strcmp(prefix_str1, prefix_str2) != 0) {
+  prefix_str = deserialize_string(fp);
+  if (prefix_str == NULL || strcmp(prefix_str, ARRAY_STR(prefix)) != 0) {
     goto fail;
   }
 
@@ -741,14 +733,12 @@ TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
     a->size = arr_size;
   }
 
-  free(prefix_str1);
-  free(prefix_str2);
+  free(prefix_str);
   fclose(fp);
   return a;
 
 fail:
-  free(prefix_str1);
-  free(prefix_str2);
+  free(prefix_str);
   if (a != NULL) {
     GLUE3(array_, prefix, _destroy) (&a);
   }
@@ -756,6 +746,8 @@ fail:
   return NULL;
 }
 
+#undef ARRAY_STR
+#undef ARRAY_STR_HELPER
 #undef HEAP_RIGHT_CHILD
 #undef HEAP_LEFT_CHILD
 #undef HEAP_PARENT
