@@ -142,3 +142,35 @@ llist_int_destroy(&a);
 CHECK(a == NULL);
 
 END_TEST
+
+START_TEST(linked_list_test8)
+
+seed_rand(1);
+for (int n = 0; n <= 200; n += 7) {
+  llist_int_t *a = llist_int_init();
+  CHECK(a != NULL);
+
+  for (int i = 0; i < n; i++) {
+    llist_int_add_end(a, get_rand() % 20);
+  }
+
+  CHECK(llist_int_msort(a) == 0);
+  CHECK(a->size == (size_t) n);
+
+  lnode_int_t *prev = NULL;
+  int count = 0;
+  for (lnode_int_t *x = a->head; x != NULL; prev = x, x = x->next) {
+    CHECK(x->prev == prev);
+    if (prev != NULL) {
+      CHECK(prev->data <= x->data);
+    }
+    count++;
+  }
+  CHECK(count == n);
+  CHECK(a->tail == prev);
+
+  llist_int_destroy(&a);
+  CHECK(a == NULL);
+}
+
+END_TEST

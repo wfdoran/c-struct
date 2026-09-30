@@ -344,50 +344,70 @@ int32_t GLUE3(llist_, prefix, _insert_after) (LLIST *a, LNODE **n_ptr, data_t d)
 /*                        sort nodes                                       */
 /* ----------------------------------------------------------------------- */
 
-bool GLUE3(llist_, prefix, _sort_pass)(LLIST *a) {
-  LNODE *n = a->head;
-  bool change = false;
+static LNODE *GLUE3(llist_, prefix, _merge_nodes)(LLIST *a, LNODE *x, LNODE *y) {
+  LNODE head;
+  LNODE *tail = &head;
 
-  while (n->next != NULL) {
-    LNODE *m = n->next;
-
-    if (a->comp(&m->data, &n->data) < 0) {
-      if (n->prev == NULL) {
-	a->head = m;
-      } else {
-	n->prev->next = m;
-      }
-
-      if (m->next == NULL) {
-	a->tail = n;
-      } else {
-	m->next->prev = n;
-      }
-      
-      m->prev = n->prev;
-      n->next = m->next;
-
-      m->next = n;
-      n->prev = m;
-      change = true;
+  while (x != NULL && y != NULL) {
+    if (a->comp(&y->data, &x->data) < 0) {
+      tail->next = y;
+      y = y->next;
     } else {
-      n = m;
+      tail->next = x;
+      x = x->next;
     }
+    tail = tail->next;
   }
-  return change;
+  tail->next = x != NULL ? x : y;
+  return head.next;
 }
 
-void GLUE3(llist_, prefix, _sort)(LLIST *a) {
-  if (a->size <= 1) {
-    return;
+/* Sorts the singly linked chain of len nodes starting at n and returns the new first node. */
+static LNODE *GLUE3(llist_, prefix, _msort_nodes)(LLIST *a, LNODE *n, size_t len) {
+  if (len < 2) {
+    return n;
   }
-		   
-  while (true) {
-    bool change = GLUE3(llist_, prefix, _sort_pass)(a);
-    if (!change) {
-      break;
-    }
+
+  size_t half = len / 2;
+  LNODE *mid = n;
+  for (size_t i = 1; i < half; i++) {
+    mid = mid->next;
   }
+  LNODE *right = mid->next;
+  mid->next = NULL;
+
+  return GLUE3(llist_, prefix, _merge_nodes)(a,
+                                             GLUE3(llist_, prefix, _msort_nodes)(a, n, half),
+                                             GLUE3(llist_, prefix, _msort_nodes)(a, right, len - half));
+}
+
+/* int32_t llist_prefix_msort(llist_prefix_t *a);
+
+   Sorts the list in place with a merge sort using the comparison
+   function (see llist_prefix_set_comp).  The sort is stable, takes
+   O(n log n) time in every case, needs O(log n) stack, and does not
+   allocate.
+
+   return value:
+     -1 => error (a is NULL, or no comparison function has been set)
+      0 => ok
+*/
+int32_t GLUE3(llist_, prefix, _msort)(LLIST *a) {
+  if (a == NULL || a->comp == NULL) {
+    return -1;
+  }
+  if (a->size < 2) {
+    return 0;
+  }
+
+  a->head = GLUE3(llist_, prefix, _msort_nodes)(a, a->head, a->size);
+
+  LNODE *prev = NULL;
+  for (LNODE *n = a->head; n != NULL; prev = n, n = n->next) {
+    n->prev = prev;
+  }
+  a->tail = prev;
+  return 0;
 }
 
 void GLUE3(llist_, prefix, _add_node)(LLIST *a, LNODE *n) {
@@ -407,63 +427,6 @@ void GLUE3(llist_, prefix, _add_node)(LLIST *a, LNODE *n) {
     a->size += 1;
   }
 }
-
-void GLUE3(llist_, prefix, _qsort)(LLIST *a) {
-  if (a->size <= 6) {
-    GLUE3(llist_, prefix, _sort)(a);
-    return;
-  }
-
-  LNODE *pivot = a->head;
-
-  LLIST *sub_lo = GLUE3(llist_, prefix, _init)();
-  LLIST *sub_hi = GLUE3(llist_, prefix, _init)();
-
-  GLUE3(llist_, prefix, _set_comp)(sub_lo, a->comp);
-  GLUE3(llist_, prefix, _set_comp)(sub_hi, a->comp);
-
-  LNODE *save_next = NULL;
-  for (LNODE *n = pivot->next; n != NULL; n = save_next) {
-    save_next = n->next;
-    if (a->comp(&pivot->data, &n->data) > 0) {
-      GLUE3(llist_, prefix, _add_node)(sub_lo, n);
-    } else {
-      GLUE3(llist_, prefix, _add_node)(sub_hi, n);
-    }
-  }
-
-  GLUE3(llist_, prefix, _qsort)(sub_lo);
-  GLUE3(llist_, prefix, _qsort)(sub_hi);
-
-  if (sub_lo->size == 0) {
-    a->head = pivot;
-    a->tail = sub_hi->tail;
-
-    pivot->prev = NULL;
-    pivot->next = sub_hi->head;
-    sub_hi->head->prev = pivot;
-  } else if (sub_hi->size == 0) {
-    a->head = sub_lo->head;
-    a->tail = pivot;
-
-    pivot->next = NULL;
-    pivot->prev = sub_lo->tail;
-    sub_lo->tail->next = pivot;
-  } else {
-    a->head = sub_lo->head;
-    a->tail = sub_hi->tail;
-
-    pivot->prev = sub_lo->tail;
-    sub_lo->tail->next = pivot;
-
-    pivot->next = sub_hi->head;
-    sub_hi->head->prev = pivot;
-  }
-
-  free(sub_lo);
-  free(sub_hi);  
-}
-
 
 #undef LNODE
 #undef LLIST

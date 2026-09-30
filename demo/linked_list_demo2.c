@@ -26,7 +26,10 @@ int main(void) {
   printf("\n");
 
   
-  llist_int_qsort(a);
+  if (llist_int_msort(a) != 0) {
+    fprintf(stderr, "sort failed\n");
+    return 1;
+  }
 
   for (int d = llist_int_walk_init_start(a, &n); n != NULL; d = llist_int_walk_forward(&n)) {
     printf("%8d\n", d);
