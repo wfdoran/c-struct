@@ -188,21 +188,18 @@ static inline int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void
         q->capacity = new_capacity;
     }
 
-    size_t pos = q->size;
-    q->data[pos].key = key;
-    q->data[pos].value = value;
-    q->size++;
-
+    /* move a hole up from the new last slot instead of swapping at every level */
+    size_t pos = q->size++;
     while (pos != 0) {
         size_t parent = PQUEUE_PARENT(pos);
-        if (q->comp(&(q->data[pos].key), &(q->data[parent].key)) <= 0) {
+        if (q->comp(&key, &(q->data[parent].key)) <= 0) {
             break;
         }
-        PNODE temp = q->data[parent];
-        q->data[parent] = q->data[pos];
-        q->data[pos] = temp;
+        q->data[pos] = q->data[parent];
         pos = parent;
     }
+    q->data[pos].key = key;
+    q->data[pos].value = value;
     return 0;
 }
 
@@ -225,37 +222,28 @@ static inline PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
     q->size--;
 
     if (q->size > 0) {
-        q->data[0] = q->data[q->size];
+        /* Move a hole down from the root, always toward the larger child, until
+           the last element fits.  This takes two comparisons per level, one
+           assignment per level, and stops early when keys are equal. */
+        PNODE last = q->data[q->size];
         size_t pos = 0;
 
         while (true) {
-            size_t left = PQUEUE_LEFT_CHILD(pos);
-            size_t right = PQUEUE_RIGHT_CHILD(pos);
-
-            if (left >= q->size && right >= q->size) {
+            size_t child = PQUEUE_LEFT_CHILD(pos);
+            if (child >= q->size) {
                 break;
             }
-
-            if (right >= q->size) {
-                if (q->comp(&q->data[left].key, &q->data[pos].key) > 0) {
-                    PNODE temp = q->data[pos];
-                    q->data[pos] = q->data[left];
-                    q->data[left] = temp;
-                }
+            if (child + 1 < q->size
+                && q->comp(&q->data[child + 1].key, &q->data[child].key) > 0) {
+                child++;
+            }
+            if (q->comp(&q->data[child].key, &last.key) <= 0) {
                 break;
             }
-
-            if (q->comp(&q->data[pos].key, &q->data[left].key) > 0
-                && q->comp(&q->data[pos].key, &q->data[right].key) > 0) {
-                break;
-            }
-
-            size_t swap = q->comp(&q->data[right].key, &q->data[left].key) > 0 ? right : left;
-            PNODE temp = q->data[pos];
-            q->data[pos] = q->data[swap];
-            q->data[swap] = temp;
-            pos = swap;
+            q->data[pos] = q->data[child];
+            pos = child;
         }
+        q->data[pos] = last;
     }
     return rv;
 }

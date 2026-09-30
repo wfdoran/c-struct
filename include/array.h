@@ -544,17 +544,17 @@ int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
     if (GLUE3(array_, prefix, _append) (a, value) != 0) {
         return -1;
     }
+    /* move a hole up from the new last slot instead of swapping at every level */
     size_t pos = a->size - 1;
     while (pos != 0) {
         size_t parent = HEAP_PARENT(pos);
-        if (a->comp(&(a->data[pos]), &(a->data[parent])) <= 0) {
+        if (a->comp(&value, &(a->data[parent])) <= 0) {
             break;
         }
-        data_t temp = a->data[parent];
-        a->data[parent] = a->data[pos];
-        a->data[pos] = temp;
+        a->data[pos] = a->data[parent];
         pos = parent;
     }
+    a->data[pos] = value;
     return 0;
 }
 
@@ -578,38 +578,27 @@ data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
     a->size--;
 
     if (a->size > 0) {
-        a->data[0] = a->data[a->size];
+        /* Move a hole down from the root, always toward the larger child, until
+           the last element fits: two comparisons per level, stopping early on
+           equal keys. */
+        data_t last = a->data[a->size];
         size_t pos = 0;
 
         while (true) {
-            size_t left = HEAP_LEFT_CHILD(pos);
-            size_t right = HEAP_RIGHT_CHILD(pos);
-
-            if (left >= a->size && right >= a->size) {
+            size_t child = HEAP_LEFT_CHILD(pos);
+            if (child >= a->size) {
                 break;
             }
-
-            if (right >= a->size) {
-                if (a->comp(&a->data[left], &a->data[pos]) > 0) {
-                    data_t temp = a->data[pos];
-                    a->data[pos] = a->data[left];
-                    a->data[left] = temp;
-                }
+            if (child + 1 < a->size && a->comp(&a->data[child + 1], &a->data[child]) > 0) {
+                child++;
+            }
+            if (a->comp(&a->data[child], &last) <= 0) {
                 break;
             }
-
-            if (a->comp(&a->data[pos], &a->data[left]) > 0
-                && a->comp(&a->data[pos], &a->data[right]) > 0) {
-                break;
-            }
-
-            size_t swap = a->comp(&a->data[right], &a->data[left]) > 0 ? right : left;
-            data_t temp = a->data[pos];
-            a->data[pos] = a->data[swap];
-            a->data[swap] = temp;
-            pos = swap;
+            a->data[pos] = a->data[child];
+            pos = child;
         }
-
+        a->data[pos] = last;
     }
     return rv;
 }
