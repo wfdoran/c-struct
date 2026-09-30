@@ -483,9 +483,10 @@ HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
   out->update = h->update;
 
   for (int64_t i = 0; i < h->capacity; i++) {
-    if (h->A[i] != NULL) {
+    if (h->A[i] != NULL && h->A[i] != &(h->deleted)) {
       int32_t rc = GLUE3(hash_, prefix, _put) (out, h->A[i]->key, h->A[i]->value);
       if (rc != 0) {
+	GLUE3(hash_, prefix, _destroy) (&out);
 	return NULL;
       }
     }
