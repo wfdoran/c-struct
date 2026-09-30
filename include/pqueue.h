@@ -91,16 +91,24 @@ static inline PQUEUE *GLUE3(pqueue_, prefix, _init) () {
     return q;
 }
 
-/* void pqueue_prefix_set_comp(pqueue_prefix_t *q, int (*comp) (data_t *, data_t *));
+/* int32_t pqueue_prefix_set_comp(pqueue_prefix_t *q, int (*comp) (data_t *, data_t *));
 
    Attaches a comparison function to the priority queue.  For basic
    data_t such as int8_t, int16_t, int32_t, int64_t, float, double,
    char*, this is not needed.  For more complicated data_t, the user
    must define the comparison function.  See comp.h for details and
    the C11 generics which deal with the basic data_ts.
+
+   return value:
+     -1 => error (q or comp is NULL; the queue is unchanged)
+      0 => ok
 */
-static inline void GLUE3(pqueue_, prefix, _set_comp) (PQUEUE *q, int (*comp) (data_t *, data_t *)) {
+static inline int32_t GLUE3(pqueue_, prefix, _set_comp) (PQUEUE *q, int (*comp) (data_t *, data_t *)) {
+    if (q == NULL || comp == NULL) {
+        return -1;
+    }
     q->comp = comp;
+    return 0;
 }
 
 /* void pqueue_prefix_set_value_free(pqueue_prefix_t *q, void (*value_free)(void *));
