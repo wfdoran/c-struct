@@ -37,6 +37,7 @@ typedef struct HNODE {
 
 typedef struct HTABLE {
     int64_t capacity;
+    int32_t shift;  // log2(capacity): the capacity is always a power of two
     int64_t size;
     int64_t used;  // live entries plus deleted markers
     HNODE **A;
@@ -48,7 +49,7 @@ typedef struct HTABLE {
 
 typedef struct HITER {
     const HTABLE *h;
-    uint64_t curr;
+    int64_t curr;
 } HITER;
 
 /* 
@@ -96,17 +97,19 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
         return NULL;
     }
 
-    expected_size /= LOAD_FACTOR;
+    expected_size = expected_size / 3 * 4 + expected_size % 3 * 4 / 3;   // expected_size / LOAD_FACTOR
     h->capacity = expected_size <= 16 ? 16 : GLUE3(hash_, prefix, _roundup_pow2) (expected_size);
+    h->shift = 0;
+    while (((int64_t) 1 << h->shift) < h->capacity) {
+        h->shift++;
+    }
     h->size = 0;
     h->used = 0;
     memset(&(h->deleted), 0, sizeof(h->deleted));
-    h->A = malloc(h->capacity * sizeof(HNODE *));
+    h->A = calloc(h->capacity, sizeof(HNODE *));   /* all-bits-zero is a NULL pointer */
     if (h->A == NULL) {
+        free(h);
         return NULL;
-    }
-    for (int64_t i = 0; i < h->capacity; i++) {
-        h->A[i] = NULL;
     }
     hkey_t temp;
     h->hash_func = DEFAULT_HASH(temp);
@@ -236,13 +239,11 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
         return -1;
     }
     int64_t new_capacity = (h->size > LOAD_FACTOR * h->capacity / 2) ? 2 * h->capacity : h->capacity;
-    HNODE **new_A = malloc(new_capacity * sizeof(HNODE *));
+    HNODE **new_A = calloc(new_capacity, sizeof(HNODE *));
     if (new_A == NULL) {
         return -1;
     }
-    for (int64_t i = 0; i < new_capacity; i++) {
-        new_A[i] = NULL;
-    }
+    const int32_t new_shift = h->shift + (new_capacity != h->capacity);
 
     const uint64_t mask = new_capacity - UINT64_C(1);
 
@@ -253,7 +254,7 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
             continue;
         }
         uint64_t base = n->hash & mask;
-        uint64_t step = ((n->hash / new_capacity) & mask) | UINT64_C(1);
+        uint64_t step = ((n->hash >> new_shift) & mask) | UINT64_C(1);
 
         for (uint64_t pos = base;; pos = (pos + step) & mask) {
             if (new_A[pos] == NULL) {
@@ -267,6 +268,7 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
     free(h->A);
     h->A = new_A;
     h->capacity = new_capacity;
+    h->shift = new_shift;
     h->used = h->size;
     return 0;
 }
@@ -298,20 +300,20 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, hkey_t key, value_t value) {
     const uint64_t hash = hash_mix64(h->hash_func(key));
     const uint64_t mask = h->capacity - UINT64_C(1);
     const uint64_t base = hash & mask;
-    const uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
+    const uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
 
-    uint64_t first_empty = -1;
+    uint64_t first_empty = UINT64_MAX;
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == &(h->deleted)) {
-	    if (first_empty == -1) {
+	    if (first_empty == UINT64_MAX) {
 	        first_empty = pos;
 	    }
 	    continue;
         }
       
         if (h->A[pos] == NULL) {
-	    if (first_empty == -1) {
+	    if (first_empty == UINT64_MAX) {
 	        first_empty = pos;
 	    }
             HNODE *n = malloc(sizeof(HNODE));
@@ -364,7 +366,7 @@ int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, hkey_t key, value_t *value)
     uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
-    uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
+    uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == NULL) {
@@ -394,7 +396,7 @@ int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, hkey_t key, value_t *value) {
     uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
-    uint64_t step = ((hash / h->capacity) & mask) | UINT64_C(1);
+    uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == NULL) {
@@ -418,7 +420,7 @@ int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, hkey_t key, value_t *value) {
 int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, hkey_t *key, value_t *value) {
     HITER *iter = *iter_ptr;
     const HTABLE *h = iter->h;
-    uint64_t curr = iter->curr;
+    int64_t curr = iter->curr;
 
     while (1) {
         if (curr == h->capacity) {
