@@ -36,7 +36,7 @@ typedef struct PHNODE {
     value_t value;
 } PHNODE;
 
-typedef struct HLIST {
+typedef struct PHTABLE {
     int64_t capacity;
     int64_t size;
     int64_t used;  // live entries plus deleted markers

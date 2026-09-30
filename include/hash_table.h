@@ -35,7 +35,7 @@ typedef struct HNODE {
     value_t value;
 } HNODE;
 
-typedef struct HLIST {
+typedef struct HTABLE {
     int64_t capacity;
     int64_t size;
     int64_t used;  // live entries plus deleted markers
