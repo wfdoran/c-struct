@@ -108,7 +108,15 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
     assert(tail1 <= head0);
     
     if (tail1 == head0) {
-      return c->closed ? CHAN_CLOSED : CHAN_EMPTY;
+      if (!atomic_load(&c->closed)) {
+        return CHAN_EMPTY;
+      }
+      /* A send that completed before the close may have landed after the
+         emptiness check above, so look again before reporting CLOSED. */
+      if (tail1 == atomic_load(&c->head0)) {
+        return CHAN_CLOSED;
+      }
+      continue;
     }
 
     if (atomic_compare_exchange_weak(&c->tail1, &tail1, tail1 + 1)) {
