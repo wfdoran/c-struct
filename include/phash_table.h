@@ -222,10 +222,11 @@ void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
     h->comp = NULL;
     h->update = NULL;
 
+    pthread_rwlock_unlock(&(h->rwlock));
     pthread_rwlock_destroy(&(h->rwlock));
 
     free(h);
-    h_ptr = NULL;
+    *h_ptr = NULL;
 }
 
 /* int32_t hash_prefix_rehash(htable_prefix_t *h);

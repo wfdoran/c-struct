@@ -223,7 +223,7 @@ void GLUE3(hash_, prefix, _destroy) (HTABLE **h_ptr) {
     h->update = NULL;
 
     free(h);
-    h_ptr = NULL;
+    *h_ptr = NULL;
 }
 
 /* int32_t hash_prefix_rehash(htable_prefix_t *h);
