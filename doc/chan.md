@@ -17,7 +17,8 @@ type and prefix label before including `chan.h`.
 
 ### `chan_prefix_t *chan_prefix_init(int64_t capacity)`
 
-Allocates and initializes a channel with the given capacity.  To the
+Allocates and initializes a channel with the given capacity.  A capacity below 1 is
+rounded up to 1; unbuffered (rendezvous) channels are not provided.  To the
 user, a `chan_prefix_t` should be viewed as an opaque object.  There
 should be no need to directly access its fields
 
@@ -42,6 +43,8 @@ closed, or CHAN_ERROR on an error.
 
 Reads a value from the channel.  Blocks if the channel is empty.
 
+If `value` is `NULL`, the value is read and discarded.
+
 Returns CHAN_SUCCESS on success, CHAN_CLOSED if the channel if
 empty and closed, or CHAN_ERROR on an error. 
 
@@ -58,6 +61,8 @@ CHAN_CLOSED if the channel is closed, or CHAN_ERROR on error.
 
 Tries to read a value from a channel.  Does not block if the channel is
 empty.
+
+If `value` is `NULL`, the value is read and discarded.
 
 Returns CHAN_SUCCESS on successfully reading a value from the channel,
 CHAN_EMPTY if the channel is empty (no read), CHAN_CLOSED if the

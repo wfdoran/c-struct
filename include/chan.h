@@ -96,7 +96,7 @@ static inline uint32_t chan_rng_below(uint32_t n) {
 */ 
 
 typedef struct CHAN {
-  data_t * volatile data;
+  data_t *data;
   int64_t capacity;
   _Atomic int64_t tail0;           
   _Atomic int64_t tail1;     
@@ -113,6 +113,12 @@ typedef struct SELECT {
   data_t *value;
 } SELECT;
 
+/* chan_prefix_t *chan_prefix_init(int64_t capacity);
+
+   Allocates a channel that buffers up to capacity values.  A capacity
+   below 1 is rounded up to 1: unbuffered (rendezvous) channels are not
+   provided.
+*/
 CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
   CHAN *c = malloc(sizeof(CHAN));
   if (c == NULL) {
@@ -169,7 +175,9 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
 
     if (atomic_compare_exchange_weak(&c->tail1, &tail1, tail1 + 1)) {
       int64_t pos = tail1 % c->capacity;
-      *value = c->data[pos];
+      if (value != NULL) {
+        *value = c->data[pos];
+      }
       while (true) {
         int64_t expect = tail1;
         if (atomic_compare_exchange_weak(&c->tail0, &expect, tail1 + 1)) {
@@ -242,8 +250,11 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
 }
 
 int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
+  if (num_select < 0 || (num_select > 0 && s == NULL)) {
+    return CHAN_ERROR;
+  }
   if (num_select == 0) {
-    return 0;
+    return SELECT_DONE;
   }
   int32_t rc;
   bool all_omits = true;
@@ -306,6 +317,8 @@ int32_t GLUE3(select_, prefix, _option_done)(SELECT *s, int32_t i) {
   return 0;
 }
 
+#undef SELECT
+#undef CHAN
 #undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
