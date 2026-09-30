@@ -196,6 +196,9 @@ void GLUE3(tree_, prefix, _destroy) (TREE **a_ptr) {
 
 static NODE *GLUE3(tree_, prefix, _init_node) (data_t key) {
     NODE *n = malloc(sizeof(NODE));
+    if (n == NULL) {
+        return NULL;
+    }
     n->key = key;
     n->value = NULL;
     n->size = 1;
@@ -332,9 +335,15 @@ static NODE *GLUE3(tree_, prefix, _balance) (NODE *n) {
 
    Inserts a key/value at node n in the tree.
 */
-static NODE *GLUE3(tree_, prefix, _insert_node) (TREE *a, NODE *n, data_t key, void *value) {
+/* On an allocation failure, *rc is set to -1 and the subtree is returned unchanged. */
+static NODE *GLUE3(tree_, prefix, _insert_node) (TREE *a, NODE *n, data_t key, void *value,
+                                                 int32_t *rc) {
     if (n == NULL) {
         NODE *rv = GLUE3(tree_, prefix, _init_node) (key);
+        if (rv == NULL) {
+            *rc = -1;
+            return NULL;
+        }
         if (a->update == NULL) {
             rv->value = value;
         } else {
@@ -344,11 +353,19 @@ static NODE *GLUE3(tree_, prefix, _insert_node) (TREE *a, NODE *n, data_t key, v
     }
     int c = a->comp(&key, &(n->key));
     if (c < 0) {
-        n->left = GLUE3(tree_, prefix, _insert_node) (a, n->left, key, value);
+        NODE *child = GLUE3(tree_, prefix, _insert_node) (a, n->left, key, value, rc);
+        if (*rc != 0) {
+            return n;
+        }
+        n->left = child;
         n->left->parent = n;
     }
     if (c > 0) {
-        n->right = GLUE3(tree_, prefix, _insert_node) (a, n->right, key, value);
+        NODE *child = GLUE3(tree_, prefix, _insert_node) (a, n->right, key, value, rc);
+        if (*rc != 0) {
+            return n;
+        }
+        n->right = child;
         n->right->parent = n;
     }
     if (c == 0) {
@@ -367,7 +384,7 @@ static NODE *GLUE3(tree_, prefix, _insert_node) (TREE *a, NODE *n, data_t key, v
     return n;
 }
 
-/* void tree_prefix_insert(tree_prefix_t *a, data_t key, void *value)
+/* int32_t tree_prefix_insert(tree_prefix_t *a, data_t key, void *value)
 
    Inserts a key/value pair into the tree.  The only unclear part is
    what to do if this key already exists in the tree.  
@@ -384,11 +401,25 @@ static NODE *GLUE3(tree_, prefix, _insert_node) (TREE *a, NODE *n, data_t key, v
             value_free(old_value) 
 
        is done. 
+
+   return value:
+     -1 => error (a is NULL, no comp function has been set, or out of
+           memory; the tree is unchanged)
+      0 => ok
 */       
 
-void GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
-    a->root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value);
+int32_t GLUE3(tree_, prefix, _insert)(TREE *a, data_t key, void *value) {
+    if (a == NULL || a->comp == NULL) {
+        return -1;
+    }
+    int32_t rc = 0;
+    NODE *root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value, &rc);
+    if (rc != 0) {
+        return rc;
+    }
+    a->root = root;
     a->root->parent = NULL;
+    return 0;
 }
 
 /* NODE* tree_prefix_delete_min_node(NODE *n, NODE **min)
@@ -482,6 +513,10 @@ static NODE *GLUE3(tree_, prefix, _delete_node) (int (*comp) (data_t *, data_t *
 */
 
 KEYVAL GLUE3(tree_, prefix, _delete) (TREE *a, data_t key) {
+    if (a->comp == NULL) {
+        KEYVAL rv = {.key = key,.value = NULL,.found = false };
+        return rv;
+    }
     NODE *n = NULL;
     a->root = GLUE3(tree_, prefix, _delete_node) (a->comp, a->root, key, &n);
     if (a->root != NULL) {

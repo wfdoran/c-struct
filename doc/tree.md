@@ -25,9 +25,10 @@ Initializes an empty binary tree.
 
 Destroys a binary tree, frees all of its nodes, and sets the pointer to NULL.
 
-### `void tree_prefix_insert(tree_prefix_t *t, data_t key, void *value);`
+### `int32_t tree_prefix_insert(tree_prefix_t *t, data_t key, void *value);`
 
-Inserts a key-value pair into a binary tree.
+Inserts a key-value pair into a binary tree.  Returns 0 on success, or -1 if `t` is `NULL`,
+no comparison function has been set, or memory could not be allocated (the tree is unchanged).
 
 ### `void* tree_prefix_delete(tree_prefix_t *t, data_t key);`
 
