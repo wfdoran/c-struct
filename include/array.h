@@ -617,101 +617,109 @@ static char *GLUE(get_, prefix)() {
 }
 
 int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) {
-  
+  if (a == NULL || filename == NULL) {
+    return -1;
+  }
+
+  char *prefix_str = GLUE(get_, prefix)();
+  if (prefix_str == NULL) {
+    return -1;
+  }
+
   FILE *fp = fopen(filename, "wb");
   if (fp == NULL) {
+    free(prefix_str);
     return -1;
   }
 
   const char *header = "Array===";
   fwrite(header, sizeof(char), 8, fp);
-  
-  char *prefix_str = GLUE(get_, prefix)();
   serialize_string(prefix_str, fp);
   free(prefix_str);
 
   const size_t data_size = sizeof(data_t);
   fwrite(&data_size, sizeof(size_t), 1, fp);
-  
+
   const size_t arr_size = a->size;
   fwrite(&arr_size, sizeof(size_t), 1, fp);
+  fwrite(a->data, data_size, arr_size, fp);
 
-  size_t num_written = fwrite(a->data, data_size, arr_size, fp);
-  if (num_written != arr_size) {
-    return -1;
+  /* stdio errors are sticky, so one check after all the writes covers them */
+  int32_t rc = (fflush(fp) != 0 || ferror(fp)) ? -1 : 0;
+  if (fclose(fp) != 0) {
+    rc = -1;
   }
-
-  fflush(fp);
-  fclose(fp);
-  return 0;
+  return rc;
 }
 
 TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
   if (filename == NULL) {
     return NULL;
   }
-  
+
   FILE *fp = fopen(filename, "rb");
   if (fp == NULL) {
     return NULL;
   }
-  
-  char header[8];
-  size_t num_read = fread(header, sizeof(char), 8, fp);
-  if (num_read != 8) {
-    return NULL;
-  }
 
-  if (strncmp(header, "Array===", 8) != 0) {
-    return NULL;
-  }
-
+  TYPE *a = NULL;
   char *prefix_str1 = GLUE(get_, prefix)();
-  char *prefix_str2 = deserialize_string(fp);
-  int comp = strcmp(prefix_str1, prefix_str2);
-  free(prefix_str1);
-  free(prefix_str2);
-  if (comp != 0) {
-    printf("XXX\n");
-    return NULL;
+  char *prefix_str2 = NULL;
+
+  char header[8];
+  if (fread(header, sizeof(char), 8, fp) != 8 || strncmp(header, "Array===", 8) != 0) {
+    goto fail;
   }
-  
+
+  prefix_str2 = deserialize_string(fp);
+  if (prefix_str1 == NULL || prefix_str2 == NULL || strcmp(prefix_str1, prefix_str2) != 0) {
+    goto fail;
+  }
 
   size_t data_size;
-  num_read = fread(&data_size, sizeof(size_t), 1, fp);
-
-  if (num_read != 1 || data_size != sizeof(data_t)) {
-    return NULL;
+  if (fread(&data_size, sizeof(size_t), 1, fp) != 1 || data_size != sizeof(data_t)) {
+    goto fail;
   }
 
   size_t arr_size;
-  num_read = fread(&arr_size, sizeof(size_t), 1, fp);
-  if (num_read != 1) {
-    return NULL;
+  if (fread(&arr_size, sizeof(size_t), 1, fp) != 1) {
+    goto fail;
   }
 
-  TYPE *a = GLUE3(array_, prefix, _init)();
+  a = GLUE3(array_, prefix, _init)();
   if (a == NULL) {
-    return NULL;
+    goto fail;
   }
 
-  free(a->alloc);
-  a->alloc = malloc(arr_size * data_size);
-  if (a->alloc == NULL) {
-    return NULL;
-  }
-  a->data = a->alloc;
-  a->capacity = arr_size;
+  if (arr_size > 0) {
+    data_t *buf = malloc(arr_size * data_size);
+    if (buf == NULL) {
+      goto fail;
+    }
+    free(a->alloc);
+    a->alloc = buf;
+    a->data = buf;
+    a->capacity = arr_size;
 
-  num_read = fread(a->data, data_size, arr_size, fp);
-  if (num_read != arr_size) {
-    return NULL;
+    if (fread(a->data, data_size, arr_size, fp) != arr_size) {
+      goto fail;
+    }
+    a->size = arr_size;
   }
-  a->size = arr_size;
 
+  free(prefix_str1);
+  free(prefix_str2);
   fclose(fp);
-
   return a;
+
+fail:
+  free(prefix_str1);
+  free(prefix_str2);
+  if (a != NULL) {
+    GLUE3(array_, prefix, _destroy) (&a);
+  }
+  fclose(fp);
+  return NULL;
 }
 
 #undef HEAP_RIGHT_CHILD

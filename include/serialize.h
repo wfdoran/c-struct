@@ -3,32 +3,38 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
+/* Sizes are written as a base-128 varint: 7 bits per byte, least significant
+   group first, high bit set on every byte except the last. */
 static void serialize_size(size_t x, FILE *fp) {
-  size_t tmp = x;
-  while (tmp > 0) {
+  do {
     uint8_t v = x & 0x7f;
-    tmp >>= 7;
-    if (tmp > 0) {
-      v ^= 0x80;
+    x >>= 7;
+    if (x != 0) {
+      v |= 0x80;
     }
     fputc(v, fp);
-  }
+  } while (x != 0);
 }
 
-static size_t deserialize_size(FILE *fp) {
+/* Returns false on a truncated or overlong value; *out is set only on success. */
+static bool deserialize_size(FILE *fp, size_t *out) {
   size_t rv = 0;
-  while (true) {
+  for (int shift = 0; shift < 64; shift += 7) {
     int c = fgetc(fp);
     if (c == EOF) {
-      return rv;
+      return false;
     }
-
-    rv = (rv << 7) ^ (c & 0x7f);
+    rv |= (size_t) (c & 0x7f) << shift;
     if ((c & 0x80) == 0) {
-      return rv;
+      *out = rv;
+      return true;
     }
   }
+  return false;
 }
 
 static void serialize_string(const char *s, FILE *fp) {
@@ -38,13 +44,16 @@ static void serialize_string(const char *s, FILE *fp) {
 }
 
 static char* deserialize_string(FILE *fp) {
-  size_t s_len = deserialize_size(fp);
-  char *s = malloc((s_len + 1) * sizeof(char));
+  size_t s_len;
+  if (!deserialize_size(fp, &s_len) || s_len >= SIZE_MAX) {
+    return NULL;
+  }
+  char *s = malloc(s_len + 1);
   if (s == NULL) {
     return NULL;
   }
-  size_t num_read = fread(s, sizeof(char), s_len, fp);
-  if (num_read != s_len) {
+  if (fread(s, sizeof(char), s_len, fp) != s_len) {
+    free(s);
     return NULL;
   }
   s[s_len] = 0;
