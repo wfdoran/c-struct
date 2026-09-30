@@ -162,6 +162,12 @@ interval_mul(interval_t a, interval_t b) {
 
   fesetround(save);
 
+  /* fmin and fmax ignore NaN, which would silently drop a 0 * infinity term */
+  if (isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3])) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
   rv.valid = true;
   return rv;  
 }
@@ -193,6 +199,12 @@ interval_fma(interval_t a, interval_t b, interval_t c) {
   rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
 
   fesetround(save);
+
+  /* fmin and fmax ignore NaN, which would silently drop a 0 * infinity term */
+  if (isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3])) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
 
   rv.valid = true;
   return rv;  
@@ -232,6 +244,12 @@ interval_div(interval_t a, interval_t b) {
 
   fesetround(save);
 
+  /* fmin and fmax ignore NaN, which would silently drop a 0 * infinity term */
+  if (isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3])) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+
   rv.valid = true;
   return rv;  
 }
@@ -241,14 +259,6 @@ interval_fmax(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
-  }
-
-  if (a.lo > b.hi) {
-    return a;
-  }
-
-  if (b.lo > b.hi) {
-    return b;
   }
 
   interval_t rv;
@@ -371,15 +381,11 @@ interval_floor(interval_t a) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  int save = fegetround();
-
-  fesetround(FE_DOWNWARD);
   interval_t rv = {
     .hi = floor(a.hi),
     .lo = floor(a.lo),
     .valid = true
   };
-  fesetround(save);
   return rv;
 }
   
@@ -389,15 +395,11 @@ interval_ceil(interval_t a) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  int save = fegetround();
-
-  fesetround(FE_UPWARD);
   interval_t rv = {
     .hi = ceil(a.hi),
     .lo = ceil(a.lo),
     .valid = true
   };
-  fesetround(save);
   return rv;
 }
   
@@ -545,18 +547,30 @@ done:
   return rv;
 }
 
-interval_t interval_pow_int(interval_t a, uint32_t e) {
+interval_t interval_pow_uint(interval_t a, uint32_t e) {
   interval_t rv = interval_from_double(1.0);
 
   while (e > 0) {
     if ((e & 1) == 1) {
       rv = interval_mul(rv, a);
     }
-    a = interval_mul(a,a);
     e >>= 1;
+    if (e > 0) {
+      a = interval_mul(a, a);
+    }
   }
 
   return rv;
+}
+
+/* A negative exponent is the reciprocal of the positive power, which is
+   invalid if that power contains zero (interval_div). */
+interval_t interval_pow_int(interval_t a, int32_t e) {
+  if (e >= 0) {
+    return interval_pow_uint(a, (uint32_t) e);
+  }
+  interval_t one = {.lo = 1.0, .hi = 1.0, .valid = true};
+  return interval_div(one, interval_pow_uint(a, UINT32_C(0) - (uint32_t) e));
 }
 
 interval_t interval_pow_dbl(interval_t a, interval_t b) {
@@ -567,7 +581,7 @@ interval_t interval_pow_dbl(interval_t a, interval_t b) {
 
 #define interval_pow(x, e) _Generic((e),  \
   int: interval_pow_int,                  \
-  uint32_t: interval_pow_int,             \
+  uint32_t: interval_pow_uint,            \
   interval_t: interval_pow_dbl            \
 )(x,e)
 
