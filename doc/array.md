@@ -39,9 +39,10 @@ Sets the entry at position `idx` to `value`.
 
 ## Queue
 
-### `void array_prefix_append(array_prefix_t *a, data_t value)`
+### `int32_t array_prefix_append(array_prefix_t *a, data_t value)`
 
 Appends `value` to the end of the array.  The array will be expanded as needed.
+Returns 0 on success, or -1 if `a` is `NULL` or memory could not be allocated (the array is unchanged).
 
 ### `data_t array_prefix_pop(array_prefix_t *a)`
 

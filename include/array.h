@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <comp.h>
 
@@ -52,6 +53,7 @@ TYPE *GLUE3(array_, prefix, _init) () {
     }
     a->alloc = malloc(sizeof(data_t));
     if (a->alloc == NULL) {
+        free(a);
         return NULL;
     }
     a->data = a->alloc;
@@ -77,12 +79,17 @@ TYPE *GLUE3(array_, prefix, _init) () {
 */
 
 TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
+    if (size > SIZE_MAX / sizeof(data_t)) {
+        return NULL;
+    }
     TYPE *a = malloc(sizeof(TYPE));
     if (a == NULL) {
         return NULL;
     }
-    a->alloc = malloc(size * sizeof(data_t));
+    /* never malloc(0): NULL would be indistinguishable from failure */
+    a->alloc = malloc((size > 0 ? size : 1) * sizeof(data_t));
     if (a->alloc == NULL) {
+        free(a);
         return NULL;
     }
     a->data = a->alloc;
@@ -116,8 +123,9 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
     if (out == NULL) {
         return NULL;
     }
-    out->alloc = malloc(in->size * sizeof(data_t));
+    out->alloc = malloc((in->size > 0 ? in->size : 1) * sizeof(data_t));
     if (out->alloc == NULL) {
+        free(out);
         return NULL;
     }
     out->data = out->alloc;
@@ -161,6 +169,7 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
     }
     out->alloc = malloc(size * sizeof(data_t));
     if (out->alloc == NULL) {
+        free(out);
         return NULL;
     }
     out->data = out->alloc;
@@ -460,13 +469,25 @@ int32_t GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
 }
 
 /* 
-   Appends a value to the end of an array. 
+   Appends a value to the end of an array.
+
+   return value:
+     -1 => error (a is NULL or out of memory; the array is unchanged)
+      0 => ok
 */
-void GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
+int32_t GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
+    if (a == NULL) {
+        return -1;
+    }
     if (a->size == a->capacity) {
+        if (a->capacity > SIZE_MAX / 2 / sizeof(data_t)) {
+            return -1;
+        }
         size_t new_capacity = a->capacity == 0 ? 1 : 2 * a->capacity;
         data_t *tmp = malloc(new_capacity * sizeof(data_t));
-        assert(tmp != NULL);
+        if (tmp == NULL) {
+            return -1;
+        }
         memcpy(tmp, a->data, a->capacity * sizeof(data_t));
         free(a->alloc);
         a->alloc = tmp;
@@ -475,6 +496,7 @@ void GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
     }
     a->data[a->size] = value;
     a->size++;
+    return 0;
 }
 
 /* 
@@ -511,7 +533,9 @@ int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
         return -1;
     }
     assert(a->comp != NULL);
-    GLUE3(array_, prefix, _append) (a, value);
+    if (GLUE3(array_, prefix, _append) (a, value) != 0) {
+        return -1;
+    }
     size_t pos = a->size - 1;
     while (pos != 0) {
         size_t parent = HEAP_PARENT(pos);
@@ -692,6 +716,9 @@ TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
   }
 
   if (arr_size > 0) {
+    if (arr_size > SIZE_MAX / data_size) {
+      goto fail;
+    }
     data_t *buf = malloc(arr_size * data_size);
     if (buf == NULL) {
       goto fail;

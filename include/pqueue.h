@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <comp.h>
 
@@ -157,7 +158,8 @@ static inline void GLUE3(pqueue_, prefix, _destroy) (PQUEUE **q_ptr) {
    are allowed.
 
    return value:
-     -1 => error (q is NULL or no comp function has been set)
+     -1 => error (q is NULL, no comp function has been set, or out of memory;
+           the queue is unchanged)
       0 => ok
 */
 static inline int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void *value) {
@@ -167,10 +169,13 @@ static inline int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void
 
     if (q->size == q->capacity) {
         size_t new_capacity = q->capacity == 0 ? 1 : 2 * q->capacity;
-        PNODE *tmp = malloc(new_capacity * sizeof(PNODE));
-        assert(tmp != NULL);
-        memcpy(tmp, q->data, q->capacity * sizeof(PNODE));
-        free(q->data);
+        if (q->capacity > SIZE_MAX / 2 / sizeof(PNODE)) {
+            return -1;
+        }
+        PNODE *tmp = realloc(q->data, new_capacity * sizeof(PNODE));
+        if (tmp == NULL) {
+            return -1;
+        }
         q->data = tmp;
         q->capacity = new_capacity;
     }
