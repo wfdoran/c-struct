@@ -718,25 +718,30 @@ KEYVAL GLUE3(tree_, prefix, _postwalk_next) (void **state) {
     return rv;
 }
 
-void GLUE3(tree_, prefix, _walk_init2) (TREE *a, data_t key, void **state) {
-    if (a->root == NULL) {
-        *state = NULL;
-    } else {
-        NODE *n = a->root;
-        while (true) {
-            int c = a->comp(&key, &(n->key));
-            if (c == 0) {
-                break;
-            }
+/* void tree_prefix_walk_init2(tree_prefix_t *a, data_t key, void **state);
 
-            NODE *next = c > 0 ? n->right : n->left;
-            if (next == NULL) {
-                break;
-            }
-            n = next;
+   Initializes an in-order walk at the first node with a key greater
+   than or equal to the given key.  If there is no such node, state is
+   set to NULL, so the caller must check state before calling
+   tree_prefix_walk_next().
+*/
+void GLUE3(tree_, prefix, _walk_init2) (TREE *a, data_t key, void **state) {
+    NODE *best = NULL;
+    NODE *n = a->root;
+    while (n != NULL) {
+        int c = a->comp(&key, &(n->key));
+        if (c == 0) {
+            best = n;
+            break;
         }
-        *state = n;
+        if (c < 0) {
+            best = n;
+            n = n->left;
+        } else {
+            n = n->right;
+        }
     }
+    *state = best;
 }
 
 void GLUE3(tree_, prefix, _walk_init) (TREE *a, void **state) {

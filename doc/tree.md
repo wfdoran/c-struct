@@ -58,8 +58,8 @@ At the last node, the internals of the state are freed and state is set to NULL.
 
 ### `void tree_prefix_walk_init2(tree_prefix_t *t, data_t key, void **state)`
 
-Initializes the in-order walk at the first node which is equal to greater than
-key.
+Initializes the in-order walk at the first node which is equal to or greater than
+key.  If there is no such node, `*state` is set to `NULL`.
 
 ### `void tree_prefix_set_update(tree_prefix_t *t, void *(*update) (void *, void *));`
 
