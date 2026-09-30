@@ -343,7 +343,8 @@ interval_erf(interval_t a) {
 
 interval_t
 interval_sqrt(interval_t a) {
-  if (!a.valid) {
+  /* like interval_log, invalid unless the whole interval is in the domain (also rejects NaN) */
+  if (!a.valid || !(a.lo >= 0.0)) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
