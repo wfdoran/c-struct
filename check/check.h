@@ -23,17 +23,19 @@
 static uint32_t _rng_state = 0;
 
 // https://en.wikipedia.org/wiki/Linear_congruential_generator
+// The low bits of an LCG have short periods, so each 16 bit half of the
+// result comes from the high bits of the state.
 static uint32_t get_rand() {
-  uint32_t a = 1664525;
-  uint32_t c = 1013904223;
+  const uint32_t a = 1664525;
+  const uint32_t c = 1013904223;
 
   _rng_state = (a * _rng_state) + c;
-  uint32_t rv = (a >> 16);
+  uint32_t hi = _rng_state >> 16;
 
   _rng_state = (a * _rng_state) + c;
-  rv = (_rng_state & 0xffff) ^ rv;
+  uint32_t lo = _rng_state >> 16;
 
-  return rv;
+  return (hi << 16) | lo;
 }
 
 static void seed_rand(uint32_t seed) {
