@@ -37,6 +37,7 @@ typedef struct HNODE {
 typedef struct HLIST {
     int64_t capacity;
     int64_t size;
+    int64_t used;  // live entries plus deleted markers
     HNODE **A;
     uint64_t (*hash_func) (key_t);
     int (*comp) (key_t, key_t);
@@ -97,6 +98,7 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
     expected_size /= LOAD_FACTOR;
     h->capacity = expected_size <= 16 ? 16 : GLUE3(hash_, prefix, _roundup_pow2) (expected_size);
     h->size = 0;
+    h->used = 0;
     h->A = malloc(h->capacity * sizeof(HNODE *));
     if (h->A == NULL) {
         return NULL;
@@ -231,7 +233,7 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
     if (h == NULL) {
         return -1;
     }
-    int64_t new_capacity = 2 * h->capacity;
+    int64_t new_capacity = (h->size > LOAD_FACTOR * h->capacity / 2) ? 2 * h->capacity : h->capacity;
     HNODE **new_A = malloc(new_capacity * sizeof(HNODE *));
     if (new_A == NULL) {
         return -1;
@@ -263,6 +265,7 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
     free(h->A);
     h->A = new_A;
     h->capacity = new_capacity;
+    h->used = h->size;
     return 0;
 }
 
@@ -317,8 +320,9 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, key_t key, value_t value) {
             n->key = key;
             n->value = value;
 	    if (h->A[first_empty] == NULL) {
-	        h->size++;
+	        h->used++;
 	    }
+	    h->size++;
             h->A[first_empty] = n;
             break;
         }
@@ -331,7 +335,7 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, key_t key, value_t value) {
         }
     }
 
-    if (h->size > LOAD_FACTOR * h->capacity) {
+    if (h->used > LOAD_FACTOR * h->capacity) {
         int32_t rc = GLUE3(hash_, prefix, _rehash) (h);
         if (rc != 0) {
             return rc;
