@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <assert.h>
 #include "hash.h"
@@ -95,6 +96,7 @@ PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
     h->capacity = expected_size <= 16 ? 16 : GLUE3(phash_, prefix, _roundup_pow2) (expected_size);
     h->size = 0;
     h->used = 0;
+    memset(&(h->deleted), 0, sizeof(h->deleted));
     h->A = malloc(h->capacity * sizeof(PHNODE *));
     if (h->A == NULL) {
         return NULL;
@@ -476,7 +478,7 @@ int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, key_t key, value_t *value) {
 	    pthread_rwlock_unlock(&(h->rwlock));
             return 0;
         } else {
-            if (h->A[pos]->hash == hash) {
+            if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
                 if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
                     if (value != NULL) {
                         *value = h->A[pos]->value;
