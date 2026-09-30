@@ -488,19 +488,31 @@ int32_t GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
         return -1;
     }
     if (a->size == a->capacity) {
-        if (a->capacity > SIZE_MAX / 2 / sizeof(data_t)) {
-            return -1;
+        /* capacity counts the slots from data to the end of the block; the
+           front slots in front of data were freed by array_prefix_pop_first() */
+        size_t front = a->data - a->alloc;
+
+        if (front > 0 && front >= a->size) {
+            /* enough room was freed at the front: slide the entries down */
+            memmove(a->alloc, a->data, a->size * sizeof(data_t));
+            a->data = a->alloc;
+            a->capacity += front;
+        } else {
+            if (a->capacity > SIZE_MAX / 2 / sizeof(data_t)) {
+                return -1;
+            }
+            size_t new_capacity = a->capacity == 0 ? 1 : 2 * a->capacity;
+            if (new_capacity > SIZE_MAX / sizeof(data_t) - front) {
+                return -1;
+            }
+            data_t *tmp = realloc(a->alloc, (front + new_capacity) * sizeof(data_t));
+            if (tmp == NULL) {
+                return -1;
+            }
+            a->alloc = tmp;
+            a->data = tmp + front;
+            a->capacity = new_capacity;
         }
-        size_t new_capacity = a->capacity == 0 ? 1 : 2 * a->capacity;
-        data_t *tmp = malloc(new_capacity * sizeof(data_t));
-        if (tmp == NULL) {
-            return -1;
-        }
-        memcpy(tmp, a->data, a->capacity * sizeof(data_t));
-        free(a->alloc);
-        a->alloc = tmp;
-        a->data = a->alloc;
-        a->capacity = new_capacity;
     }
     a->data[a->size] = value;
     a->size++;
