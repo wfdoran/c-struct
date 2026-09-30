@@ -93,12 +93,14 @@ PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
         return NULL;
     }
 
+    expected_size /= LOAD_FACTOR;
     h->capacity = expected_size <= 16 ? 16 : GLUE3(phash_, prefix, _roundup_pow2) (expected_size);
     h->size = 0;
     h->used = 0;
     memset(&(h->deleted), 0, sizeof(h->deleted));
     h->A = malloc(h->capacity * sizeof(PHNODE *));
     if (h->A == NULL) {
+        free(h);
         return NULL;
     }
     for (int64_t i = 0; i < h->capacity; i++) {
@@ -110,7 +112,11 @@ PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
     _unused(temp);
     h->update = NULL;
 
-    pthread_rwlock_init(&(h->rwlock), NULL);
+    if (pthread_rwlock_init(&(h->rwlock), NULL) != 0) {
+        free(h->A);
+        free(h);
+        return NULL;
+    }
 
     return h;
 }
@@ -294,10 +300,14 @@ static int32_t GLUE3(phash_, prefix, _rehash) (PHTABLE *h) {
 */
 
 int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, hkey_t key, value_t value) {
-    if (h == NULL || h->hash_func == NULL) {
+    if (h == NULL) {
         return -1;
     }
     pthread_rwlock_wrlock(&(h->rwlock));
+    if (h->hash_func == NULL) {
+        pthread_rwlock_unlock(&(h->rwlock));
+        return -1;
+    }
 
     const uint64_t hash = hash_mix64(h->hash_func(key));
     const uint64_t mask = h->capacity - UINT64_C(1);
@@ -356,13 +366,17 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, hkey_t key, value_t value) {
 
 int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, hkey_t key, value_t value,
 					       value_t (*update) (value_t, value_t)) {
-    if (h == NULL || h->hash_func == NULL) {
+    if (h == NULL) {
         return -1;
     }
     if (update == NULL) {
       return -1;
     }
     pthread_rwlock_wrlock(&(h->rwlock));
+    if (h->hash_func == NULL) {
+        pthread_rwlock_unlock(&(h->rwlock));
+        return -1;
+    }
 
     const uint64_t hash = hash_mix64(h->hash_func(key));
     const uint64_t mask = h->capacity - UINT64_C(1);
@@ -431,10 +445,14 @@ int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, hkey_t key, value_t v
 */
 
 int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, hkey_t key, value_t *value) {
-    if (h == NULL || h->hash_func == NULL) {
+    if (h == NULL) {
         return -1;
     }
     pthread_rwlock_rdlock(&(h->rwlock));
+    if (h->hash_func == NULL) {
+        pthread_rwlock_unlock(&(h->rwlock));
+        return -1;
+    }
     uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
     uint64_t base = hash & mask;
@@ -464,10 +482,14 @@ int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, hkey_t key, value_t *value) {
 */
 
 int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, value_t *value) {
-    if (h == NULL || h->hash_func == NULL) {
+    if (h == NULL) {
         return -1;
     }
     pthread_rwlock_wrlock(&(h->rwlock));
+    if (h->hash_func == NULL) {
+        pthread_rwlock_unlock(&(h->rwlock));
+        return -1;
+    }
 
     uint64_t hash = hash_mix64(h->hash_func(key));
     uint64_t mask = h->capacity - UINT64_C(1);
