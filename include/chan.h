@@ -4,6 +4,8 @@
 #include <stdatomic.h>
 #include <sched.h>
 #include <assert.h>
+#include <time.h>
+#include <sys/random.h>
 
 #ifndef data_t
 #error "data_t not defined"
@@ -28,6 +30,52 @@
 #define SELECT_SEND (0)
 #define SELECT_RECV (1)
 #define SELECT_OMIT (2)
+
+/* Random numbers for select_prefix_one, which tries its cases in random
+   order so that no ready case can starve the others.  This only needs
+   fairness, not unpredictability, so each thread owns a small, fast
+   splitmix64 generator:
+
+     * thread safe: the state is _Thread_local, so there is nothing shared
+       and no locking;
+     * self-seeding: the first use in a thread seeds it from the operating
+       system (getentropy).  If that fails, it falls back to mixing the
+       clock, the address of the thread's own state, and a global counter,
+       which still gives every thread a different stream.
+*/
+static _Thread_local uint64_t chan_rng_state;
+static _Thread_local bool chan_rng_seeded = false;
+static atomic_uint_fast64_t chan_rng_counter = 0;
+
+static inline uint64_t chan_rng_next(void) {
+  if (!chan_rng_seeded) {
+    uint64_t seed;
+    if (getentropy(&seed, sizeof(seed)) != 0) {
+      struct timespec ts = {0, 0};
+      timespec_get(&ts, TIME_UTC);
+      seed = ((uint64_t) ts.tv_sec << 30) ^ (uint64_t) ts.tv_nsec;
+      seed ^= (uint64_t) (uintptr_t) &chan_rng_state;
+      seed += UINT64_C(0x9e3779b97f4a7c15) * (1 + (uint64_t) atomic_fetch_add(&chan_rng_counter, 1));
+    }
+    chan_rng_state = seed;
+    chan_rng_seeded = true;
+  }
+
+  uint64_t z = (chan_rng_state += UINT64_C(0x9e3779b97f4a7c15));
+  z = (z ^ (z >> 30)) * UINT64_C(0xbf58476d1ce4e5b9);
+  z = (z ^ (z >> 27)) * UINT64_C(0x94d049bb133111eb);
+  return z ^ (z >> 31);
+}
+
+/* Uniform value in [0, n) for n > 0, without modulo bias. */
+static inline uint32_t chan_rng_below(uint32_t n) {
+  const uint32_t threshold = (uint32_t) (-n) % n;   /* 2^32 mod n */
+  uint32_t r;
+  do {
+    r = (uint32_t) (chan_rng_next() >> 32);
+  } while (r < threshold);
+  return r % n;
+}
 #endif
 
 
@@ -204,7 +252,7 @@ int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
     perm[i] = i;
   }
   for (int32_t i = 1; i < num_select; i++) {
-    int32_t j = arc4random() % (i + 1);
+    int32_t j = (int32_t) chan_rng_below((uint32_t) (i + 1));
     int32_t temp = perm[i];
     perm[i] = perm[j];
     perm[j] = temp;
