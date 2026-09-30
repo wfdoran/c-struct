@@ -538,6 +538,29 @@ size_t GLUE3(array_, prefix, _capacity) (const TYPE *a) {
 #define HEAP_LEFT_CHILD(x) (2*(x) + 1)
 #define HEAP_RIGHT_CHILD(x) (2*(x) + 2)
 
+/* Restores the heap order below pos, assuming both subtrees of pos are
+   already heaps.  The entry at pos is moved down, toward the larger child,
+   until it fits. */
+static void GLUE3(array_, prefix, _sift_down) (TYPE *a, size_t pos) {
+    data_t last = a->data[pos];
+
+    while (true) {
+        size_t child = HEAP_LEFT_CHILD(pos);
+        if (child >= a->size) {
+            break;
+        }
+        if (child + 1 < a->size && a->comp(&a->data[child + 1], &a->data[child]) > 0) {
+            child++;
+        }
+        if (a->comp(&a->data[child], &last) <= 0) {
+            break;
+        }
+        a->data[pos] = a->data[child];
+        pos = child;
+    }
+    a->data[pos] = last;
+}
+
 /* 
    Viewing the array as a heap, pushes a value onto the heap.
    
@@ -590,33 +613,14 @@ data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
     a->size--;
 
     if (a->size > 0) {
-        /* Move a hole down from the root, always toward the larger child, until
-           the last element fits: two comparisons per level, stopping early on
-           equal keys. */
-        data_t last = a->data[a->size];
-        size_t pos = 0;
-
-        while (true) {
-            size_t child = HEAP_LEFT_CHILD(pos);
-            if (child >= a->size) {
-                break;
-            }
-            if (child + 1 < a->size && a->comp(&a->data[child + 1], &a->data[child]) > 0) {
-                child++;
-            }
-            if (a->comp(&a->data[child], &last) <= 0) {
-                break;
-            }
-            a->data[pos] = a->data[child];
-            pos = child;
-        }
-        a->data[pos] = last;
+        a->data[0] = a->data[a->size];
+        GLUE3(array_, prefix, _sift_down) (a, 0);
     }
     return rv;
 }
 
 /* 
-   Heapifies an array.
+   Heapifies an array in O(n) time.
 */
 
 int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
@@ -626,10 +630,11 @@ int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
     if (a->comp == NULL) {
         return -1;
     }
-    size_t size = a->size;
-    a->size = 0;
-    for (size_t i = 0; i < size; i++) {
-        GLUE3(array_, prefix, _heappush) (a, a->data[i]);
+    /* Floyd's construction: sift down every entry that has a child, last to
+       first.  This takes O(n) comparisons, where pushing each entry in turn
+       takes O(n log n) in the worst case. */
+    for (size_t i = a->size / 2; i > 0; i--) {
+        GLUE3(array_, prefix, _sift_down) (a, i - 1);
     }
     return 0;
 }
