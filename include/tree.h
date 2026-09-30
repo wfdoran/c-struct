@@ -442,6 +442,26 @@ static NODE *GLUE3(tree_, prefix, _delete_min_node) (NODE *n, NODE **min) {
     return n;
 }
 
+/* NODE* tree_prefix_delete_max_node(NODE *n, NODE **max)
+
+   Removes the maximum node from the non-empty subtree rooted at n.  The
+   removed node is returned in max, and the return value is the new root
+   of the subtree (rebalanced).
+*/
+static NODE *GLUE3(tree_, prefix, _delete_max_node) (NODE *n, NODE **max) {
+    if (n->right == NULL) {
+        *max = n;
+        return n->left;
+    }
+    n->right = GLUE3(tree_, prefix, _delete_max_node) (n->right, max);
+    if (n->right != NULL) {
+        n->right->parent = n;
+    }
+    n = GLUE3(tree_, prefix, _balance) (n);
+    GLUE3(tree_, prefix, _fillin) (n);
+    return n;
+}
+
 /* tree_prefix_delete_node(int (*comp) (data_t *, data_t *), NODE *n, data_t key, NODE **rv)
 
    Deletes the node with key value key from the subtree rooted at n.
@@ -563,17 +583,20 @@ KEYVAL GLUE3(tree_, prefix, _retrieve) (TREE *a, data_t key) {
 */
 
 KEYVAL GLUE3(tree_, prefix, _delete_min) (TREE *a) {
-    NODE *n = a->root;
-    if (n == NULL) {
+    if (a->root == NULL) {
         KEYVAL rv = {.value = NULL,.found = false };
         return rv;
     }
 
-    while (n->left != NULL) {
-        n = n->left;
+    NODE *n = NULL;
+    a->root = GLUE3(tree_, prefix, _delete_min_node) (a->root, &n);
+    if (a->root != NULL) {
+        a->root->parent = NULL;
     }
 
-    return GLUE3(tree_, prefix, _delete) (a, n->key);
+    KEYVAL rv = {.key = n->key,.value = n->value,.found = true };
+    free(n);
+    return rv;
 }
 
 
@@ -583,17 +606,20 @@ KEYVAL GLUE3(tree_, prefix, _delete_min) (TREE *a) {
   node is returned.
 */
 KEYVAL GLUE3(tree_, prefix, _delete_max) (TREE *a) {
-    NODE *n = a->root;
-    if (n == NULL) {
+    if (a->root == NULL) {
         KEYVAL rv = {.value = NULL,.found = false };
         return rv;
     }
 
-    while (n->right != NULL) {
-        n = n->right;
+    NODE *n = NULL;
+    a->root = GLUE3(tree_, prefix, _delete_max_node) (a->root, &n);
+    if (a->root != NULL) {
+        a->root->parent = NULL;
     }
 
-    return GLUE3(tree_, prefix, _delete) (a, n->key);
+    KEYVAL rv = {.key = n->key,.value = n->value,.found = true };
+    free(n);
+    return rv;
 }
 
 /* 
