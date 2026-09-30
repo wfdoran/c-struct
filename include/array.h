@@ -104,7 +104,7 @@ TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
 #else
     a->have_null_value = false;
 #endif
-    for (int64_t i = 0; i < size; i++) {
+    for (size_t i = 0; i < size; i++) {
         a->data[i] = default_value;
     }
     return a;
@@ -137,7 +137,7 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
       out->null_value = in->null_value;
     }
     if (f != NULL) {
-        for (int64_t i = 0; i < in->size; i++) {
+        for (size_t i = 0; i < in->size; i++) {
             out->data[i] = f(in->data[i]);
         }
     } else {
@@ -159,7 +159,7 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
     if (in == NULL) {
         return NULL;
     }
-    if (left < 0 || right <= left || right > in->size) {
+    if (right <= left || right > in->size) {
         return NULL;
     }
     const size_t size = right - left;
@@ -181,7 +181,7 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
       out->null_value = in->null_value;
     }
     if (f != NULL) {
-        for (int64_t i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i++) {
             out->data[i] = f(in->data[i + left]);
         }
     } else {
@@ -271,11 +271,11 @@ int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
 */
 
 ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
-    size_t lo = -1;
-    size_t hi = a->size;
+    ssize_t lo = -1;
+    ssize_t hi = (ssize_t) a->size;
 
     while (hi - lo > 1) {
-        size_t mid = lo + (hi - lo) / 2;
+        ssize_t mid = lo + (hi - lo) / 2;
         int x = a->comp(&a->data[mid], &v);
         if (x == 0) {
             return mid;
@@ -310,11 +310,11 @@ ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
 */
 
 ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
-    size_t lo = -1;
-    size_t hi = a->size;
+    ssize_t lo = -1;
+    ssize_t hi = (ssize_t) a->size;
 
     while (hi - lo > 1) {
-        size_t mid = lo + (hi - lo) / 2;
+        ssize_t mid = lo + (hi - lo) / 2;
         int x = a->comp(&a->data[mid], &v);
         if (x <= 0) {
             lo = mid;
@@ -333,11 +333,11 @@ ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
 */
 
 ssize_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
-    size_t lo = -1;
-    size_t hi = a->size;
+    ssize_t lo = -1;
+    ssize_t hi = (ssize_t) a->size;
 
     while (hi - lo > 1) {
-        size_t mid = lo + (hi - lo) / 2;
+        ssize_t mid = lo + (hi - lo) / 2;
         int x = a->comp(&a->data[mid], &v);
         if (x < 0) {
             lo = mid;
@@ -408,11 +408,11 @@ int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
 */
 data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
     assert(a != NULL);
-    if (idx < 0 || idx >= a->size) {
+    if (idx >= a->size) {
         if (a->have_null_value) {
             return a->null_value;
         } else {
-            assert(idx >= 0 && idx < a->size);
+            assert(idx < a->size);
         }
     }
     return a->data[idx];
@@ -460,10 +460,9 @@ int32_t GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
     if (a == NULL) {
         return -1;
     }
-    if (idx < 0 || idx >= a->size) {
+    if (idx >= a->size) {
         return -1;
     }
-    assert(idx >= 0 && idx < a->size);
     a->data[idx] = value;
     return 0;
 }
