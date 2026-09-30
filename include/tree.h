@@ -457,7 +457,7 @@ KEYVAL GLUE3(tree_, prefix, _delete) (TREE *a, data_t key) {
         return rv;
     }
 
-    KEYVAL rv = {.key = key,.value = n->value,.found = true };
+    KEYVAL rv = {.key = n->key,.value = n->value,.found = true };
     free(n);
     return rv;
 }
