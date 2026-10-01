@@ -433,3 +433,8 @@ static inline void GLUE3(llist_, prefix, _add_node)(LLIST *a, LNODE *n) {
 #undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
+
+/* the internal macros of this header (and its optional null/sentinel setting) are
+   removed so that they do not leak into the includer */
+#undef _unused
+#undef null_value

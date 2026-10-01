@@ -503,3 +503,8 @@ static inline HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
 #undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
+
+/* the internal macros of this header (and its optional null/sentinel setting) are
+   removed so that they do not leak into the includer */
+#undef _unused
+#undef LOAD_FACTOR

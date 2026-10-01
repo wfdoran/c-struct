@@ -294,3 +294,7 @@ static inline bool GLUE3(pqueue_, prefix, _is_empty) (const PQUEUE *q) {
 #undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
+
+/* the internal macros of this header (and its optional null/sentinel setting) are
+   removed so that they do not leak into the includer */
+#undef _unused

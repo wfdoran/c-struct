@@ -125,9 +125,7 @@ static inline int32_t GLUE3(option_, prefix, _map)(TYPE *x, data_t (*f) (data_t)
 #undef GLUE
 #undef GLUE_HELPER
 
-#ifdef sentinel_value
 #undef sentinel_value
-#endif
 
 /* To Add
 static inline void GLUE3(option_, prefix, _clear)

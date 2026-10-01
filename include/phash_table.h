@@ -479,3 +479,8 @@ static inline int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, va
 #undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
+
+/* the internal macros of this header (and its optional null/sentinel setting) are
+   removed so that they do not leak into the includer */
+#undef _unused
+#undef LOAD_FACTOR
