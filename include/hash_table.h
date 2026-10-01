@@ -52,30 +52,29 @@ typedef struct HITER {
     int64_t curr;
 } HITER;
 
-/* 
+/* Ideas for later, not implemented:
+
    void hash_prefix_filter(htable_prefix_t *h, bool (*filter)(hkey_t, value_t));
-   void Hash_prefix_apply_r(htable_prefix_t *h, value_t (*apply_r) (hkey_t, value_t, void*), void *arg);
-   htable_prefix_t* hash_prefix_duplicate(const htable_prefix_t *h)
-   
    put_many
    merge
-
-   shrink?
+   shrink
    smoother expansion instead of stop-the-world
- 
-https://en.wikipedia.org/wiki/Hash_table
+
+   https://en.wikipedia.org/wiki/Hash_table
 */
 
 static inline int64_t GLUE3(hash_, prefix, _roundup_pow2) (int64_t x) {
-    x--;
-    x |= x >> 1;
-    x |= x >> 2;
-    x |= x >> 4;
-    x |= x >> 8;
-    x |= x >> 16;
-    x |= x >> 32;
-    x++;
-    return x;
+    /* smallest power of two >= x, for x >= 1; unsigned so that the shifts and the
+       final increment cannot overflow a signed value */
+    uint64_t v = (uint64_t) x - 1;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v |= v >> 32;
+    v++;
+    return (int64_t) v;
 }
 
 /* htable_prefix_t* hash_prefix_init(int64_t expected_size); 
@@ -116,8 +115,6 @@ static inline HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
     h->comp = DEFAULT_COMP_TYPE(temp);
     _unused(temp);
     h->update = NULL;
-
-    _unused(DEFAULT_COMP(temp));
 
     return h;
 }
@@ -214,7 +211,7 @@ static inline void GLUE3(hash_, prefix, _destroy) (HTABLE **h_ptr) {
     for (int64_t i = 0; i < h->capacity; i++) {
         if (h->A[i] != &(h->deleted)) {
             free(h->A[i]);
-	}
+        }
     }
     free(h->A);
 
@@ -262,7 +259,7 @@ static inline int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
                 break;
             }
         }
-	h->size++;
+        h->size++;
     }
 
     free(h->A);
@@ -306,16 +303,16 @@ static inline int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, hkey_t key, value_t
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == &(h->deleted)) {
-	    if (first_empty == UINT64_MAX) {
-	        first_empty = pos;
-	    }
-	    continue;
+            if (first_empty == UINT64_MAX) {
+                first_empty = pos;
+            }
+            continue;
         }
       
         if (h->A[pos] == NULL) {
-	    if (first_empty == UINT64_MAX) {
-	        first_empty = pos;
-	    }
+            if (first_empty == UINT64_MAX) {
+                first_empty = pos;
+            }
             HNODE *n = malloc(sizeof(HNODE));
             if (n == NULL) {
                 return -1;
@@ -323,15 +320,15 @@ static inline int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, hkey_t key, value_t
             n->hash = hash;
             n->key = key;
             n->value = value;
-	    if (h->A[first_empty] == NULL) {
-	        h->used++;
-	    }
-	    h->size++;
+            if (h->A[first_empty] == NULL) {
+                h->used++;
+            }
+            h->size++;
             h->A[first_empty] = n;
             break;
         }
 
-	if (h->A[pos]->hash == hash) {
+        if (h->A[pos]->hash == hash) {
             if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
                 h->A[pos]->value = h->update == NULL ? value : h->update(h->A[pos]->value, value);
                 break;
@@ -372,7 +369,7 @@ static inline int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, hkey_t key, v
         if (h->A[pos] == NULL) {
             return 0;
         } else {
-	    if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
+            if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
                 if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
                     if (value != NULL) {
                         *value = h->A[pos]->value;
@@ -488,8 +485,8 @@ static inline HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
     if (h->A[i] != NULL && h->A[i] != &(h->deleted)) {
       int32_t rc = GLUE3(hash_, prefix, _put) (out, h->A[i]->key, h->A[i]->value);
       if (rc != 0) {
-	GLUE3(hash_, prefix, _destroy) (&out);
-	return NULL;
+        GLUE3(hash_, prefix, _destroy) (&out);
+        return NULL;
       }
     }
   }

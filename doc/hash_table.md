@@ -87,7 +87,14 @@ particular, if either hkey_t or value_t is a pointer, the address is stored
 in hash table and along with the (current) hash value of the key.
 Once inserted, the key should not be altered.  
 
-How does the hash table handle cases where the key already exists?
+If the key is already in the table, the existing entry is kept and only its value changes.
+If an update function has been set with `hash_prefix_set_update`, the new value is
+`update(old_value, value)`; otherwise `value` replaces the old value.  The hash table does
+not free the old value, so use an update function if it needs to be released.  If a compare
+function is set (the default for `char*` keys), it decides whether two keys with the same
+hash are the same key; without one, equal hashes mean equal keys.
+
+Returns 0 on success (whether the key was new or already present) and -1 on error.
 
 
 ### `int32_t hash_prefix_get(const htable_prefix_t *h, hkey_t key, value_t *value)`

@@ -67,15 +67,17 @@ https://en.wikipedia.org/wiki/Hash_table
 */
 
 static inline int64_t GLUE3(phash_, prefix, _roundup_pow2) (int64_t x) {
-    x--;
-    x |= x >> 1;
-    x |= x >> 2;
-    x |= x >> 4;
-    x |= x >> 8;
-    x |= x >> 16;
-    x |= x >> 32;
-    x++;
-    return x;
+    /* smallest power of two >= x, for x >= 1; unsigned so that the shifts and the
+       final increment cannot overflow a signed value */
+    uint64_t v = (uint64_t) x - 1;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v |= v >> 32;
+    v++;
+    return (int64_t) v;
 }
 
 /* htable_prefix_t* hash_prefix_init(int64_t expected_size); 
@@ -220,7 +222,7 @@ static inline void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
     for (int64_t i = 0; i < h->capacity; i++) {
       if (h->A[i] != &(h->deleted)) {
             free(h->A[i]);
-	}
+        }
     }
     free(h->A);
 
@@ -372,7 +374,7 @@ static inline int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, hkey_t key, value
 }
 
 static inline int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, hkey_t key, value_t value,
-					       value_t (*update) (value_t, value_t)) {
+                                               value_t (*update) (value_t, value_t)) {
     if (h == NULL || update == NULL) {
         return -1;
     }
@@ -416,15 +418,15 @@ static inline int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, hkey_t key, value
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == NULL) {
-	    pthread_rwlock_unlock(&(h->rwlock));
+            pthread_rwlock_unlock(&(h->rwlock));
             return 0;
         } else {
-	    if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
+            if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
                 if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
                     if (value != NULL) {
                         *value = h->A[pos]->value;
                     }
-		    pthread_rwlock_unlock(&(h->rwlock));	
+                    pthread_rwlock_unlock(&(h->rwlock));	
                     return 1;
                 }
             }
@@ -454,7 +456,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, va
 
     for (uint64_t pos = base;; pos = (pos + step) & mask) {
         if (h->A[pos] == NULL) {
-	    pthread_rwlock_unlock(&(h->rwlock));
+            pthread_rwlock_unlock(&(h->rwlock));
             return 0;
         } else {
             if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
@@ -465,7 +467,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, va
                     free(h->A[pos]);
                     h->A[pos] = &(h->deleted);
                     h->size--;
-		    pthread_rwlock_unlock(&(h->rwlock));
+                    pthread_rwlock_unlock(&(h->rwlock));
                     return 1;
                 }
             }
