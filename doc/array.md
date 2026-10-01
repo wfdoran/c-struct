@@ -178,6 +178,10 @@ that the loop `for (i = bisect_lower(a, v1); i <= bisect_upper(a, v2); i++)`
 visits exactly the indices with values between `v1` and `v2` inclusive,
 including when that range is empty.
 
+The three `bisect` functions, like `array_prefix_index()`, need a comparison function
+and a non-`NULL` array: otherwise an ASSERT failure, since their return values
+cannot report an error.
+
 ## Heap
 
 The array can be used as a binary heap ordered by the comparison function, with

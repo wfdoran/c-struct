@@ -333,6 +333,8 @@ static inline int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
 */
 
 static inline ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
+    ASSERT(a != NULL);
+    ASSERT(a->comp != NULL);
     ssize_t lo = -1;
     ssize_t hi = (ssize_t) a->size;
 
@@ -372,6 +374,8 @@ static inline ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
 */
 
 static inline ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
+    ASSERT(a != NULL);
+    ASSERT(a->comp != NULL);
     ssize_t lo = -1;
     ssize_t hi = (ssize_t) a->size;
 
@@ -395,6 +399,8 @@ static inline ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_
 */
 
 static inline ssize_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
+    ASSERT(a != NULL);
+    ASSERT(a->comp != NULL);
     ssize_t lo = -1;
     ssize_t hi = (ssize_t) a->size;
 

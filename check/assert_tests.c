@@ -13,6 +13,16 @@
 #undef data_t
 #undef prefix
 
+typedef struct {
+  int x;
+} nocomp_t;
+
+#define data_t nocomp_t
+#define prefix nocomp
+#include <array.h>
+#undef data_t
+#undef prefix
+
 #define data_t int
 #define prefix int
 #include <pqueue.h>
@@ -74,6 +84,32 @@ static void child_pqueue_null(void) {
   pqueue_int_size(NULL);
 }
 
+static void child_bisect(void) {
+  array_nocomp_t *a = array_nocomp_init();
+  nocomp_t v = {1};
+  array_nocomp_append(a, v);
+  array_nocomp_bisect(a, v);
+}
+
+static void child_bisect_upper(void) {
+  array_nocomp_t *a = array_nocomp_init();
+  nocomp_t v = {1};
+  array_nocomp_append(a, v);
+  array_nocomp_bisect_upper(a, v);
+}
+
+static void child_bisect_lower(void) {
+  array_nocomp_t *a = array_nocomp_init();
+  nocomp_t v = {1};
+  array_nocomp_append(a, v);
+  array_nocomp_bisect_lower(a, v);
+}
+
+static void child_bisect_null(void) {
+  nocomp_t v = {1};
+  array_nocomp_bisect(NULL, v);
+}
+
 START_TEST(assert_test1)
 
 char msg[512];
@@ -103,5 +139,21 @@ CHECK(strstr(msg, "array_int_pop") != NULL);
 
 CHECK(run_child(child_pqueue_null, msg, sizeof(msg)) == SIGABRT);
 CHECK(strstr(msg, "q != NULL") != NULL);
+
+END_TEST
+
+// searching an array which has no comparison function is caught, not a NULL call
+START_TEST(assert_test3)
+
+char msg[512];
+
+CHECK(run_child(child_bisect, msg, sizeof(msg)) == SIGABRT);
+CHECK(strstr(msg, "a->comp != NULL") != NULL);
+CHECK(run_child(child_bisect_upper, msg, sizeof(msg)) == SIGABRT);
+CHECK(strstr(msg, "a->comp != NULL") != NULL);
+CHECK(run_child(child_bisect_lower, msg, sizeof(msg)) == SIGABRT);
+CHECK(strstr(msg, "a->comp != NULL") != NULL);
+CHECK(run_child(child_bisect_null, msg, sizeof(msg)) == SIGABRT);
+CHECK(strstr(msg, "a != NULL") != NULL);
 
 END_TEST
