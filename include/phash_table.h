@@ -328,6 +328,10 @@ static inline int32_t GLUE3(phash_, prefix, _put_locked) (PHTABLE *h, uint64_t h
             if (first_empty == UINT64_MAX) {
                 first_empty = pos;
             }
+            /* probes stop at an empty slot, so the last one must never be used up */
+            if (h->A[first_empty] == NULL && (uint64_t) h->used + 1 >= (uint64_t) h->capacity) {
+                return -1;
+            }
             PHNODE *n = malloc(sizeof(PHNODE));
             if (n == NULL) {
                 return -1;
@@ -352,7 +356,8 @@ static inline int32_t GLUE3(phash_, prefix, _put_locked) (PHTABLE *h, uint64_t h
     }
 
     if (h->used > LOAD_FACTOR * h->capacity) {
-        return GLUE3(phash_, prefix, _rehash) (h);
+        /* best effort: the entry is already stored, and the next put tries again */
+        (void) GLUE3(phash_, prefix, _rehash) (h);
     }
     return 0;
 }

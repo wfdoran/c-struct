@@ -102,7 +102,9 @@ function is set (the default for `char*` keys), it decides whether two keys with
 hash are the same key; without one, equal hashes mean equal keys.
 
 Returns 0 on success (whether the key was new or already present) and -1 on error (`h` is `NULL`, there
-is no hash function, or memory could not be allocated).
+is no hash function, or memory could not be allocated).  A -1 means the entry was not stored.  If memory runs out
+only while the table is being enlarged after a successful insert, `put` still returns 0 and the enlargement is retried by
+a later `put`; if the table can no longer grow and one empty slot is left, `put` of a new key returns -1.
 
 ### `int32_t hash_prefix_get(const htable_prefix_t *h, hkey_t key, value_t *value)`
 
