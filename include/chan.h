@@ -138,7 +138,7 @@ typedef struct SELECT {
    below 1 is rounded up to 1: unbuffered (rendezvous) channels are not
    provided.
 */
-CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
+static inline CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
   if (capacity < 1) {
     capacity = 1;
   }
@@ -177,7 +177,7 @@ CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
   return c;
 }
 
-void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
+static inline void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
   CHAN *c = *c_ptr;
   if (c == NULL) {
     return;
@@ -188,7 +188,7 @@ void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
   *c_ptr = NULL;
 }
 
-int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
+static inline int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
@@ -228,7 +228,7 @@ int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
   }
 }
 
-int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
+static inline int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
@@ -262,7 +262,7 @@ int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
   }
 }
 
-int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
+static inline int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
   while (true) {
     int32_t rc = GLUE3(chan_, prefix, _tryrecv)(c, value);
     if (rc != CHAN_EMPTY) {
@@ -272,7 +272,7 @@ int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
   }
 }
 
-int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
+static inline int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
   while (true) {
     int32_t rc = GLUE3(chan_, prefix, _trysend)(c, value);
     if (rc != CHAN_FULL) {
@@ -282,7 +282,7 @@ int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
   }
 }
 
-int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
+static inline int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
@@ -290,7 +290,7 @@ int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   return was_closed ? CHAN_CLOSED : CHAN_SUCCESS;
 }
 
-int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
+static inline int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
   if (num_select < 0 || (num_select > 0 && s == NULL)) {
     return CHAN_ERROR;
   }
@@ -349,7 +349,7 @@ int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
   return num_select;
 }
 
-int32_t GLUE3(select_, prefix, _option_done)(SELECT *s, int32_t i) {
+static inline int32_t GLUE3(select_, prefix, _option_done)(SELECT *s, int32_t i) {
   s[i].select_type = SELECT_OMIT;
   int32_t rc = GLUE3(chan_, prefix, _close)(s[i].c);
   if (rc == CHAN_ERROR) {

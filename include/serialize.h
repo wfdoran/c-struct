@@ -9,7 +9,7 @@
 
 /* Sizes are written as a base-128 varint: 7 bits per byte, least significant
    group first, high bit set on every byte except the last. */
-static void serialize_size(size_t x, FILE *fp) {
+static inline void serialize_size(size_t x, FILE *fp) {
   do {
     uint8_t v = x & 0x7f;
     x >>= 7;
@@ -21,7 +21,7 @@ static void serialize_size(size_t x, FILE *fp) {
 }
 
 /* Returns false on a truncated or overlong value; *out is set only on success. */
-static bool deserialize_size(FILE *fp, size_t *out) {
+static inline bool deserialize_size(FILE *fp, size_t *out) {
   size_t rv = 0;
   for (int shift = 0; shift < 64; shift += 7) {
     int c = fgetc(fp);
@@ -37,13 +37,13 @@ static bool deserialize_size(FILE *fp, size_t *out) {
   return false;
 }
 
-static void serialize_string(const char *s, FILE *fp) {
+static inline void serialize_string(const char *s, FILE *fp) {
   size_t s_len = strlen(s);
   serialize_size(s_len, fp);
   fwrite(s, sizeof(char), s_len, fp);
 }
 
-static char* deserialize_string(FILE *fp) {
+static inline char* deserialize_string(FILE *fp) {
   size_t s_len;
   if (!deserialize_size(fp, &s_len) || s_len >= SIZE_MAX) {
     return NULL;

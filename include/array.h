@@ -47,7 +47,7 @@ typedef struct {
    
    Initializes an empty array.
 */
-TYPE *GLUE3(array_, prefix, _init) () {
+static inline TYPE *GLUE3(array_, prefix, _init) () {
     TYPE *a = malloc(sizeof(TYPE));
     if (a == NULL) {
         return NULL;
@@ -79,7 +79,7 @@ TYPE *GLUE3(array_, prefix, _init) () {
    Initializes an array of size size with the given default value.
 */
 
-TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
+static inline TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
     if (size > SIZE_MAX / sizeof(data_t)) {
         return NULL;
     }
@@ -116,7 +116,7 @@ TYPE *GLUE3(array_, prefix, _init2) (size_t size, data_t default_value) {
    Makes a deep copy of an array.  The user provided f is used to
    create/initialize each entry in the clone.
 */
-TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const data_t)) {
+static inline TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const data_t)) {
     if (in == NULL) {
         return NULL;
     }
@@ -151,7 +151,7 @@ TYPE *GLUE3(array_, prefix, _deep_clone) (const TYPE *in, data_t (*f) (const dat
 
    Makes a copy of an array.    
 */
-TYPE *GLUE3(array_, prefix, _clone) (const TYPE *in) {
+static inline TYPE *GLUE3(array_, prefix, _clone) (const TYPE *in) {
     return GLUE3(array_, prefix, _deep_clone) (in, NULL);
 }
 
@@ -163,7 +163,7 @@ TYPE *GLUE3(array_, prefix, _clone) (const TYPE *in) {
    left > right, right > size, or memory is exhausted.  The user
    provided f, if not NULL, is used to create each entry.
 */
-TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t right,
+static inline TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t right,
 					 data_t (*f) (const data_t)) {
     if (in == NULL) {
         return NULL;
@@ -199,7 +199,7 @@ TYPE *GLUE3(array_, prefix, _deep_slice) (const TYPE *in, size_t left, size_t ri
     return out;
 }
 
-TYPE *GLUE3(array_, prefix, _slice) (const TYPE *in, size_t left, size_t right) {
+static inline TYPE *GLUE3(array_, prefix, _slice) (const TYPE *in, size_t left, size_t right) {
     return GLUE3(array_, prefix, _deep_slice)(in, left, right, NULL);
 }
 
@@ -209,7 +209,7 @@ TYPE *GLUE3(array_, prefix, _slice) (const TYPE *in, size_t left, size_t right) 
    array_prefix_sort().  
 */
 
-int32_t GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t *)) {
+static inline int32_t GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t *)) {
     if (a == NULL || comp == NULL) {
         return -1;
     }
@@ -222,7 +222,7 @@ int32_t GLUE3(array_, prefix, _set_comp) (TYPE *a, int (*comp) (data_t *, data_t
    Sets the null value.  This is returned from various getters if the
    array is empty or the request is out of range. 
 */
-int32_t GLUE3(array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
+static inline int32_t GLUE3(array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
     if (a == NULL) {
         return -1;
     }
@@ -238,7 +238,7 @@ int32_t GLUE3(array_, prefix, _set_null_value) (TYPE *a, data_t null_value) {
    used to do this.
 */
 
-int32_t GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
+static inline int32_t GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
     if (a_ptr == NULL) {
         return -1;
     }
@@ -263,7 +263,7 @@ int32_t GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
 /* Stable merge sort of the n entries at v, using comp directly (qsort would need
    the comparison function cast to an incompatible type).  tmp must have room
    for n / 2 entries. */
-static void GLUE3(array_, prefix, _sort_range) (int (*comp) (data_t *, data_t *), data_t *v,
+static inline void GLUE3(array_, prefix, _sort_range) (int (*comp) (data_t *, data_t *), data_t *v,
                                                 data_t *tmp, size_t n) {
     if (n <= 16) {
         for (size_t i = 1; i < n; i++) {
@@ -305,7 +305,7 @@ static void GLUE3(array_, prefix, _sort_range) (int (*comp) (data_t *, data_t *)
 /* Sorts the array (a stable sort, O(n log n) comparisons) using the comparison
    function.  Returns -1 if a is NULL, there is no comparison function, or memory
    for the temporary buffer could not be allocated, and 0 otherwise. */
-int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
+static inline int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
     if (a == NULL) {
         return -1;
     }
@@ -332,7 +332,7 @@ int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
   If no such index exists, returns -1.
 */
 
-ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
+static inline ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
     ssize_t lo = -1;
     ssize_t hi = (ssize_t) a->size;
 
@@ -371,7 +371,7 @@ ssize_t GLUE3(array_, prefix, _bisect) (const TYPE *a, data_t v) {
    Also, this handles empty ranges as well.  
 */
 
-ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
+static inline ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
     ssize_t lo = -1;
     ssize_t hi = (ssize_t) a->size;
 
@@ -394,7 +394,7 @@ ssize_t GLUE3(array_, prefix, _bisect_upper) (const TYPE *a, data_t v) {
    Returns the size of the array if all of the values are less than v.
 */
 
-ssize_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
+static inline ssize_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
     ssize_t lo = -1;
     ssize_t hi = (ssize_t) a->size;
 
@@ -411,7 +411,7 @@ ssize_t GLUE3(array_, prefix, _bisect_lower) (const TYPE *a, data_t v) {
 }
 
 /* Applies a function to every entry in an array */
-int32_t GLUE3(array_, prefix, _map) (TYPE *a, data_t (*f) (data_t)) {
+static inline int32_t GLUE3(array_, prefix, _map) (TYPE *a, data_t (*f) (data_t)) {
     if (a == NULL || f == NULL) {
         return -1;
     }
@@ -423,7 +423,7 @@ int32_t GLUE3(array_, prefix, _map) (TYPE *a, data_t (*f) (data_t)) {
 
 /* Combines all of the entries in the array using a user provided function.
    Takes the first value as the initial value.  */
-data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t (*f) (data_t, const data_t)) {
+static inline data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t (*f) (data_t, const data_t)) {
     assert(a != NULL);
     assert(f != NULL);
     assert(a->size > 0);
@@ -437,7 +437,7 @@ data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t (*f) (data_t, const d
 /* Combines all of the entries in the array using a user provided function.
    The user provides the initial value. */
 
-data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
+static inline data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
                                       data_t (*f) (data_t, const data_t)) {
     assert(a != NULL);
     assert(f != NULL);
@@ -449,7 +449,7 @@ data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
 }
 
 
-int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
+static inline int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
     assert(a != NULL);
     assert(f != NULL);
     if (a == NULL || f == NULL) {
@@ -468,7 +468,7 @@ int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
    and the index is out of range, the null value is returned.  Otherwise,
    index out of range results in an assert failure.
 */
-data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
+static inline data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
     assert(a != NULL);
     if (idx >= a->size) {
         if (a->have_null_value) {
@@ -484,7 +484,7 @@ data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
    Pops the last value off of the array.  Using this and array_prefix_append()
    you get a stack.
 */
-data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
+static inline data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
     assert(a != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
@@ -501,7 +501,7 @@ data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
    Pops the first value off of the array.  Using this and array_prefix_append()
    you get a queue.
 */
-data_t GLUE3(array_, prefix, _pop_first) (TYPE *a) {
+static inline data_t GLUE3(array_, prefix, _pop_first) (TYPE *a) {
     assert(a != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
@@ -518,7 +518,7 @@ data_t GLUE3(array_, prefix, _pop_first) (TYPE *a) {
     return rv;
 }
 
-int32_t GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
+static inline int32_t GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
     if (a == NULL) {
         return -1;
     }
@@ -536,7 +536,7 @@ int32_t GLUE3(array_, prefix, _set) (TYPE *a, data_t value, size_t idx) {
      -1 => error (a is NULL or out of memory; the array is unchanged)
       0 => ok
 */
-int32_t GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
+static inline int32_t GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
     if (a == NULL) {
         return -1;
     }
@@ -575,7 +575,7 @@ int32_t GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
 /* 
    Returns the number of entries in the array. 
 */
-size_t GLUE3(array_, prefix, _size) (const TYPE *a) {
+static inline size_t GLUE3(array_, prefix, _size) (const TYPE *a) {
     assert(a != NULL);
     return a->size;
 }
@@ -583,7 +583,7 @@ size_t GLUE3(array_, prefix, _size) (const TYPE *a) {
 /* 
    Returns the capacity in the array until a resize is needed.
 */
-size_t GLUE3(array_, prefix, _capacity) (const TYPE *a) {
+static inline size_t GLUE3(array_, prefix, _capacity) (const TYPE *a) {
     return a->capacity;
 }
 
@@ -594,7 +594,7 @@ size_t GLUE3(array_, prefix, _capacity) (const TYPE *a) {
 /* Restores the heap order below pos, assuming both subtrees of pos are
    already heaps.  The entry at pos is moved down, toward the larger child,
    until it fits. */
-static void GLUE3(array_, prefix, _sift_down) (TYPE *a, size_t pos) {
+static inline void GLUE3(array_, prefix, _sift_down) (TYPE *a, size_t pos) {
     data_t last = a->data[pos];
 
     while (true) {
@@ -621,7 +621,7 @@ static void GLUE3(array_, prefix, _sift_down) (TYPE *a, size_t pos) {
    you get a heap.
 */
 
-int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
+static inline int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
     if (a == NULL) {
         return -1;
     }
@@ -652,7 +652,7 @@ int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
 
 */
 
-data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
+static inline data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
     assert(a != NULL);
     assert(a->comp != NULL);
     if (a->size <= 0) {
@@ -676,7 +676,7 @@ data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
    Heapifies an array in O(n) time.
 */
 
-int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
+static inline int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
     if (a == NULL) {
         return -1;
     }
@@ -692,7 +692,7 @@ int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
     return 0;
 }
 
-ssize_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
+static inline ssize_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
     assert(a != NULL);
     assert(a->comp != NULL);
     for (size_t i = 0; i < a->size; i++) {
@@ -706,7 +706,7 @@ ssize_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
 #define ARRAY_STR_HELPER(x) #x
 #define ARRAY_STR(x) ARRAY_STR_HELPER(x)
 
-int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) {
+static inline int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) {
   if (a == NULL || filename == NULL) {
     return -1;
   }
@@ -735,7 +735,7 @@ int32_t GLUE3(array_, prefix, _serialize) (const TYPE *a, const char *filename) 
   return rc;
 }
 
-TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
+static inline TYPE* GLUE3(array_, prefix, _deserialize) (const char *filename) {
   if (filename == NULL) {
     return NULL;
   }

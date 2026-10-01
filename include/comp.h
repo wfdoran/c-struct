@@ -14,58 +14,58 @@
     }\
     return 0;    
     
-static int comp_int64(int64_t *a, int64_t *b) {
+static inline int comp_int64(int64_t *a, int64_t *b) {
     GENERIC_COMP
 }
 
-static int comp_int32(int32_t *a, int32_t *b) {
+static inline int comp_int32(int32_t *a, int32_t *b) {
     GENERIC_COMP
 }
 
-static int comp_int16(int16_t *a, int16_t *b) {
+static inline int comp_int16(int16_t *a, int16_t *b) {
     GENERIC_COMP
 }
 
-static int comp_int8(int8_t *a, int8_t *b) {
+static inline int comp_int8(int8_t *a, int8_t *b) {
     GENERIC_COMP
 }
 
-static int comp_uint64(uint64_t *a, uint64_t *b) {
+static inline int comp_uint64(uint64_t *a, uint64_t *b) {
     GENERIC_COMP
 }
 
-static int comp_uint32(uint32_t *a, uint32_t *b) {
+static inline int comp_uint32(uint32_t *a, uint32_t *b) {
     GENERIC_COMP
 }
 
-static int comp_uint16(uint16_t *a, uint16_t *b) {
+static inline int comp_uint16(uint16_t *a, uint16_t *b) {
     GENERIC_COMP
 }
 
-static int comp_uint8(uint8_t *a, uint8_t *b) {
+static inline int comp_uint8(uint8_t *a, uint8_t *b) {
     GENERIC_COMP
 }
 
-static int comp_float(float *a, float *b) {
+static inline int comp_float(float *a, float *b) {
     GENERIC_COMP
 }
 
-static int comp_double(double *a, double *b) {
+static inline int comp_double(double *a, double *b) {
     GENERIC_COMP
 }
 
 
-static int comp_char(char *a, char *b) {
+static inline int comp_char(char *a, char *b) {
     GENERIC_COMP
 }
 
 #undef GENERIC_COMP
 
-static int comp_str(char **a, char **b) {
+static inline int comp_str(char **a, char **b) {
     return strcmp(*a, *b);
 }
 
-static int comp_cstr(const char **a, const char **b) {
+static inline int comp_cstr(const char **a, const char **b) {
     return strcmp(*a, *b);
 }
 
@@ -86,11 +86,11 @@ static int comp_cstr(const char **a, const char **b) {
     default: NULL)
 
 
-static int comp_str_data(char *a, char *b) {
+static inline int comp_str_data(char *a, char *b) {
     return strcmp(a, b);
 }
 
-static int comp_cstr_data(const char *a, const char *b) {
+static inline int comp_cstr_data(const char *a, const char *b) {
     return strcmp(a, b);
 }
 

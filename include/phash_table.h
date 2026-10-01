@@ -66,7 +66,7 @@ typedef struct PHTABLE {
 https://en.wikipedia.org/wiki/Hash_table
 */
 
-static int64_t GLUE3(phash_, prefix, _roundup_pow2) (int64_t x) {
+static inline int64_t GLUE3(phash_, prefix, _roundup_pow2) (int64_t x) {
     x--;
     x |= x >> 1;
     x |= x >> 2;
@@ -91,7 +91,7 @@ static int64_t GLUE3(phash_, prefix, _roundup_pow2) (int64_t x) {
 
 #define _unused(x) ((void)(x))
 
-PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
+static inline PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
     PHTABLE *h = malloc(sizeof(PHTABLE));
     if (h == NULL) {
         return NULL;
@@ -134,7 +134,7 @@ PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
    must use write their own and use this routine to tell the hash table to 
    use it.    
 */
-void GLUE3(phash_, prefix, _set_hash) (PHTABLE *h, uint64_t (*hash_func) (hkey_t)) {
+static inline void GLUE3(phash_, prefix, _set_hash) (PHTABLE *h, uint64_t (*hash_func) (hkey_t)) {
     atomic_store_explicit(&h->hash_func, hash_func, memory_order_release);
 }
 
@@ -148,7 +148,7 @@ void GLUE3(phash_, prefix, _set_hash) (PHTABLE *h, uint64_t (*hash_func) (hkey_t
    Note: if hkey_t is char*, strcmp is used.  
 */
 
-void GLUE3(phash_, prefix, _set_comp) (PHTABLE *h, int (*comp) (hkey_t, hkey_t)) {
+static inline void GLUE3(phash_, prefix, _set_comp) (PHTABLE *h, int (*comp) (hkey_t, hkey_t)) {
     pthread_rwlock_wrlock(&(h->rwlock));
     h->comp = comp;
     pthread_rwlock_unlock(&(h->rwlock));
@@ -169,7 +169,7 @@ void GLUE3(phash_, prefix, _set_comp) (PHTABLE *h, int (*comp) (hkey_t, hkey_t))
  
    would keep the sum the values in the hash table. 
 */
-void GLUE3(phash_, prefix, _set_update) (PHTABLE *h, value_t (*update) (value_t, value_t)) {
+static inline void GLUE3(phash_, prefix, _set_update) (PHTABLE *h, value_t (*update) (value_t, value_t)) {
     pthread_rwlock_wrlock(&(h->rwlock));
     h->update = update;
     pthread_rwlock_unlock(&(h->rwlock));
@@ -179,7 +179,7 @@ void GLUE3(phash_, prefix, _set_update) (PHTABLE *h, value_t (*update) (value_t,
 
    Returns the number of unique hkey_ts inserted into the hash table. 
 */
-int64_t GLUE3(phash_, prefix, _get_size) (PHTABLE *h) {
+static inline int64_t GLUE3(phash_, prefix, _get_size) (PHTABLE *h) {
     pthread_rwlock_rdlock(&(h->rwlock));
     int64_t rv = h->size;
     pthread_rwlock_unlock(&(h->rwlock));
@@ -192,7 +192,7 @@ int64_t GLUE3(phash_, prefix, _get_size) (PHTABLE *h) {
 
    Once this is 75% filled, it is automatically doubled. 
 */
-int64_t GLUE3(phash_, prefix, _get_capacity) (PHTABLE *h) {
+static inline int64_t GLUE3(phash_, prefix, _get_capacity) (PHTABLE *h) {
     pthread_rwlock_rdlock(&(h->rwlock));
     int64_t rv =  h->capacity;
     pthread_rwlock_unlock(&(h->rwlock));
@@ -211,7 +211,7 @@ int64_t GLUE3(phash_, prefix, _get_capacity) (PHTABLE *h) {
    pointers to structs, the caller should first iterate through the
    hash table and free them appropriately. 
 */
-void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
+static inline void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
     PHTABLE *h = *h_ptr;
     if (h == NULL) {
         return;
@@ -243,7 +243,7 @@ void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
    This routine doubles the capacity of a hash table and reinserts all
    of the entries in the new table.
 */
-static int32_t GLUE3(phash_, prefix, _rehash) (PHTABLE *h) {
+static inline int32_t GLUE3(phash_, prefix, _rehash) (PHTABLE *h) {
     if (h == NULL) {
         return -1;
     }
@@ -305,7 +305,7 @@ static int32_t GLUE3(phash_, prefix, _rehash) (PHTABLE *h) {
    already present.  The caller holds the write lock and has computed
    hash = hash_mix64(hash_func(key)) before taking it.  An existing value
    becomes update(old, value), or just value if update is NULL. */
-static int32_t GLUE3(phash_, prefix, _put_locked) (PHTABLE *h, uint64_t hash, hkey_t key,
+static inline int32_t GLUE3(phash_, prefix, _put_locked) (PHTABLE *h, uint64_t hash, hkey_t key,
                                                    value_t value,
                                                    value_t (*update) (value_t, value_t)) {
     const uint64_t mask = h->capacity - UINT64_C(1);
@@ -355,7 +355,7 @@ static int32_t GLUE3(phash_, prefix, _put_locked) (PHTABLE *h, uint64_t hash, hk
     return 0;
 }
 
-int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, hkey_t key, value_t value) {
+static inline int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, hkey_t key, value_t value) {
     if (h == NULL) {
         return -1;
     }
@@ -371,7 +371,7 @@ int32_t GLUE3(phash_, prefix, _put) (PHTABLE *h, hkey_t key, value_t value) {
     return rc;
 }
 
-int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, hkey_t key, value_t value,
+static inline int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, hkey_t key, value_t value,
 					       value_t (*update) (value_t, value_t)) {
     if (h == NULL || update == NULL) {
         return -1;
@@ -399,7 +399,7 @@ int32_t GLUE3(phash_, prefix, _atomic_update) (PHTABLE *h, hkey_t key, value_t v
      1 => key found, *value set to the corresponding value.
 */
 
-int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, hkey_t key, value_t *value) {
+static inline int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, hkey_t key, value_t *value) {
     if (h == NULL) {
         return -1;
     }
@@ -437,7 +437,7 @@ int32_t GLUE3(phash_, prefix, _get) (PHTABLE *h, hkey_t key, value_t *value) {
    
 */
 
-int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, value_t *value) {
+static inline int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, value_t *value) {
     if (h == NULL) {
         return -1;
     }

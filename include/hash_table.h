@@ -66,7 +66,7 @@ typedef struct HITER {
 https://en.wikipedia.org/wiki/Hash_table
 */
 
-static int64_t GLUE3(hash_, prefix, _roundup_pow2) (int64_t x) {
+static inline int64_t GLUE3(hash_, prefix, _roundup_pow2) (int64_t x) {
     x--;
     x |= x >> 1;
     x |= x >> 2;
@@ -91,7 +91,7 @@ static int64_t GLUE3(hash_, prefix, _roundup_pow2) (int64_t x) {
 
 #define _unused(x) ((void)(x))
 
-HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
+static inline HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
     HTABLE *h = malloc(sizeof(HTABLE));
     if (h == NULL) {
         return NULL;
@@ -130,7 +130,7 @@ HTABLE *GLUE3(hash_, prefix, _init) (int64_t expected_size) {
    must use write their own and use this routine to tell the hash table to 
    use it.    
 */
-void GLUE3(hash_, prefix, _set_hash) (HTABLE *h, uint64_t (*hash_func) (hkey_t)) {
+static inline void GLUE3(hash_, prefix, _set_hash) (HTABLE *h, uint64_t (*hash_func) (hkey_t)) {
     h->hash_func = hash_func;
 }
 
@@ -144,7 +144,7 @@ void GLUE3(hash_, prefix, _set_hash) (HTABLE *h, uint64_t (*hash_func) (hkey_t))
    Note: if hkey_t is char*, strcmp is used.  
 */
 
-void GLUE3(hash_, prefix, _set_comp) (HTABLE *h, int (*comp) (hkey_t, hkey_t)) {
+static inline void GLUE3(hash_, prefix, _set_comp) (HTABLE *h, int (*comp) (hkey_t, hkey_t)) {
     h->comp = comp;
 }
 
@@ -171,7 +171,7 @@ void GLUE3(hash_, prefix, _set_comp) (HTABLE *h, int (*comp) (hkey_t, hkey_t)) {
         return current;
      }
 */
-void GLUE3(hash_, prefix, _set_update) (HTABLE *h, value_t (*update) (value_t, value_t)) {
+static inline void GLUE3(hash_, prefix, _set_update) (HTABLE *h, value_t (*update) (value_t, value_t)) {
     h->update = update;
 }
 
@@ -179,7 +179,7 @@ void GLUE3(hash_, prefix, _set_update) (HTABLE *h, value_t (*update) (value_t, v
 
    Returns the number of unique hkey_ts inserted into the hash table. 
 */
-int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
+static inline int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
     return h->size;
 }
 
@@ -189,7 +189,7 @@ int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
 
    Once this is 75% filled, it is automatically doubled. 
 */
-int64_t GLUE3(hash_, prefix, _get_capacity) (const HTABLE *h) {
+static inline int64_t GLUE3(hash_, prefix, _get_capacity) (const HTABLE *h) {
     return h->capacity;
 }
 
@@ -205,7 +205,7 @@ int64_t GLUE3(hash_, prefix, _get_capacity) (const HTABLE *h) {
    pointers to structs, the caller should first iterate through the
    hash table and free them appropriately. 
 */
-void GLUE3(hash_, prefix, _destroy) (HTABLE **h_ptr) {
+static inline void GLUE3(hash_, prefix, _destroy) (HTABLE **h_ptr) {
     HTABLE *h = *h_ptr;
     if (h == NULL) {
         return;
@@ -234,7 +234,7 @@ void GLUE3(hash_, prefix, _destroy) (HTABLE **h_ptr) {
    This routine doubles the capacity of a hash table and reinserts all
    of the entries in the new table.
 */
-int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
+static inline int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
     if (h == NULL) {
         return -1;
     }
@@ -293,7 +293,7 @@ int32_t GLUE3(hash_, prefix, _rehash) (HTABLE *h) {
      0 => ok
 */
 
-int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, hkey_t key, value_t value) {
+static inline int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, hkey_t key, value_t value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
@@ -359,7 +359,7 @@ int32_t GLUE3(hash_, prefix, _put) (HTABLE *h, hkey_t key, value_t value) {
      1 => key found, *value set to the corresponding value.
 */
 
-int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, hkey_t key, value_t *value) {
+static inline int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, hkey_t key, value_t *value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
@@ -389,7 +389,7 @@ int32_t GLUE3(hash_, prefix, _get) (const HTABLE *h, hkey_t key, value_t *value)
    
 */
 
-int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, hkey_t key, value_t *value) {
+static inline int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, hkey_t key, value_t *value) {
     if (h == NULL || h->hash_func == NULL) {
         return -1;
     }
@@ -417,7 +417,7 @@ int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, hkey_t key, value_t *value) {
     }
 }
 
-int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, hkey_t *key, value_t *value) {
+static inline int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, hkey_t *key, value_t *value) {
     HITER *iter = *iter_ptr;
     const HTABLE *h = iter->h;
     int64_t curr = iter->curr;
@@ -447,7 +447,7 @@ int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, hkey_t *key, value_t *val
     }
 }
 
-int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, hkey_t *key, value_t *value) {
+static inline int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, hkey_t *key, value_t *value) {
     HITER *iter = malloc(sizeof(HITER));
     iter->h = h;
     iter->curr = 0;
@@ -456,7 +456,7 @@ int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, hkey_t 
     return GLUE3(hash_, prefix, _next) (iter_ptr, key, value);
 }
 
-void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f) (hkey_t, value_t)) {
+static inline void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f) (hkey_t, value_t)) {
     for (int64_t idx = 0; idx < h->capacity; idx++) {
         HNODE *a = h->A[idx];
         if (a != NULL && a != &(h->deleted)) {
@@ -465,7 +465,7 @@ void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f) (hkey_t, value_t)) {
     }
 }
 
-void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f) (hkey_t, value_t, void *), void *arg) {
+static inline void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f) (hkey_t, value_t, void *), void *arg) {
     for (int64_t idx = 0; idx < h->capacity; idx++) {
         HNODE *a = h->A[idx];
         if (a != NULL && a != &(h->deleted)) {
@@ -474,7 +474,7 @@ void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f) (hkey_t, value_t, v
     }
 }
 
-HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
+static inline HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
   HTABLE *out = GLUE3(hash_, prefix, _init) (h->size);
   if (out == NULL) {
     return NULL;
