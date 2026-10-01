@@ -17,10 +17,10 @@ type and prefix label before including `chan.h`.
 
 ### `chan_prefix_t *chan_prefix_init(int64_t capacity)`
 
-Allocates and initializes a channel with the given capacity.  A capacity below 1 is
-rounded up to 1; unbuffered (rendezvous) channels are not provided.  To the
-user, a `chan_prefix_t` should be viewed as an opaque object.  There
-should be no need to directly access its fields
+Allocates and initializes a channel with the given capacity.  A capacity below 1
+is rounded up to 1; unbuffered (rendezvous) channels are not provided.  To the
+user, a `chan_prefix_t` should be viewed as an opaque object.  There should be
+no need to directly access its fields
 
 Returns a pointer to the newly allocated chan_prefix_t on success or
 NULL on error. 
@@ -74,4 +74,5 @@ Closes a channel.  Future `chan_prefix_send` and `chan_prefix_trysend` will
 fail with CHAN_CLOSED.  Future `chan_prefix_recv` and `chan_prefix_tryrecv` will
 work until the channel is drained then fail with CHAN_CLOSED.
 
-Returns CHAN_SUCCESS on success of CHAN_CLOSED if the channel was already closed. 
+Returns CHAN_SUCCESS on success of CHAN_CLOSED if the channel was already
+closed.
