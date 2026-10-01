@@ -10,7 +10,7 @@
 #undef value_t
 #undef hkey_t
 
-int main() {
+int main(void) {
 
   phtable_int_t *h = phash_int_init(0);
   phash_int_put(h, 0, 0);

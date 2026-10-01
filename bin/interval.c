@@ -749,7 +749,7 @@ void demo_sqrt(void) {
   printf("\n");
 }
 
-void demo_interval_fma() {
+void demo_interval_fma(void) {
   interval_t a = interval_from_double(2000000000000000.0);
   interval_t b = interval_from_double(0.0000000000000005);
   interval_t c = interval_from_double(-1.0);
@@ -768,7 +768,7 @@ void demo_interval_fma() {
 
    3, 7, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 2, 1, 1, 2, 2, 2, 2, 1,
  */
-void demo_continued_fraction() {
+void demo_continued_fraction(void) {
   interval_t x = interval_from_double(M_PI);
   interval_t one = interval_from_double(1.0);
 
@@ -790,7 +790,7 @@ void demo_continued_fraction() {
   }
 }
 
-void demo_int_init() {
+void demo_int_init(void) {
   int64_t base = UINT64_C(1) << 53;
   int64_t delta = UINT64_C(1);
   

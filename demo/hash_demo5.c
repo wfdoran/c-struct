@@ -20,7 +20,7 @@ int64_t sum(int key, int64_t value, void *arg) {
   return value;
 }
 
-int main() {
+int main(void) {
   htable_int_t *h = hash_int_init(0);
   for (int i = 1; i <= 1000; i++) {
     hash_int_put(h, i, (int64_t) i);

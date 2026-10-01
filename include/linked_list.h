@@ -46,7 +46,7 @@ typedef struct {
 
 #define _unused(x) ((void)(x))
 
-static inline LLIST *GLUE3(llist_, prefix, _init) () {
+static inline LLIST *GLUE3(llist_, prefix, _init) (void) {
     LLIST *a = malloc(sizeof(LLIST));
     if (a == NULL) {
         return a;

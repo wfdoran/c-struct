@@ -1,6 +1,6 @@
 #!/usr/bin/gawk -f
 BEGIN{
 }
-/START_TEST/{a = substr($1,12,length($1)-12); printf("int %s();\n", a);}
+/START_TEST/{a = substr($1,12,length($1)-12); printf("int %s(void);\n", a);}
 END{
 }

@@ -37,7 +37,7 @@ int triple_comp(triple_t a, triple_t b) {
   return 0;
 }
 
-int main() {
+int main(void) {
   htable_trip_t *h = hash_trip_init(0);
   hash_trip_set_hash(h, &triple_hash);
   hash_trip_set_comp(h, &triple_comp);

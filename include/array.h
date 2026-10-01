@@ -43,11 +43,11 @@ typedef struct {
     data_t null_value;
 } TYPE;
 
-/* array_prefix_t* array_prefix_init();
+/* array_prefix_t* array_prefix_init(void);
    
    Initializes an empty array.
 */
-static inline TYPE *GLUE3(array_, prefix, _init) () {
+static inline TYPE *GLUE3(array_, prefix, _init) (void) {
     TYPE *a = malloc(sizeof(TYPE));
     if (a == NULL) {
         return NULL;

@@ -64,12 +64,12 @@ typedef struct {
 
 #define _unused(x) ((void)(x))
 
-/* tree_prefix_t* tree_prefix_init(); 
+/* tree_prefix_t* tree_prefix_init(void); 
 
    allocates and returns an empty binary tree.  The caller must free the 
    returned pointer by calling tree_prefix_destroy(&t);   
 */
-static inline TREE *GLUE3(tree_, prefix, _init) () {
+static inline TREE *GLUE3(tree_, prefix, _init) (void) {
     TREE *a = malloc(sizeof(TREE));
     if (a == NULL) {
         return a;

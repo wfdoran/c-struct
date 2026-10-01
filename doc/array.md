@@ -16,7 +16,7 @@ This provides a generic C11 array.  Before including `array.h`, a data type and 
 
 ## Basic Operations
 
-### `array_prefix_t *array_prefix_init()`
+### `array_prefix_t *array_prefix_init(void)`
 
 Initializes an empty array. 
 

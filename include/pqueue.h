@@ -58,7 +58,7 @@ typedef struct {
 
 #define _unused(x) ((void)(x))
 
-/* pqueue_prefix_t* pqueue_prefix_init();
+/* pqueue_prefix_t* pqueue_prefix_init(void);
 
    allocates and returns an empty priority queue.  The caller must
    free the returned pointer by calling pqueue_prefix_destroy(&q).
@@ -68,7 +68,7 @@ typedef struct {
    comp function.  To get min-first behavior, supply a comp function
    via pqueue_prefix_set_comp() which reverses the usual ordering.
 */
-static inline PQUEUE *GLUE3(pqueue_, prefix, _init) () {
+static inline PQUEUE *GLUE3(pqueue_, prefix, _init) (void) {
     PQUEUE *q = malloc(sizeof(PQUEUE));
     if (q == NULL) {
         return q;

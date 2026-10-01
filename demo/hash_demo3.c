@@ -15,7 +15,7 @@ int update(int current, int adder) {
   return current + adder;
 }
 
-int main() {
+int main(void) {
   htable_count_t *h = hash_count_init(0);
   hash_count_set_update(h, &update);
 

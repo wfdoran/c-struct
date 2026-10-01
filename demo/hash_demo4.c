@@ -15,7 +15,7 @@ double f(int key, double value) {
   return key + sqrt(value);
 }
 
-int main() {
+int main(void) {
   htable_int_t *h = hash_int_init(0);
   for (int i = 1; i <= 100; i++) {
     hash_int_put(h, i, sqrt(i));

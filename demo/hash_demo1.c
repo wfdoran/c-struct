@@ -10,7 +10,7 @@
 #undef value_t
 #undef hkey_t
 
-int main() {
+int main(void) {
   /* Example of using hash.h */
   char* a = "Bill Doran";
   uint64_t (*my_hash)(char*) = DEFAULT_HASH(a);

@@ -17,7 +17,7 @@ typedef struct {
 } key_prefix_value_t;
 ```
 
-### `tree_prefix_t* tree_prefix_init();`
+### `tree_prefix_t* tree_prefix_init(void);`
 
 Initializes an empty binary tree.
 

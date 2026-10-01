@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 #define START_TEST(a)				\
-  int a() {					\
+  int a(void) {					\
     {
 
 #define END_TEST				\
@@ -25,7 +25,7 @@ static uint32_t _rng_state = 0;
 // https://en.wikipedia.org/wiki/Linear_congruential_generator
 // The low bits of an LCG have short periods, so each 16 bit half of the
 // result comes from the high bits of the state.
-static inline uint32_t get_rand() {
+static inline uint32_t get_rand(void) {
   const uint32_t a = 1664525;
   const uint32_t c = 1013904223;
 

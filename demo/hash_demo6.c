@@ -10,7 +10,7 @@
 #undef value_t
 #undef hkey_t
 
-int main() {
+int main(void) {
   htable_int_t *h = hash_int_init(14);
 
   hash_int_put(h, 1, 1);

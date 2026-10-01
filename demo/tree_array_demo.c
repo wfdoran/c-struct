@@ -27,7 +27,7 @@ void value_free(void *a) {
   array_int32_destroy(&b);
 }
 
-int main() {
+int main(void) {
   srand(time(NULL));
   tree_intarr_t *t = tree_intarr_init();
   tree_intarr_set_update(t, update);

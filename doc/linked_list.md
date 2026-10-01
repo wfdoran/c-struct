@@ -1,7 +1,7 @@
 # Linked List
 
 
-### `llist_prefix_t *llist_prefix_init()`
+### `llist_prefix_t *llist_prefix_init(void)`
 
 ### `void llist_prefix_destroy(llist_prefix_t **a_ptr)`
 
