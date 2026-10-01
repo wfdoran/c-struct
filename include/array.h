@@ -260,6 +260,51 @@ int32_t GLUE3(array_, prefix, _destroy) (TYPE **a_ptr) {
     Sorts the array.
 */
 
+/* Stable merge sort of the n entries at v, using comp directly (qsort would need
+   the comparison function cast to an incompatible type).  tmp must have room
+   for n / 2 entries. */
+static void GLUE3(array_, prefix, _sort_range) (int (*comp) (data_t *, data_t *), data_t *v,
+                                                data_t *tmp, size_t n) {
+    if (n <= 16) {
+        for (size_t i = 1; i < n; i++) {
+            data_t x = v[i];
+            size_t j = i;
+            while (j > 0 && comp(&x, &v[j - 1]) < 0) {
+                v[j] = v[j - 1];
+                j--;
+            }
+            v[j] = x;
+        }
+        return;
+    }
+
+    size_t half = n / 2;
+    GLUE3(array_, prefix, _sort_range) (comp, v, tmp, half);
+    GLUE3(array_, prefix, _sort_range) (comp, v + half, tmp, n - half);
+    if (comp(&v[half - 1], &v[half]) <= 0) {
+        return;
+    }
+
+    /* merge: the left half moves to tmp, and the output never overtakes the right half */
+    memcpy(tmp, v, half * sizeof(data_t));
+    size_t i = 0;
+    size_t j = half;
+    size_t k = 0;
+    while (i < half && j < n) {
+        if (comp(&v[j], &tmp[i]) < 0) {
+            v[k++] = v[j++];
+        } else {
+            v[k++] = tmp[i++];
+        }
+    }
+    while (i < half) {
+        v[k++] = tmp[i++];
+    }
+}
+
+/* Sorts the array (a stable sort, O(n log n) comparisons) using the comparison
+   function.  Returns -1 if a is NULL, there is no comparison function, or memory
+   for the temporary buffer could not be allocated, and 0 otherwise. */
 int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
     if (a == NULL) {
         return -1;
@@ -267,8 +312,16 @@ int32_t GLUE3(array_, prefix, _sort) (TYPE *a) {
     if (a->comp == NULL) {
         return -1;
     }
-    int (*comp) (const void *, const void *) = (int (*)(const void *, const void *)) a->comp;
-    qsort(a->data, a->size, sizeof(data_t), comp);
+    if (a->size < 2) {
+        return 0;
+    }
+
+    data_t *tmp = malloc((a->size / 2 + 1) * sizeof(data_t));
+    if (tmp == NULL) {
+        return -1;
+    }
+    GLUE3(array_, prefix, _sort_range) (a->comp, a->data, tmp, a->size);
+    free(tmp);
     return 0;
 }
 

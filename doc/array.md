@@ -77,7 +77,9 @@ Gives the amount of allocated space for the array.
 
 ### `int32_t array_prefix_sort(array_prefix_t *a)`
 
-Sorts the array.
+Sorts the array in place with a stable merge sort using the comparison function.
+Returns 0 on success, or -1 if `a` is `NULL`, no comparison function is available, or memory
+for the temporary buffer could not be allocated.
 
 ### `int32_t array_prefix_map(array_prefix_t *a, data_t (*f)(data_t))`
 
