@@ -5,61 +5,41 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define GENERIC_COMP \
-    if (*a > *b) { \
-        return 1;\
-    }\
-    if (*a < *b) {\
-        return -1;\
-    }\
-    return 0;    
-    
-static inline int comp_int64(int64_t *a, int64_t *b) {
-    GENERIC_COMP
-}
+/* Comparators for the arithmetic types, in the form the containers use (pointers to the elements).
+   The _Generic in DEFAULT_COMP below is written over the standard types: int64_t and friends are
+   typedefs of them, and which one depends on the platform (int64_t is long on Linux, long long on
+   macOS), so listing the typedef names would leave some spellings of the same type without a
+   default.  The fixed width names are kept as functions for callers which use them directly. */
+#define COMP_DEFINE(name, T) \
+    static inline int comp_##name(T *a, T *b) { \
+        return (*a > *b) - (*a < *b); \
+    }
 
-static inline int comp_int32(int32_t *a, int32_t *b) {
-    GENERIC_COMP
-}
+COMP_DEFINE(schar, signed char)
+COMP_DEFINE(short, short)
+COMP_DEFINE(int, int)
+COMP_DEFINE(long, long)
+COMP_DEFINE(llong, long long)
+COMP_DEFINE(uchar, unsigned char)
+COMP_DEFINE(ushort, unsigned short)
+COMP_DEFINE(uint, unsigned int)
+COMP_DEFINE(ulong, unsigned long)
+COMP_DEFINE(ullong, unsigned long long)
+COMP_DEFINE(bool, _Bool)
+COMP_DEFINE(float, float)
+COMP_DEFINE(double, double)
+COMP_DEFINE(char, char)
 
-static inline int comp_int16(int16_t *a, int16_t *b) {
-    GENERIC_COMP
-}
+COMP_DEFINE(int64, int64_t)
+COMP_DEFINE(int32, int32_t)
+COMP_DEFINE(int16, int16_t)
+COMP_DEFINE(int8, int8_t)
+COMP_DEFINE(uint64, uint64_t)
+COMP_DEFINE(uint32, uint32_t)
+COMP_DEFINE(uint16, uint16_t)
+COMP_DEFINE(uint8, uint8_t)
 
-static inline int comp_int8(int8_t *a, int8_t *b) {
-    GENERIC_COMP
-}
-
-static inline int comp_uint64(uint64_t *a, uint64_t *b) {
-    GENERIC_COMP
-}
-
-static inline int comp_uint32(uint32_t *a, uint32_t *b) {
-    GENERIC_COMP
-}
-
-static inline int comp_uint16(uint16_t *a, uint16_t *b) {
-    GENERIC_COMP
-}
-
-static inline int comp_uint8(uint8_t *a, uint8_t *b) {
-    GENERIC_COMP
-}
-
-static inline int comp_float(float *a, float *b) {
-    GENERIC_COMP
-}
-
-static inline int comp_double(double *a, double *b) {
-    GENERIC_COMP
-}
-
-
-static inline int comp_char(char *a, char *b) {
-    GENERIC_COMP
-}
-
-#undef GENERIC_COMP
+#undef COMP_DEFINE
 
 static inline int comp_str(char **a, char **b) {
     return strcmp(*a, *b);
@@ -70,14 +50,17 @@ static inline int comp_cstr(const char **a, const char **b) {
 }
 
 #define DEFAULT_COMP(x) _Generic((x), \
-    int64_t: &comp_int64, \
-    int32_t: &comp_int32, \
-    int16_t: &comp_int16, \
-    int8_t: &comp_int8, \
-    uint64_t: &comp_uint64, \
-    uint32_t: &comp_uint32, \
-    uint16_t: &comp_uint16, \
-    uint8_t: &comp_uint8, \
+    signed char: &comp_schar, \
+    short: &comp_short, \
+    int: &comp_int, \
+    long: &comp_long, \
+    long long: &comp_llong, \
+    unsigned char: &comp_uchar, \
+    unsigned short: &comp_ushort, \
+    unsigned int: &comp_uint, \
+    unsigned long: &comp_ulong, \
+    unsigned long long: &comp_ullong, \
+    _Bool: &comp_bool, \
     float: &comp_float, \
     double: &comp_double, \
     char: &comp_char, \

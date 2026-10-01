@@ -1,8 +1,40 @@
 #include <check.h>
 #include <string.h>
+#include <limits.h>
+#include <sys/types.h>
 #include <comp.h>
 #include <hash.h>
 #include <any.h>
+
+// The containers pick up the defaults for every spelling of an integer type (before, `long long`
+// had none on Linux, and `long` and `size_t` had none on macOS).
+#define data_t long long
+#define prefix llong
+#include <array.h>
+#undef data_t
+#undef prefix
+
+#define data_t unsigned long long
+#define prefix ullong
+#include <tree.h>
+#undef data_t
+#undef prefix
+
+#define hkey_t long long
+#define value_t int
+#define prefix llong
+#include <hash_table.h>
+#undef prefix
+#undef value_t
+#undef hkey_t
+
+#define hkey_t size_t
+#define value_t int
+#define prefix size
+#include <hash_table.h>
+#undef prefix
+#undef value_t
+#undef hkey_t
 
 typedef struct {
   int x;
@@ -94,49 +126,67 @@ CHECK(comp_cstr_data("apple", "apple") == 0);
 
 END_TEST
 
-// DEFAULT_COMP finds a comparator for every supported type, and none for
-// types it does not know.
+// DEFAULT_COMP finds a comparator for every supported type, whichever standard type the
+// platform's int64_t and friends happen to be, and none for types it does not know.
+#define CHECK_DEFAULT_COMP(T, lo, hi) \
+  do { \
+    T v = 0; \
+    int (*cmp)(T *, T *) = DEFAULT_COMP(v); \
+    CHECK(cmp != NULL); \
+    T a = (lo), b = (hi); \
+    CHECK(cmp(&a, &b) < 0); \
+    CHECK(cmp(&b, &a) > 0); \
+    CHECK(cmp(&a, &a) == 0); \
+  } while (0)
+
 START_TEST(comp_test4)
 
-int64_t i64 = 0;
-int32_t i32 = 0;
-int16_t i16 = 0;
-int8_t i8v = 0;
-uint64_t u64 = 0;
-uint32_t u32 = 0;
-uint16_t u16 = 0;
-uint8_t u8v = 0;
-float f = 0;
-double d = 0;
-char c = 0;
+CHECK_DEFAULT_COMP(int64_t, -5, 3);
+CHECK_DEFAULT_COMP(int32_t, -5, 3);
+CHECK_DEFAULT_COMP(int16_t, -5, 3);
+CHECK_DEFAULT_COMP(int8_t, -5, 3);
+CHECK_DEFAULT_COMP(uint64_t, 1, UINT64_MAX);
+CHECK_DEFAULT_COMP(uint32_t, 1, UINT32_MAX);
+CHECK_DEFAULT_COMP(uint16_t, 1, UINT16_MAX);
+CHECK_DEFAULT_COMP(uint8_t, 1, UINT8_MAX);
+CHECK_DEFAULT_COMP(signed char, -5, 3);
+CHECK_DEFAULT_COMP(short, -5, 3);
+CHECK_DEFAULT_COMP(int, -5, 3);
+CHECK_DEFAULT_COMP(long, -5, 3);
+CHECK_DEFAULT_COMP(long long, -5, 3);
+CHECK_DEFAULT_COMP(unsigned char, 1, UCHAR_MAX);
+CHECK_DEFAULT_COMP(unsigned short, 1, USHRT_MAX);
+CHECK_DEFAULT_COMP(unsigned int, 1, UINT_MAX);
+CHECK_DEFAULT_COMP(unsigned long, 1, ULONG_MAX);
+CHECK_DEFAULT_COMP(unsigned long long, 1, ULLONG_MAX);
+CHECK_DEFAULT_COMP(size_t, 1, SIZE_MAX);
+CHECK_DEFAULT_COMP(ssize_t, -5, 3);
+CHECK_DEFAULT_COMP(_Bool, 0, 1);
+CHECK_DEFAULT_COMP(float, -1.5f, 2.5f);
+CHECK_DEFAULT_COMP(double, -1.5, 2.5);
+CHECK_DEFAULT_COMP(char, 'a', 'b');
+
 char *s = NULL;
 const char *cs = NULL;
 comp_struct_t st = {0};
+long double ld = 0;
+int32_t i32 = 0;
 
-CHECK(DEFAULT_COMP(i64) == &comp_int64);
-CHECK(DEFAULT_COMP(i32) == &comp_int32);
-CHECK(DEFAULT_COMP(i16) == &comp_int16);
-CHECK(DEFAULT_COMP(i8v) == &comp_int8);
-CHECK(DEFAULT_COMP(u64) == &comp_uint64);
-CHECK(DEFAULT_COMP(u32) == &comp_uint32);
-CHECK(DEFAULT_COMP(u16) == &comp_uint16);
-CHECK(DEFAULT_COMP(u8v) == &comp_uint8);
-CHECK(DEFAULT_COMP(f) == &comp_float);
-CHECK(DEFAULT_COMP(d) == &comp_double);
-CHECK(DEFAULT_COMP(c) == &comp_char);
 CHECK(DEFAULT_COMP(s) == &comp_str);
 CHECK(DEFAULT_COMP(cs) == &comp_cstr);
 CHECK(DEFAULT_COMP(st) == NULL);
+CHECK(DEFAULT_COMP(ld) == NULL);
 
 CHECK(DEFAULT_COMP_TYPE(s) == &comp_str_data);
 CHECK(DEFAULT_COMP_TYPE(cs) == &comp_cstr_data);
 CHECK(DEFAULT_COMP_TYPE(i32) == NULL);
 CHECK(DEFAULT_COMP_TYPE(st) == NULL);
 
-// the chosen comparator can be used through the generic pointer type
-int (*cmp)(int32_t *, int32_t *) = DEFAULT_COMP(i32);
-int32_t x = 1, y = 2;
-CHECK(cmp(&x, &y) < 0);
+// the fixed width names are still available
+int64_t a64 = 1, b64 = 2;
+CHECK(comp_int64(&a64, &b64) < 0);
+uint8_t a8 = 1, b8 = 2;
+CHECK(comp_uint8(&b8, &a8) > 0);
 
 END_TEST
 
@@ -171,7 +221,76 @@ double d = 0;
 CHECK(DEFAULT_HASH(s) == &hash_str_mutable);
 CHECK(DEFAULT_HASH(cs) == &hash_str);
 CHECK(hash_str_mutable(s) == hash_str(cs));
-CHECK(DEFAULT_HASH(i) == &hash_int32_t);
 CHECK(DEFAULT_HASH(d) == &hash_double);
+CHECK(DEFAULT_HASH(i) != NULL);
+
+// every integer type has a default hash, whichever standard type int64_t and friends are
+#define CHECK_DEFAULT_HASH(T) \
+  do { \
+    T v = 7; \
+    uint64_t (*h)(T) = DEFAULT_HASH(v); \
+    CHECK(h != NULL); \
+    CHECK(h(v) == 7); \
+  } while (0)
+
+CHECK_DEFAULT_HASH(int64_t);
+CHECK_DEFAULT_HASH(int32_t);
+CHECK_DEFAULT_HASH(int16_t);
+CHECK_DEFAULT_HASH(int8_t);
+CHECK_DEFAULT_HASH(uint64_t);
+CHECK_DEFAULT_HASH(uint32_t);
+CHECK_DEFAULT_HASH(uint16_t);
+CHECK_DEFAULT_HASH(uint8_t);
+CHECK_DEFAULT_HASH(signed char);
+CHECK_DEFAULT_HASH(short);
+CHECK_DEFAULT_HASH(int);
+CHECK_DEFAULT_HASH(long);
+CHECK_DEFAULT_HASH(long long);
+CHECK_DEFAULT_HASH(unsigned char);
+CHECK_DEFAULT_HASH(unsigned short);
+CHECK_DEFAULT_HASH(unsigned int);
+CHECK_DEFAULT_HASH(unsigned long);
+CHECK_DEFAULT_HASH(unsigned long long);
+CHECK_DEFAULT_HASH(size_t);
+CHECK_DEFAULT_HASH(char);
+{
+  _Bool one = 1;
+  CHECK(DEFAULT_HASH(one) != NULL && DEFAULT_HASH(one)(one) == 1);
+  comp_struct_t st = {0};
+  CHECK(DEFAULT_HASH(st) == NULL);
+}
+
+END_TEST
+
+START_TEST(comp_test6)
+
+array_llong_t *a = array_llong_init();
+for (long long i = 5; i > 0; i--) {
+  array_llong_append(a, i * 1000000000000LL);
+}
+CHECK(array_llong_sort(a) == 0);
+CHECK(array_llong_get(a, 0) == 1000000000000LL);
+CHECK(array_llong_bisect(a, 3000000000000LL) == 2);
+array_llong_destroy(&a);
+
+tree_ullong_t *t = tree_ullong_init();
+CHECK(tree_ullong_insert(t, ULLONG_MAX, NULL) == 0);
+CHECK(tree_ullong_insert(t, 1, NULL) == 0);
+CHECK(tree_ullong_delete_min(t).key == 1);
+tree_ullong_destroy(&t);
+
+htable_llong_t *h = hash_llong_init(0);
+CHECK(hash_llong_put(h, -5, 50) == 0);
+CHECK(hash_llong_put(h, LLONG_MIN, 7) == 0);
+int v = 0;
+CHECK(hash_llong_get(h, -5, &v) == 1 && v == 50);
+CHECK(hash_llong_get(h, LLONG_MIN, &v) == 1 && v == 7);
+hash_llong_destroy(&h);
+
+htable_size_t *z = hash_size_init(0);
+CHECK(hash_size_put(z, (size_t) 12345, 1) == 0);
+CHECK(hash_size_get(z, (size_t) 12345, &v) == 1 && v == 1);
+CHECK(hash_size_get(z, (size_t) 12346, &v) == 0);
+hash_size_destroy(&z);
 
 END_TEST

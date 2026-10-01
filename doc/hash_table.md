@@ -62,7 +62,7 @@ as these can change between releases.
 the smallest power of 2 which holds that many entries at no more than 75% occupancy, or 16, whichever is larger,
 so `hash_prefix_init(0)` is fine when you have no idea.  The table grows by doubling when it gets too full.
 
-If the key type is one that `hash.h` knows (the integer types, `float`, `double`, `char*`, `const char*`),
+If the key type is one that `hash.h` knows (every integer type including `long long`, `size_t` and `bool`, `float`, `double`, `char*`, `const char*`),
 a hash function is set automatically, and for `char*` and `const char*` keys a compare function (`strcmp`) as well.
 For any other key type, call `hash_prefix_set_hash()` before using the table.
 
