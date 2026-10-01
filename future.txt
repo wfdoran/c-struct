@@ -1,14 +1,12 @@
 Possible Future Additions
 
-* Parallel HashTable
+* memory pool (similar to the one in Go), to be used for the hash table nodes
 
-* select for channels
+* blocking select for channels
 
-* option
+* locality-sensitive hashing
 
-* locality sensitve hashing
-
-* hyper log log
+* HyperLogLog
 
 * skip list
 
@@ -16,5 +14,4 @@ Possible Future Additions
 
 * count-min sketch
 
-* cucko hashing
-
+* cuckoo hashing

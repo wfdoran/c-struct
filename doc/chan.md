@@ -34,7 +34,7 @@ afterwards.
 
 ### `int32_t chan_prefix_send(chan_prefix_t *c, data_t value)`
 
-Puts a value into a channel.  Blocks if the channels is full.
+Puts a value into a channel.  Blocks if the channel is full.
 
 Returns CHAN_SUCCESS on success, CHAN_CLOSED if the channel has been
 closed, or CHAN_ERROR on an error.
@@ -66,7 +66,7 @@ If `value` is `NULL`, the value is read and discarded.
 
 Returns CHAN_SUCCESS on successfully reading a value from the channel,
 CHAN_EMPTY if the channel is empty (no read), CHAN_CLOSED if the
-channel is empyt and closed, or CHAN_ERROR on error.
+channel is empty and closed, or CHAN_ERROR on error.
 
 ### `int32_t chan_prefix_close(chan_prefix_t *c)`
 
