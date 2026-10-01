@@ -17,7 +17,7 @@ option_int_t b = option_int_init_empty();
 In the descriptions below, `prefix` stands for whatever label you chose and `option_prefix_t` is the type.  Every function is `static inline`.
 
 An optional sentinel can be given before including the header with `#define sentinel_value some_value`.  An empty option then holds that
-value, and `option_prefix_force_get()` returns it for an empty option instead of failing an assert.  The header undefines `sentinel_value` again.
+value, and `option_prefix_force_get()` returns it for an empty option instead of an ASSERT failure.  The header undefines `sentinel_value` again.
 
 ## Creating
 
@@ -45,7 +45,7 @@ which makes it the same as `is_set`.
 
 ### `data_t option_prefix_force_get(option_prefix_t x)`
 
-Returns the held value.  The option must hold one: an assert failure otherwise, unless a sentinel was configured.
+Returns the held value.  The option must hold one: an ASSERT failure otherwise, unless a sentinel was configured.
 
 ### `data_t option_prefix_get_or_else(option_prefix_t x, data_t other)`
 

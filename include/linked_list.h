@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <assert.h>
+#include "cs_assert.h"
 
 #include <comp.h>
 
@@ -98,7 +98,7 @@ static inline void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
    Returns the number of entries in the list.
 */
 static inline size_t GLUE3(llist_, prefix, _size) (const LLIST *a) {
-    assert(a != NULL);
+    ASSERT(a != NULL);
     return a->size;
 }
 

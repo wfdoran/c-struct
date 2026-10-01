@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -O2 -std=gnu11 -g -Wall -fopenmp
 INCLUDE = -I../include -I./
 
-TESTS = array linked_list tree chan hash_table phash_table pqueue option serialize comp any link
+TESTS = assert array linked_list tree chan hash_table phash_table pqueue option serialize comp any link
 SRC = $(addsuffix _tests.c, $(TESTS))
 OBJS = $(addsuffix _tests.o, $(TESTS))
 

@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <assert.h>
+#include "cs_assert.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -424,9 +424,9 @@ static inline int32_t GLUE3(array_, prefix, _map) (TYPE *a, data_t (*f) (data_t)
 /* Combines all of the entries in the array using a user provided function.
    Takes the first value as the initial value.  */
 static inline data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t (*f) (data_t, const data_t)) {
-    assert(a != NULL);
-    assert(f != NULL);
-    assert(a->size > 0);
+    ASSERT(a != NULL);
+    ASSERT(f != NULL);
+    ASSERT(a->size > 0);
     data_t rv = a->data[0];
     for (size_t i = 1; i < a->size; i++) {
         rv = f(rv, a->data[i]);
@@ -439,8 +439,8 @@ static inline data_t GLUE3(array_, prefix, _fold) (const TYPE *a, data_t (*f) (d
 
 static inline data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
                                       data_t (*f) (data_t, const data_t)) {
-    assert(a != NULL);
-    assert(f != NULL);
+    ASSERT(a != NULL);
+    ASSERT(f != NULL);
     data_t rv = init;
     for (size_t i = 0; i < a->size; i++) {
         rv = f(rv, a->data[i]);
@@ -450,8 +450,8 @@ static inline data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
 
 
 static inline int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
-    assert(a != NULL);
-    assert(f != NULL);
+    ASSERT(a != NULL);
+    ASSERT(f != NULL);
     if (a == NULL || f == NULL) {
         return -1;
     }
@@ -466,15 +466,15 @@ static inline int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t
 
    Gets the value at a particular index.  If a null value has been provided 
    and the index is out of range, the null value is returned.  Otherwise,
-   index out of range results in an assert failure.
+   index out of range results in an ASSERT failure.
 */
 static inline data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
-    assert(a != NULL);
+    ASSERT(a != NULL);
     if (idx >= a->size) {
         if (a->have_null_value) {
             return a->null_value;
         } else {
-            assert(idx < a->size);
+            ASSERT(idx < a->size);
         }
     }
     return a->data[idx];
@@ -485,12 +485,12 @@ static inline data_t GLUE3(array_, prefix, _get) (const TYPE *a, size_t idx) {
    you get a stack.
 */
 static inline data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
-    assert(a != NULL);
+    ASSERT(a != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
         } else {
-            assert(a->size > 0);
+            ASSERT(a->size > 0);
         }
     }
     a->size--;
@@ -502,12 +502,12 @@ static inline data_t GLUE3(array_, prefix, _pop) (TYPE *a) {
    you get a queue.
 */
 static inline data_t GLUE3(array_, prefix, _pop_first) (TYPE *a) {
-    assert(a != NULL);
+    ASSERT(a != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
         } else {
-            assert(a->size > 0);
+            ASSERT(a->size > 0);
         }
     }
 
@@ -576,7 +576,7 @@ static inline int32_t GLUE3(array_, prefix, _append) (TYPE *a, data_t value) {
    Returns the number of entries in the array. 
 */
 static inline size_t GLUE3(array_, prefix, _size) (const TYPE *a) {
-    assert(a != NULL);
+    ASSERT(a != NULL);
     return a->size;
 }
 
@@ -628,7 +628,7 @@ static inline int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
     if (a->comp == NULL) {
         return -1;
     }
-    assert(a->comp != NULL);
+    ASSERT(a->comp != NULL);
     if (GLUE3(array_, prefix, _append) (a, value) != 0) {
         return -1;
     }
@@ -653,13 +653,13 @@ static inline int32_t GLUE3(array_, prefix, _heappush) (TYPE *a, data_t value) {
 */
 
 static inline data_t GLUE3(array_, prefix, _heappop) (TYPE *a) {
-    assert(a != NULL);
-    assert(a->comp != NULL);
+    ASSERT(a != NULL);
+    ASSERT(a->comp != NULL);
     if (a->size <= 0) {
         if (a->have_null_value) {
             return a->null_value;
         } else {
-            assert(a->size > 0);
+            ASSERT(a->size > 0);
         }
     }
     data_t rv = a->data[0];
@@ -693,8 +693,8 @@ static inline int32_t GLUE3(array_, prefix, _heapify) (TYPE *a) {
 }
 
 static inline ssize_t GLUE3(array_, prefix, _index) (const TYPE *a, data_t v) {
-    assert(a != NULL);
-    assert(a->comp != NULL);
+    ASSERT(a != NULL);
+    ASSERT(a->comp != NULL);
     for (size_t i = 0; i < a->size; i++) {
         if (a->comp(&a->data[i], &v) == 0) {
             return i;

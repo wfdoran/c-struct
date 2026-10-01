@@ -3,7 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <stdatomic.h>
-#include <assert.h>
+#include "cs_assert.h"
 #include "hash.h"
 #include "comp.h"
 
@@ -478,7 +478,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove) (PHTABLE *h, hkey_t key, va
             }
         }
     }
-    assert(0);
+    ASSERT(0);
 }
 
 #undef PHNODE

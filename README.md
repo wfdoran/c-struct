@@ -34,7 +34,7 @@ times with different labels.  `-std=gnu11` is used throughout; the code also nee
 hash table needs `-pthread`.
 
 Conventions: functions are named `container_prefix_operation`.  Functions which can fail return `int32_t` with 0 for success and -1 for an
-error; lookups return a struct with a `found` flag, or a count (1 found, 0 not found); a few accessors assert on misuse.
+error; lookups return a struct with a `found` flag, or a count (1 found, 0 not found); a few accessors use `ASSERT` (`cs_assert.h`) on misuse: it prints `ASSERT failure:`, the file, function, line and condition to stderr and aborts, and, unlike `assert()`, it is not removed by `-DNDEBUG`.
 The containers never free the data that stored pointers refer to, unless you give them a free function.
 
 ## Containers

@@ -40,7 +40,7 @@ free what they point to first; `array_prefix_map()` can be used for this.
 ### `data_t array_prefix_get(const array_prefix_t *a, size_t idx)`
 
 Gets the array element at position `idx`.  If `idx` is out of range and a null value
-has been set, the null value is returned; otherwise an assert failure.
+has been set, the null value is returned; otherwise an ASSERT failure.
 
 ### `int32_t array_prefix_set(array_prefix_t *a, data_t value, size_t idx)`
 
@@ -56,7 +56,7 @@ Returns 0 on success, or -1 if `a` is `NULL` or memory could not be allocated (t
 ### `data_t array_prefix_pop(array_prefix_t *a)`
 
 Pops the last value off the array.  With `array_prefix_append()` this gives a stack.  If the array is
-empty, the null value is returned if one has been set; otherwise an assert failure.
+empty, the null value is returned if one has been set; otherwise an ASSERT failure.
 
 ### `data_t array_prefix_pop_first(array_prefix_t *a)`
 
@@ -76,7 +76,7 @@ Returns 0, or -1 if `a` or `comp` is `NULL`.
 ### `int32_t array_prefix_set_null_value(array_prefix_t *a, data_t null_value)`
 
 Sets the null value, which `array_prefix_get()`, `array_prefix_pop()`, `array_prefix_pop_first()` and
-`array_prefix_heappop()` return instead of failing an assert when the index is out of range or the array
+`array_prefix_heappop()` return instead of an ASSERT failure when the index is out of range or the array
 is empty.  Returns 0, or -1 if `a` is `NULL`.
 
 ## Getters
@@ -111,7 +111,7 @@ where `a[1]` is the new value.  And so on down the array.  Returns 0, or -1 if `
 ### `data_t array_prefix_fold(const array_prefix_t *a, data_t (*f) (data_t, const data_t))`
 
 Combines all of the entries using `f`.  The first entry is the initial value, so the
-array must not be empty (an assert failure otherwise).
+array must not be empty (an ASSERT failure otherwise).
 
 ### `data_t array_prefix_fold2(const array_prefix_t *a, data_t init, data_t (*f) (data_t, const data_t))`
 

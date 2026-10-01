@@ -1,7 +1,7 @@
 // https://algs4.cs.princeton.edu/32bst/
 
 #include <stdlib.h>
-#include <assert.h>
+#include "cs_assert.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>

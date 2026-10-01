@@ -2,7 +2,7 @@
 // https://algs4.cs.princeton.edu/24pq/
 
 #include <stdlib.h>
-#include <assert.h>
+#include "cs_assert.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -210,8 +210,8 @@ static inline int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void
    empty, the returned pqkv_prefix_t has found set to false.
 */
 static inline PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
-    assert(q != NULL);
-    assert(q->comp != NULL);
+    ASSERT(q != NULL);
+    ASSERT(q->comp != NULL);
 
     if (q->size == 0) {
         PQKV rv = {.value = NULL,.found = false };
@@ -255,7 +255,7 @@ static inline PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
    found set to false.
 */
 static inline PQKV GLUE3(pqueue_, prefix, _peek) (const PQUEUE *q) {
-    assert(q != NULL);
+    ASSERT(q != NULL);
 
     if (q->size == 0) {
         PQKV rv = {.value = NULL,.found = false };
@@ -271,7 +271,7 @@ static inline PQKV GLUE3(pqueue_, prefix, _peek) (const PQUEUE *q) {
   Returns the number of entries in the priority queue.
 */
 static inline size_t GLUE3(pqueue_, prefix, _size) (const PQUEUE *q) {
-    assert(q != NULL);
+    ASSERT(q != NULL);
     return q->size;
 }
 
@@ -280,7 +280,7 @@ static inline size_t GLUE3(pqueue_, prefix, _size) (const PQUEUE *q) {
   Returns true if the priority queue has no entries.
 */
 static inline bool GLUE3(pqueue_, prefix, _is_empty) (const PQUEUE *q) {
-    assert(q != NULL);
+    ASSERT(q != NULL);
     return q->size == 0;
 }
 

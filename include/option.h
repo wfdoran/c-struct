@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
-#include <assert.h>
+#include "cs_assert.h"
 #include <stdint.h>
 
 #ifndef data_t
@@ -54,7 +54,7 @@ static inline TYPE GLUE3(option_, prefix, _clone) (TYPE x) {
 /* setters */
 
 static inline void GLUE3(option_, prefix, _set)(TYPE *x, data_t value) {
-  assert(x != NULL);
+  ASSERT(x != NULL);
   x->value = value;
   x->set = true;
 }
@@ -84,7 +84,7 @@ static inline data_t GLUE3(option_, prefix, _force_get) (TYPE x) {
   }
 #endif
 
-  assert(x.set);
+  ASSERT(x.set);
   return x.value;
 }
 
@@ -97,7 +97,7 @@ static inline data_t GLUE3(option_, prefix, _get_or_else)(TYPE x, data_t other) 
 }
 
 static inline bool GLUE3(option_, prefix, _get_clear)(TYPE *x, data_t *value) {
-  assert(x != NULL);
+  ASSERT(x != NULL);
   if (x->set) {
     if (value != NULL) {
       *value = x->value;
