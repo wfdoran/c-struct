@@ -178,7 +178,7 @@ for (int rc = hash_prefix_first(h, &iter, &key, &value); rc == 0; rc = hash_pref
 
 ### `int32_t hash_prefix_first(const htable_prefix_t *h, hiter_prefix_t **iter_state, hkey_t *key, value_t *value)`
 
-Starts an iteration.  Returns 0 and fills in `*key` and `*value` with the first entry, or returns 1 if the table is empty.
+Starts an iteration.  Returns 0 and fills in `*key` and `*value` with the first entry, or returns 1 if the table is empty, or -1 if memory for the iterator could not be allocated (`*iter_state` is then `NULL`).
 Either of `key` and `value` may be `NULL`.
 
 ### `int32_t hash_prefix_next(hiter_prefix_t **iter_state, hkey_t *key, value_t *value)`

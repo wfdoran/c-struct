@@ -448,6 +448,10 @@ static inline int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, hkey_t *key
 
 static inline int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, hkey_t *key, value_t *value) {
     HITER *iter = malloc(sizeof(HITER));
+    if (iter == NULL) {
+        *iter_ptr = NULL;
+        return -1;
+    }
     iter->h = h;
     iter->curr = 0;
     *iter_ptr = iter;
