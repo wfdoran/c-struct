@@ -38,7 +38,9 @@ void* consume(void *args) {
   int64_t sum = 0;
   for (int64_t i = x->my_thread; i <= x->max_n; i += x->num_threads) {
     int64_t val;
-    chan_int64_recv(x->in, &val);
+    if (chan_int64_recv(x->in, &val) != CHAN_SUCCESS) {
+      break;
+    }
 
     if (val == INT64_C(-1)) {
       printf("%ld %ld\n", x->in->tail1, x->in->head0);

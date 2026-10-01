@@ -46,6 +46,13 @@ static inline uint64_t hash_str(const char *s) {
   return rv;
 }
 
+/* The same for a key type of char* (not const char*): the hash tables store a function
+   pointer whose parameter has the key's exact type, and a function taking
+   const char* is not a compatible pointer type. */
+static inline uint64_t hash_str_mutable(char *s) {
+  return hash_str(s);
+}
+
 /* Equal keys must hash equally: fold -0.0 into +0.0 and give every NaN the same hash. */
 static inline uint64_t hash_double(double x) {
   if (x == 0.0) {
@@ -83,7 +90,7 @@ static inline uint64_t hash_float(float x) {
     char: &hash_char, \
     double: &hash_double, \
     float: &hash_float, \
-    char*: &hash_str, \
+    char*: &hash_str_mutable, \
     const char*: &hash_str, \
     default: NULL)
 

@@ -72,7 +72,9 @@ int main(void) {
        float total = 0.0;
        for (int th = 0; th < nth; th++) {
 	 float v;
-	 chan_float_recv(ch2, &v);
+	 if (chan_float_recv(ch2, &v) != CHAN_SUCCESS) {
+	   break;
+	 }
 	 total += v;
 	 
        }

@@ -164,9 +164,13 @@ CHECK(hash_mix64(1) != hash_mix64(2));
 CHECK(hash_mix64(0) == hash_mix64(0));
 
 char *s = "x";
+const char *cs = "x";
 int32_t i = 0;
 double d = 0;
-CHECK(DEFAULT_HASH(s) == &hash_str);
+// each string key type gets a function whose parameter is exactly that type
+CHECK(DEFAULT_HASH(s) == &hash_str_mutable);
+CHECK(DEFAULT_HASH(cs) == &hash_str);
+CHECK(hash_str_mutable(s) == hash_str(cs));
 CHECK(DEFAULT_HASH(i) == &hash_int32_t);
 CHECK(DEFAULT_HASH(d) == &hash_double);
 
