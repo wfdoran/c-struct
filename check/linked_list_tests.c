@@ -174,3 +174,45 @@ for (int n = 0; n <= 200; n += 7) {
 }
 
 END_TEST
+
+START_TEST(linked_list_test9)
+
+llist_int_t *a = llist_int_init();
+CHECK(a != NULL);
+CHECK(llist_int_size(a) == 0);
+
+for (int i = 0; i < 10; i++) {
+  llist_int_add_end(a, i);
+}
+CHECK(llist_int_size(a) == 10);
+llist_int_add_start(a, -1);
+CHECK(llist_int_size(a) == 11);
+
+llist_int_remove_start(a);
+llist_int_remove_end(a);
+CHECK(llist_int_size(a) == 9);
+
+lnode_int_t *n;
+llist_int_walk_init_start(a, &n);
+llist_int_insert_after(a, &n, 100);
+CHECK(llist_int_size(a) == 10);
+llist_int_insert_before(a, &n, 101);
+CHECK(llist_int_size(a) == 11);
+llist_int_remove_forward(a, &n);
+CHECK(llist_int_size(a) == 10);
+
+CHECK(llist_int_msort(a) == 0);
+CHECK(llist_int_size(a) == 10);
+
+// removing everything, including from an empty list, never goes below zero
+for (int i = 0; i < 12; i++) {
+  llist_int_remove_start(a);
+}
+CHECK(llist_int_size(a) == 0);
+llist_int_remove_end(a);
+CHECK(llist_int_size(a) == 0);
+
+llist_int_destroy(&a);
+CHECK(a == NULL);
+
+END_TEST

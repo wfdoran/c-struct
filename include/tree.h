@@ -557,7 +557,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _delete) (TREE *a, data_t key) {
 
    Searchs for a node with a given key.  The node is not removed if found.
 */
-static inline KEYVAL GLUE3(tree_, prefix, _retrieve) (TREE *a, data_t key) {
+static inline KEYVAL GLUE3(tree_, prefix, _retrieve) (const TREE *a, data_t key) {
     NODE *n = a->root;
 
     while (true) {
@@ -626,7 +626,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _delete_max) (TREE *a) {
 
   Retrieves the ke/value of the minimum node.  
 */
-static inline KEYVAL GLUE3(tree_, prefix, _retrieve_min) (TREE *a) {
+static inline KEYVAL GLUE3(tree_, prefix, _retrieve_min) (const TREE *a) {
     NODE *n = a->root;
 
     if (n == NULL) {
@@ -646,7 +646,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve_min) (TREE *a) {
 
   Retrieves teh key/value of the maximum node.
 */
-static inline KEYVAL GLUE3(tree_, prefix, _retrieve_max) (TREE *a) {
+static inline KEYVAL GLUE3(tree_, prefix, _retrieve_max) (const TREE *a) {
     NODE *n = a->root;
 
     if (n == NULL) {
@@ -666,7 +666,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve_max) (TREE *a) {
 
   Returns the number of nodes in the tree.
 */
-static inline size_t GLUE3(tree_, prefix, _size) (TREE *a) {
+static inline size_t GLUE3(tree_, prefix, _size) (const TREE *a) {
     return a->root == NULL ? 0 : a->root->size;
 }
 
@@ -674,7 +674,7 @@ static inline size_t GLUE3(tree_, prefix, _size) (TREE *a) {
 
   Returns the number of nodes with key less than the given value.
 */
-static inline size_t GLUE3(tree_, prefix, _num_less) (TREE *a, data_t key) {
+static inline size_t GLUE3(tree_, prefix, _num_less) (const TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
     while (n != NULL) {
@@ -700,7 +700,7 @@ static inline size_t GLUE3(tree_, prefix, _num_less) (TREE *a, data_t key) {
    Returns the number of nodes with key less than or equal to
    the given value.
 */
-static inline size_t GLUE3(tree_, prefix, _num_less_equal) (TREE *a, data_t key) {
+static inline size_t GLUE3(tree_, prefix, _num_less_equal) (const TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
     while (n != NULL) {
@@ -723,7 +723,7 @@ static inline size_t GLUE3(tree_, prefix, _num_less_equal) (TREE *a, data_t key)
 
   Returns the number of nodes with key greater than the given value.
 */
-static inline size_t GLUE3(tree_, prefix, _num_greater) (TREE *a, data_t key) {
+static inline size_t GLUE3(tree_, prefix, _num_greater) (const TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
     while (n != NULL) {
@@ -749,7 +749,7 @@ static inline size_t GLUE3(tree_, prefix, _num_greater) (TREE *a, data_t key) {
   Returns the number of nodes with key greater than or equal to the
   given value.
 */
-static inline size_t GLUE3(tree_, prefix, _num_greater_equal) (TREE *a, data_t key) {
+static inline size_t GLUE3(tree_, prefix, _num_greater_equal) (const TREE *a, data_t key) {
     size_t total = 0;
     NODE *n = a->root;
     while (n != NULL) {
@@ -772,7 +772,7 @@ static inline size_t GLUE3(tree_, prefix, _num_greater_equal) (TREE *a, data_t k
 
   Returns the height of the tree.
 */
-static inline int GLUE3(tree_, prefix, _height) (TREE *a) {
+static inline int GLUE3(tree_, prefix, _height) (const TREE *a) {
     return a->root == NULL ? 0 : a->root->height;
 }
 
@@ -793,7 +793,7 @@ static inline NODE *GLUE3(tree_, prefix, _postwalk_descent) (NODE *n) {
     }
 }
 
-static inline void GLUE3(tree_, prefix, _postwalk_init) (TREE *a, void **state) {
+static inline void GLUE3(tree_, prefix, _postwalk_init) (const TREE *a, void **state) {
     if (a->root == NULL) {
         *state = NULL;
     } else {
@@ -822,7 +822,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _postwalk_next) (void **state) {
    set to NULL, so the caller must check state before calling
    tree_prefix_walk_next().
 */
-static inline void GLUE3(tree_, prefix, _walk_init2) (TREE *a, data_t key, void **state) {
+static inline void GLUE3(tree_, prefix, _walk_init2) (const TREE *a, data_t key, void **state) {
     NODE *best = NULL;
     NODE *n = a->root;
     while (n != NULL) {
@@ -841,7 +841,7 @@ static inline void GLUE3(tree_, prefix, _walk_init2) (TREE *a, data_t key, void 
     *state = best;
 }
 
-static inline void GLUE3(tree_, prefix, _walk_init) (TREE *a, void **state) {
+static inline void GLUE3(tree_, prefix, _walk_init) (const TREE *a, void **state) {
     if (a->root == NULL) {
         *state = NULL;
     } else {
@@ -875,7 +875,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _walk_next) (void **state) {
     return rv;
 }
 
-static inline KEYVAL GLUE3(tree_, prefix, _get_rank) (TREE *a, size_t rank) {
+static inline KEYVAL GLUE3(tree_, prefix, _get_rank) (const TREE *a, size_t rank) {
     NODE *n = a->root;
     if (n == NULL || rank >= n->size) {
         KEYVAL rv = {.value = NULL,.found = false };
@@ -939,7 +939,7 @@ static inline void GLUE3(tree_, prefix, _print_node) (void (*node_print) (data_t
     GLUE3(tree_, prefix, _print_node) (node_print, n->right, depth + 1, rmask);
 }
 
-static inline void GLUE3(tree_, prefix, _print) (TREE *a, void (*node_print) (data_t, void *)) {
+static inline void GLUE3(tree_, prefix, _print) (const TREE *a, void (*node_print) (data_t, void *)) {
     GLUE3(tree_, prefix, _print_node) (node_print, a->root, 0, 0);
 
 }

@@ -62,8 +62,8 @@ START_TEST(hash_table_test1)
 
 htable_hi_t *h = hash_hi_init(0);
 CHECK(h != NULL);
-CHECK(hash_hi_get_size(h) == 0);
-CHECK(hash_hi_get_capacity(h) == 16);
+CHECK(hash_hi_size(h) == 0);
+CHECK(hash_hi_capacity(h) == 16);
 
 hash_hi_destroy(&h);
 CHECK(h == NULL);
@@ -84,19 +84,19 @@ CHECK(hash_hi_put(h, 7, 70) == 0);
 CHECK(hash_hi_get(h, 7, &v) == 1);
 CHECK(v == 70);
 CHECK(hash_hi_get(h, 7, NULL) == 1);
-CHECK(hash_hi_get_size(h) == 1);
+CHECK(hash_hi_size(h) == 1);
 
 CHECK(hash_hi_put(h, 7, 71) == 0);
 CHECK(hash_hi_get(h, 7, &v) == 1);
 CHECK(v == 71);
-CHECK(hash_hi_get_size(h) == 1);
+CHECK(hash_hi_size(h) == 1);
 
 CHECK(hash_hi_remove(h, 8, &v) == 0);
 CHECK(hash_hi_remove(h, 7, &v) == 1);
 CHECK(v == 71);
 CHECK(hash_hi_remove(h, 7, &v) == 0);
 CHECK(hash_hi_get(h, 7, &v) == 0);
-CHECK(hash_hi_get_size(h) == 0);
+CHECK(hash_hi_size(h) == 0);
 
 CHECK(hash_hi_put(NULL, 1, 1) == -1);
 CHECK(hash_hi_get(NULL, 1, &v) == -1);
@@ -119,7 +119,7 @@ for (int i = 0; i < 5; i++) {
 int v;
 CHECK(hash_hi_get(h, 3, &v) == 1);
 CHECK(v == 50);
-CHECK(hash_hi_get_size(h) == 1);
+CHECK(hash_hi_size(h) == 1);
 
 hash_hi_destroy(&h);
 
@@ -134,9 +134,9 @@ for (int i = 0; i < n; i++) {
   CHECK(hash_hi_put(h, i * 3, i) == 0);
 }
 
-CHECK(hash_hi_get_size(h) == n);
+CHECK(hash_hi_size(h) == (size_t) n);
 
-int64_t cap = hash_hi_get_capacity(h);
+int64_t cap = hash_hi_capacity(h);
 CHECK((cap & (cap - 1)) == 0);
 CHECK(cap * 3 >= (int64_t) n * 4);
 
@@ -159,13 +159,13 @@ htable_hi_t *h = hash_hi_init(0);
 hash_hi_put(h, 5, 1);
 hash_hi_remove(h, 5, NULL);
 hash_hi_put(h, 5, 2);
-CHECK(hash_hi_get_size(h) == 1);
+CHECK(hash_hi_size(h) == 1);
 
 hash_hi_put(h, 6, 1);
 hash_hi_put(h, 7, 1);
 hash_hi_remove(h, 6, NULL);
 hash_hi_put(h, 6, 1);
-CHECK(hash_hi_get_size(h) == 3);
+CHECK(hash_hi_size(h) == 3);
 
 for (int round = 0; round < 20; round++) {
   for (int i = 0; i < 12; i++) {
@@ -174,7 +174,7 @@ for (int round = 0; round < 20; round++) {
   for (int i = 0; i < 12; i++) {
     hash_hi_remove(h, 100 + i, NULL);
   }
-  CHECK(hash_hi_get_size(h) == 3);
+  CHECK(hash_hi_size(h) == 3);
 }
 
 hash_hi_destroy(&h);
@@ -193,7 +193,7 @@ for (int i = 0; i < 200000; i++) {
   hash_hi_remove(h, i * 7919, NULL);
 }
 
-CHECK(hash_hi_get_size(h) == 0);
+CHECK(hash_hi_size(h) == 0);
 CHECK(hash_hi_get(h, -1, NULL) == 0);
 CHECK(hash_hi_remove(h, -1, NULL) == 0);
 CHECK(hash_hi_put(h, -1, 1) == 0);
@@ -217,7 +217,7 @@ CHECK(hash_hi_put(h, k0, 1) == 0);
 CHECK(hash_hi_remove(h, k0, NULL) == 1);
 CHECK(hash_hi_remove(h, 0, NULL) == 0);
 CHECK(hash_hi_get(h, 0, NULL) == 0);
-CHECK(hash_hi_get_size(h) == 0);
+CHECK(hash_hi_size(h) == 0);
 
 for (int i = 1; i <= 12; i++) {
   hash_hi_put(h, i * 16, i);
@@ -231,13 +231,13 @@ for (int k = 0; k < 200; k++) {
     CHECK(hash_hi_remove(h, k, NULL) == 0);
   }
 }
-CHECK(hash_hi_get_size(h) == 0);
+CHECK(hash_hi_size(h) == 0);
 
 CHECK(hash_hi_put(h, 0, 5) == 0);
 int v = -1;
 CHECK(hash_hi_remove(h, 0, &v) == 1);
 CHECK(v == 5);
-CHECK(hash_hi_get_size(h) == 0);
+CHECK(hash_hi_size(h) == 0);
 
 hash_hi_destroy(&h);
 
@@ -255,7 +255,7 @@ hash_hs_remove(h, "c", NULL);
 
 htable_hs_t *c = hash_hs_clone(h);
 CHECK(c != NULL);
-CHECK(hash_hs_get_size(c) == 4);
+CHECK(hash_hs_size(c) == 4);
 
 for (int i = 0; i < 6; i++) {
   int in_h = hash_hs_get(h, names[i], NULL);
@@ -269,8 +269,8 @@ CHECK(v == 1);
 
 hash_hs_put(c, "z", 99);
 CHECK(hash_hs_get(h, "z", NULL) == 0);
-CHECK(hash_hs_get_size(h) == 4);
-CHECK(hash_hs_get_size(c) == 5);
+CHECK(hash_hs_size(h) == 4);
+CHECK(hash_hs_size(c) == 5);
 
 hash_hs_destroy(&c);
 hash_hs_destroy(&h);
@@ -293,7 +293,7 @@ int v = 0;
 CHECK(hash_hs_get(h, a2, &v) == 1);
 CHECK(v == 1);
 hash_hs_put(h, a2, 3);
-CHECK(hash_hs_get_size(h) == 2);
+CHECK(hash_hs_size(h) == 2);
 
 hash_hc_put(g, a1, 1);
 hash_hc_put(g, b, 2);
@@ -301,7 +301,7 @@ v = 0;
 CHECK(hash_hc_get(g, a2, &v) == 1);
 CHECK(v == 1);
 hash_hc_put(g, a2, 3);
-CHECK(hash_hc_get_size(g) == 2);
+CHECK(hash_hc_size(g) == 2);
 CHECK(hash_hc_get(g, "absent", NULL) == 0);
 CHECK(g->comp != NULL);
 
@@ -316,7 +316,7 @@ htable_hd_t *h = hash_hd_init(0);
 
 hash_hd_put(h, 0.0, 1);
 hash_hd_put(h, -0.0, 2);
-CHECK(hash_hd_get_size(h) == 1);
+CHECK(hash_hd_size(h) == 1);
 int v = 0;
 CHECK(hash_hd_get(h, 0.0, &v) == 1);
 CHECK(v == 2);
@@ -347,7 +347,7 @@ for (int i = 0; i < n; i++) {
   CHECK(hash_hd_get(h, (double) i, &v) == 1);
   CHECK(v == i);
 }
-CHECK(hash_hd_get_size(h) == n);
+CHECK(hash_hd_size(h) == (size_t) n);
 
 hash_hd_destroy(&h);
 
@@ -461,12 +461,12 @@ for (int round = 0; round < 20; round++) {
         CHECK(v == model[k]);
       }
     }
-    CHECK(hash_hi_get_size(h) == count);
+    CHECK(hash_hi_size(h) == (size_t) count);
   }
 
   htable_hi_t *c = hash_hi_clone(h);
   CHECK(c != NULL);
-  CHECK(hash_hi_get_size(c) == count);
+  CHECK(hash_hi_size(c) == (size_t) count);
   for (int k = 0; k < 1000; k++) {
     int v = -1;
     CHECK(hash_hi_get(c, k, &v) == present[k]);

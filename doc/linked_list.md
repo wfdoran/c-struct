@@ -37,6 +37,10 @@ Frees all of the nodes and the list itself, and sets the user's pointer to `NULL
 Sets the comparison function used by `llist_prefix_msort()`.  For basic types (`int`, `double`, `char*`, ...) one is provided by
 `comp.h`; other types need one set here.
 
+### `size_t llist_prefix_size(const llist_prefix_t *a)`
+
+Returns the number of entries in the list.
+
 ### `int32_t llist_prefix_add_start(llist_prefix_t *a, data_t v)`
 ### `int32_t llist_prefix_add_end(llist_prefix_t *a, data_t v)`
 

@@ -76,37 +76,37 @@ which matters when the keys are pointers to allocated memory.
 Remove the node with the smallest or largest key and return its key and value.  `found` is `false` if the tree is empty.
 These do not use the comparison function.
 
-### `key_prefix_value_t tree_prefix_retrieve(tree_prefix_t *t, data_t key)`
+### `key_prefix_value_t tree_prefix_retrieve(const tree_prefix_t *t, data_t key)`
 
 Retrieves but does not delete the key-value pair for a given key.
 
-### `key_prefix_value_t tree_prefix_retrieve_min(tree_prefix_t *t)`
-### `key_prefix_value_t tree_prefix_retrieve_max(tree_prefix_t *t)`
+### `key_prefix_value_t tree_prefix_retrieve_min(const tree_prefix_t *t)`
+### `key_prefix_value_t tree_prefix_retrieve_max(const tree_prefix_t *t)`
 
 Retrieve, without deleting, the key and value of the smallest or largest key.  `found` is `false` if the tree is empty.
 
 ## Size and Rank
 
-### `size_t tree_prefix_size(tree_prefix_t *t);`
+### `size_t tree_prefix_size(const tree_prefix_t *t);`
 
 Returns the number of nodes in the tree.  This implementation does not
 have a fictitious root node.
 
-### `int tree_prefix_height(tree_prefix_t *t);`
+### `int tree_prefix_height(const tree_prefix_t *t);`
 
 Returns the height of the tree, the number of nodes on the longest path from the root
 (0 for an empty tree, 1 for a single node).  The tree is kept balanced (AVL), so for `n`
 nodes the height is at least ceil(log2(n + 1)) and at most about 1.44 log2(n + 2).
 
-### `key_prefix_value_t tree_prefix_get_rank(tree_prefix_t *t, size_t rank)`
+### `key_prefix_value_t tree_prefix_get_rank(const tree_prefix_t *t, size_t rank)`
 
 Returns the key and value with the given rank, counting from 0 in key order: rank 0 is the smallest key.
 `found` is `false` if `rank` is not less than the size of the tree.
 
-### `size_t tree_prefix_num_less(tree_prefix_t *t, data_t key)`
-### `size_t tree_prefix_num_less_equal(tree_prefix_t *t, data_t key)`
-### `size_t tree_prefix_num_greater(tree_prefix_t *t, data_t key)`
-### `size_t tree_prefix_num_greater_equal(tree_prefix_t *t, data_t key)`
+### `size_t tree_prefix_num_less(const tree_prefix_t *t, data_t key)`
+### `size_t tree_prefix_num_less_equal(const tree_prefix_t *t, data_t key)`
+### `size_t tree_prefix_num_greater(const tree_prefix_t *t, data_t key)`
+### `size_t tree_prefix_num_greater_equal(const tree_prefix_t *t, data_t key)`
 
 Return the number of nodes whose key is less than, less than or equal to, greater than, or greater than or equal to
 `key`.  The key itself does not need to be in the tree.
@@ -123,11 +123,11 @@ for (tree_prefix_walk_init(t, &state); state != NULL; ) {
 }
 ```
 
-### `void tree_prefix_walk_init(tree_prefix_t *t, void **state);`
+### `void tree_prefix_walk_init(const tree_prefix_t *t, void **state);`
 
 Initializes an in-order walk of the tree, starting at the smallest key.  `*state` is `NULL` if the tree is empty.
 
-### `void tree_prefix_walk_init2(tree_prefix_t *t, data_t key, void **state)`
+### `void tree_prefix_walk_init2(const tree_prefix_t *t, data_t key, void **state)`
 
 Initializes the in-order walk at the first node which is equal to or greater than
 key.  If there is no such node, `*state` is set to `NULL`.
@@ -138,13 +138,13 @@ Returns the key-value pair for the current node in the walk and steps `state` to
 At the last node, `state` is set to `NULL`.  Nothing is allocated, so there is nothing to free if
 you stop early.  Do not call it when `state` is `NULL`.  The tree must not be modified during a walk.
 
-### `void tree_prefix_postwalk_init(tree_prefix_t *t, void **state)`
+### `void tree_prefix_postwalk_init(const tree_prefix_t *t, void **state)`
 ### `key_prefix_value_t tree_prefix_postwalk_next(void **state)`
 
 The same, but a post-order walk: every node comes after its children, ending with the root.  This is the order to use to free or
 destroy things node by node.
 
-### `void tree_prefix_print(tree_prefix_t *t, void (*node_print) (data_t, void *))`
+### `void tree_prefix_print(const tree_prefix_t *t, void (*node_print) (data_t, void *))`
 
 Prints a picture of the tree sideways to standard output, one node per line, calling `node_print(key, value)`
 to print each node's contents.  Useful for debugging.

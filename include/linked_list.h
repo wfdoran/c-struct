@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <assert.h>
 
 #include <comp.h>
 
@@ -35,10 +37,6 @@ typedef struct {
     size_t size;
     int (*comp) (data_t *, data_t *);
 } LLIST;
-
-/* 
-  llist_prefix_size;
-*/
 
 /* ----------------------------------------------------------------------- */
 /*                  constructors / destructor                              */
@@ -94,6 +92,15 @@ static inline void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
 /* ----------------------------------------------------------------------- */
 /*                          add / remove                                   */
 /* ----------------------------------------------------------------------- */
+
+/* size_t llist_prefix_size(const llist_prefix_t *a)
+
+   Returns the number of entries in the list.
+*/
+static inline size_t GLUE3(llist_, prefix, _size) (const LLIST *a) {
+    assert(a != NULL);
+    return a->size;
+}
 
 static inline int32_t GLUE3(llist_, prefix, _add_start) (LLIST *a, data_t d) {
     if (a == NULL) {

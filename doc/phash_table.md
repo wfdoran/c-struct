@@ -22,7 +22,7 @@ describes the differences.
 
 ## Differences from the plain table
 
-* **One lock.**  The table has a single read-write lock.  `get`, `get_size` and `get_capacity` take it for reading, so any number of
+* **One lock.**  The table has a single read-write lock.  `get`, `size` and `capacity` take it for reading, so any number of
   them can run together.  `put`, `remove` and `atomic_update` take it for writing, one at a time.
 * **Same results.**  `put`, `get` and `remove` have the same arguments and return values as in `hash_table.md`.  `destroy` and `init` are the same as well.
 * **Hash outside the lock.**  The hash function runs before the lock is taken, so a slow hash function does not hold up other threads.

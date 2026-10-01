@@ -51,7 +51,7 @@ int main(void) {
     }
   }
 
-  printf("number of entries %ld of %ld\n", phash_int_get_size(h), phash_int_get_capacity(h));
+  printf("number of entries %zu of %zu\n", phash_int_size(h), phash_int_capacity(h));
   
   phash_int_destroy(&h);
   return 0;

@@ -26,8 +26,8 @@ int main(void) {
     int rc = hash_int_put(h, i*i, i);
     assert(rc == 0);
   }
-  printf("hash table size = %ld  capacity = %ld\n",
-	 hash_int_get_size(h), hash_int_get_capacity(h));
+  printf("hash table size = %zu  capacity = %zu\n",
+	 hash_int_size(h), hash_int_capacity(h));
   printf("\n");
 
   /* Try getting a few values. */
@@ -52,8 +52,8 @@ int main(void) {
     }
   }
 
-  printf("hash table size = %ld  capacity = %ld\n",
-	 hash_int_get_size(h), hash_int_get_capacity(h));
+  printf("hash table size = %zu  capacity = %zu\n",
+	 hash_int_size(h), hash_int_capacity(h));
   printf("\n");
   
   hiter_int_t *iter;

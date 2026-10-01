@@ -45,8 +45,8 @@ START_TEST(phash_table_test1)
 
 phtable_pi_t *h = phash_pi_init(0);
 CHECK(h != NULL);
-CHECK(phash_pi_get_size(h) == 0);
-CHECK(phash_pi_get_capacity(h) == 16);
+CHECK(phash_pi_size(h) == 0);
+CHECK(phash_pi_capacity(h) == 16);
 
 phash_pi_destroy(&h);
 CHECK(h == NULL);
@@ -68,13 +68,13 @@ CHECK(v == 70);
 CHECK(phash_pi_put(h, 7, 71) == 0);
 CHECK(phash_pi_get(h, 7, &v) == 1);
 CHECK(v == 71);
-CHECK(phash_pi_get_size(h) == 1);
+CHECK(phash_pi_size(h) == 1);
 
 CHECK(phash_pi_remove(h, 8, &v) == 0);
 CHECK(phash_pi_remove(h, 7, &v) == 1);
 CHECK(v == 71);
 CHECK(phash_pi_remove(h, 7, &v) == 0);
-CHECK(phash_pi_get_size(h) == 0);
+CHECK(phash_pi_size(h) == 0);
 
 CHECK(phash_pi_put(NULL, 1, 1) == -1);
 CHECK(phash_pi_get(NULL, 1, &v) == -1);
@@ -91,7 +91,7 @@ phtable_pi_t *h = phash_pi_init(0);
 for (int i = 0; i < n; i++) {
   CHECK(phash_pi_put(h, i, i * 2) == 0);
 }
-CHECK(phash_pi_get_size(h) == n);
+CHECK(phash_pi_size(h) == (size_t) n);
 for (int i = 0; i < n; i++) {
   int v;
   CHECK(phash_pi_get(h, i, &v) == 1);
@@ -113,12 +113,12 @@ CHECK(phash_pi_put(h, k0, 1) == 0);
 CHECK(phash_pi_remove(h, k0, NULL) == 1);
 CHECK(phash_pi_remove(h, 0, NULL) == 0);
 CHECK(phash_pi_get(h, 0, NULL) == 0);
-CHECK(phash_pi_get_size(h) == 0);
+CHECK(phash_pi_size(h) == 0);
 
 phash_pi_put(h, 5, 1);
 phash_pi_remove(h, 5, NULL);
 phash_pi_put(h, 5, 2);
-CHECK(phash_pi_get_size(h) == 1);
+CHECK(phash_pi_size(h) == 1);
 
 // Deleted markers must not make lookups of absent keys loop forever, and
 // removing an absent key (including 0) must not touch the marker.
@@ -127,7 +127,7 @@ for (int i = 0; i < 100000; i++) {
   phash_pi_put(h, i * 7919 + 1, i);
   phash_pi_remove(h, i * 7919 + 1, NULL);
 }
-CHECK(phash_pi_get_size(h) == 1);
+CHECK(phash_pi_size(h) == 1);
 CHECK(phash_pi_get(h, -1, NULL) == 0);
 CHECK(phash_pi_remove(h, 0, NULL) == 0);
 CHECK(phash_pi_remove(h, -1, NULL) == 0);
@@ -140,7 +140,7 @@ END_TEST
 START_TEST(phash_table_test5)
 
 phtable_pi_t *h = phash_pi_init(100);
-CHECK(phash_pi_get_capacity(h) == 256);
+CHECK(phash_pi_capacity(h) == 256);
 
 phash_pi_set_update(h, add);
 phash_pi_put(h, 1, 10);
@@ -200,7 +200,7 @@ for (int i = 0; i < keys * per_key; i++) {
   phash_pi_atomic_update(h, i % keys, 1, add);
 }
 
-CHECK(phash_pi_get_size(h) == keys);
+CHECK(phash_pi_size(h) == (size_t) keys);
 for (int k = 0; k < keys; k++) {
   int v = 0;
   CHECK(phash_pi_get(h, k, &v) == 1);
@@ -233,7 +233,7 @@ for (int i = 0; i < n; i++) {
 }
 
 CHECK(bad == 0);
-CHECK(phash_pi_get_size(h) == n);
+CHECK(phash_pi_size(h) == (size_t) n);
 for (int i = 0; i < n; i++) {
   int v;
   CHECK(phash_pi_get(h, i, &v) == 1);
@@ -261,7 +261,7 @@ for (int i = 0; i < n; i++) {
   }
 }
 
-CHECK(phash_pi_get_size(h) == n / 2);
+CHECK(phash_pi_size(h) == (size_t) (n / 2));
 for (int i = 0; i < n; i++) {
   int v;
   int rc = phash_pi_get(h, i, &v);

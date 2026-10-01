@@ -152,11 +152,11 @@ char* update(char* previous, char* current) {
 
 ## Accessors
 
-### `int64_t hash_prefix_get_size(const htable_prefix_t *h)`
+### `size_t hash_prefix_size(const htable_prefix_t *h)`
 
 Returns the number of entries in the table.
 
-### `int64_t hash_prefix_get_capacity(const htable_prefix_t *h)`
+### `size_t hash_prefix_capacity(const htable_prefix_t *h)`
 
 Returns the number of slots allocated for the table.  When more than 75% of the slots are in use
 (by entries or by markers left by removed entries), the table is rebuilt, doubling in size if it needs the room.

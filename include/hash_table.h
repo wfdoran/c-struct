@@ -172,22 +172,22 @@ static inline void GLUE3(hash_, prefix, _set_update) (HTABLE *h, value_t (*updat
     h->update = update;
 }
 
-/* int64_t hash_prefix_get_size(const htable_prefix_t *h);
+/* size_t hash_prefix_size(const htable_prefix_t *h);
 
    Returns the number of unique hkey_ts inserted into the hash table. 
 */
-static inline int64_t GLUE3(hash_, prefix, _get_size) (const HTABLE *h) {
-    return h->size;
+static inline size_t GLUE3(hash_, prefix, _size) (const HTABLE *h) {
+    return (size_t) h->size;
 }
 
-/* int64_t hash_prefix_get_capacity(const htable_prefix_t *h);
+/* size_t hash_prefix_capacity(const htable_prefix_t *h);
 
    Returns the allocated size of the hash table.  
 
    Once this is 75% filled, it is automatically doubled. 
 */
-static inline int64_t GLUE3(hash_, prefix, _get_capacity) (const HTABLE *h) {
-    return h->capacity;
+static inline size_t GLUE3(hash_, prefix, _capacity) (const HTABLE *h) {
+    return (size_t) h->capacity;
 }
 
 /* void hash_prefix_destroy(htable_prefix_t **h_ptr);
