@@ -358,8 +358,8 @@ interval_erf(interval_t a) {
 
 interval_t
 interval_sqrt(interval_t a) {
-  /* like interval_log, invalid unless the whole interval is in the domain (also rejects NaN) */
-  if (!a.valid || !(a.lo >= 0.0)) {
+  /* the domain is [0, inf): use the part of the interval inside it, and fail only if none of it is */
+  if (!a.valid || !(a.hi >= 0.0)) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
@@ -371,7 +371,8 @@ interval_sqrt(interval_t a) {
   rv.hi = iv_fence(sqrt(iv_fence(a.hi)));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = iv_fence(sqrt(iv_fence(a.lo)));
+  double lo = a.lo > 0 ? a.lo : 0.0;
+  rv.lo = iv_fence(sqrt(iv_fence(lo)));
 
   fesetround(save);
 
@@ -411,7 +412,8 @@ interval_ceil(interval_t a) {
 
 interval_t
 interval_log(interval_t a) {
-  if (!a.valid || a.lo <= 0.0) {
+  /* the domain is (0, inf): use the part of the interval inside it, and fail only if none of it is */
+  if (!a.valid || !(a.hi > 0.0)) {
     interval_t bad = {.lo = 0.0, .hi = 0.0, .valid = false};
     return bad;
   }
@@ -423,7 +425,8 @@ interval_log(interval_t a) {
   rv.hi = interval_ulp_up(log(a.hi));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = interval_ulp_down(log(a.lo));
+  double lo = a.lo > 0 ? a.lo : 0.0;       /* log(0) is -inf: the lower bound is unbounded */
+  rv.lo = interval_ulp_down(log(lo));
 
   fesetround(save);
 
