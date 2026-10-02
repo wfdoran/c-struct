@@ -1,4 +1,6 @@
 #include <check.h>
+#include <pthread.h>
+#include <time.h>
 
 
 #define data_t int
@@ -177,5 +179,36 @@ c = chan_dn_init(1);
 chan_dn_destroy(&c);
 chan_dn_destroy(&c);
 CHECK(c == NULL);
+
+END_TEST
+
+static void *chan_test6_receiver(void *p) {
+  int v;
+  chan_int_recv((chan_int_t *) p, &v);
+  return NULL;
+}
+
+static double process_cpu_seconds(void) {
+  struct timespec ts;
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+  return (double) ts.tv_sec + 1e-9 * (double) ts.tv_nsec;
+}
+
+// A receiver which waits for a long time must not burn a CPU while it waits
+START_TEST(chan_test6)
+
+chan_int_t *c = chan_int_init(4);
+pthread_t t;
+double cpu0 = process_cpu_seconds();
+CHECK(pthread_create(&t, NULL, chan_test6_receiver, c) == 0);
+
+struct timespec wait = {0, 500 * 1000 * 1000};
+nanosleep(&wait, NULL);
+double used = process_cpu_seconds() - cpu0;
+CHECK(used < 0.25);   // about 0.5 s with a bare yield loop, about 0.03 s with the backoff
+
+CHECK(chan_int_send(c, 7) == CHAN_SUCCESS);
+CHECK(pthread_join(t, NULL) == 0);
+chan_int_destroy(&c);
 
 END_TEST

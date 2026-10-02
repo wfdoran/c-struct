@@ -45,6 +45,30 @@ static inline void chan_wait(int32_t *spins) {
   }
 }
 
+/* Called between the attempts of a blocking send or receive, which wait for another thread
+   to make room or to send something.  The wait may be short or long, so the first attempts
+   are made one after the other, then the thread yields the processor between attempts
+   (waits up to a millisecond or two behave as if there were no backoff), and after that it
+   sleeps for a short time.  A thread which waits for a long time then uses almost no CPU;
+   the price is some extra delay (about 100 to 200 microseconds) once the wait has become
+   long.  n counts the attempts of one call and starts at 0. */
+#define CHAN_BACKOFF_SPINS (32)
+#define CHAN_BACKOFF_YIELDS (4000)
+
+static inline void chan_backoff(int32_t *n) {
+  if (*n < CHAN_BACKOFF_SPINS) {
+    /* try again at once */
+  } else if (*n < CHAN_BACKOFF_YIELDS) {
+    sched_yield();
+  } else {
+    struct timespec ts = {0, 50000};
+    nanosleep(&ts, NULL);
+  }
+  if (*n < CHAN_BACKOFF_YIELDS) {
+    (*n)++;
+  }
+}
+
 /* Random numbers for select_prefix_one, which tries its cases in random
    order so that no ready case can starve the others.  This only needs
    fairness, not unpredictability, so each thread owns a small, fast
@@ -266,22 +290,24 @@ static inline int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
 }
 
 static inline int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
+  int32_t attempts = 0;
   while (true) {
     int32_t rc = GLUE3(chan_, prefix, _tryrecv)(c, value);
     if (rc != CHAN_EMPTY) {
       return rc;
     }
-    sched_yield();
+    chan_backoff(&attempts);
   }
 }
 
 static inline int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
+  int32_t attempts = 0;
   while (true) {
     int32_t rc = GLUE3(chan_, prefix, _trysend)(c, value);
     if (rc != CHAN_FULL) {
       return rc;
     }
-    sched_yield();
+    chan_backoff(&attempts);
   }
 }
 
