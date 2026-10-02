@@ -1,4 +1,5 @@
 #include <check.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -296,5 +297,30 @@ h = phash_dn_init(0);
 phash_dn_destroy(&h);
 phash_dn_destroy(&h);
 CHECK(h == NULL);
+
+END_TEST
+
+// an absurd expected size is refused (the scaling used to overflow int64_t), a negative one is
+// treated as 0
+START_TEST(phash_table_test11)
+
+phtable_dn_t *t = phash_dn_init(INT64_MAX);
+CHECK(t == NULL);
+t = phash_dn_init(INT64_MAX / 2);
+CHECK(t == NULL);
+t = phash_dn_init(INT64_C(5000000000000000000));
+CHECK(t == NULL);
+t = phash_dn_init(INT64_C(1) << 62);
+CHECK(t == NULL);
+
+t = phash_dn_init(INT64_MIN);
+CHECK(t != NULL);
+CHECK(phash_dn_capacity(t) == 16);
+phash_dn_destroy(&t);
+
+t = phash_dn_init(-5);
+CHECK(t != NULL);
+CHECK(phash_dn_put(t, 1, 2) == 0);
+phash_dn_destroy(&t);
 
 END_TEST

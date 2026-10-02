@@ -94,6 +94,14 @@ static inline int64_t GLUE3(phash_, prefix, _roundup_pow2) (int64_t x) {
 #define _unused(x) ((void)(x))
 
 static inline PHTABLE *GLUE3(phash_, prefix, _init) (int64_t expected_size) {
+    /* the scaling below must not overflow in either direction, and the capacity (a power of
+       two) must fit in an int64_t; no allocation of that many slots could succeed anyway */
+    if (expected_size > (INT64_C(1) << 62) / 4 * 3) {
+        return NULL;
+    }
+    if (expected_size < 0) {
+        expected_size = 0;
+    }
     PHTABLE *h = malloc(sizeof(PHTABLE));
     if (h == NULL) {
         return NULL;

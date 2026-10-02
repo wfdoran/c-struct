@@ -65,6 +65,9 @@ as these can change between releases.
 of the table is the smallest power of 2 which holds that many entries at no more
 than 75% occupancy, or 16, whichever is larger, so `hash_prefix_init(0)` is fine
 when you have no idea.  The table grows by doubling when it gets too full.
+A negative `expected_size` is treated as 0, and an absurdly large one (above
+about 3.4e18) makes `hash_prefix_init` return `NULL`, as an allocation that
+large would fail anyway.
 
 If the key type is one that `hash.h` knows (every integer type including
 `long long`, `size_t` and `bool`, `float`, `double`, `char*`, `const char*`), a
