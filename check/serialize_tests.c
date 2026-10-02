@@ -246,3 +246,41 @@ CHECK(array_ser_deserialize(TEST_FILE) == NULL);
 remove(TEST_FILE);
 
 END_TEST
+
+// a varint is at most 64 bits: the tenth byte may only carry bit 63
+START_TEST(serialize_test9)
+
+unsigned char max[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01};
+write_bytes(TEST_FILE, (char *) max, sizeof(max));
+FILE *fp = fopen(TEST_FILE, "rb");
+size_t r = 7;
+CHECK(deserialize_size(fp, &r));
+CHECK(r == (size_t) UINT64_MAX);
+fclose(fp);
+
+// bits above 2^64 are rejected, not dropped, and *out is left alone
+unsigned char too_big[][10] = {
+  {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x02},
+  {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f},
+  {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x03},
+};
+for (int i = 0; i < 3; i++) {
+  write_bytes(TEST_FILE, (char *) too_big[i], 10);
+  r = 7;
+  fp = fopen(TEST_FILE, "rb");
+  CHECK(!deserialize_size(fp, &r));
+  CHECK(r == 7);
+  fclose(fp);
+}
+
+// a value of bit 63 alone is fine
+unsigned char bit63[] = {0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01};
+write_bytes(TEST_FILE, (char *) bit63, sizeof(bit63));
+fp = fopen(TEST_FILE, "rb");
+CHECK(deserialize_size(fp, &r));
+CHECK(r == (size_t) 1 << 63);
+fclose(fp);
+
+remove(TEST_FILE);
+
+END_TEST
