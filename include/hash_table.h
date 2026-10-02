@@ -488,7 +488,16 @@ static inline void GLUE3(hash_, prefix, _apply_r) (HTABLE *h, value_t (*f) (hkey
     }
 }
 
-static inline HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
+/* htable_prefix_t *hash_prefix_clone(const htable_prefix_t *h);
+
+   Makes a copy of the table.  Every entry is copied with the hash it already has, and the
+   keys are known to be distinct, so nothing is hashed or compared.  Returns NULL if h is
+   NULL or memory is exhausted.
+*/
+static inline HTABLE *GLUE3(hash_, prefix, _clone) (const HTABLE *h) {
+  if (h == NULL) {
+    return NULL;
+  }
   HTABLE *out = GLUE3(hash_, prefix, _init) (h->size);
   if (out == NULL) {
     return NULL;
@@ -498,14 +507,28 @@ static inline HTABLE *GLUE3(hash_, prefix, _clone) (HTABLE *h) {
   out->comp = h->comp;
   out->update = h->update;
 
+  /* init(size) leaves room for h->size entries below the load factor, so no rehash is needed */
+  const uint64_t mask = (uint64_t) out->capacity - UINT64_C(1);
   for (int64_t i = 0; i < h->capacity; i++) {
-    if (h->A[i] != NULL && h->A[i] != &(h->deleted)) {
-      int32_t rc = GLUE3(hash_, prefix, _put) (out, h->A[i]->key, h->A[i]->value);
-      if (rc != 0) {
-        GLUE3(hash_, prefix, _destroy) (&out);
-        return NULL;
-      }
+    const HNODE *n = h->A[i];
+    if (n == NULL || n == &(h->deleted)) {
+      continue;
     }
+    HNODE *copy = malloc(sizeof(HNODE));
+    if (copy == NULL) {
+      GLUE3(hash_, prefix, _destroy) (&out);
+      return NULL;
+    }
+    *copy = *n;
+
+    const uint64_t step = ((copy->hash >> out->shift) & mask) | UINT64_C(1);
+    uint64_t pos = copy->hash & mask;
+    while (out->A[pos] != NULL) {
+      pos = (pos + step) & mask;
+    }
+    out->A[pos] = copy;
+    out->size++;
+    out->used++;
   }
 
   return out;

@@ -219,11 +219,13 @@ Replaces the value of every entry by `f(key, value)`.
 The same, but `arg` is passed through to `f` as a third argument, for state or
 results.
 
-### `htable_prefix_t *hash_prefix_clone(htable_prefix_t *h)`
+### `htable_prefix_t *hash_prefix_clone(const htable_prefix_t *h)`
 
 Makes a copy of the table, including its hash, compare and update functions.
 Keys and values are copied by value, so if they are pointers, both tables refer
-to the same data.  Returns `NULL` if memory could not be allocated.
+to the same data.  No key is hashed or compared again, so cloning is faster than
+putting the entries one by one.  Returns `NULL` if `h` is `NULL` or memory could
+not be allocated.
 
 ## Technical Details
 

@@ -528,3 +528,64 @@ CHECK(hash_dn_put(t, 1, 2) == 0);
 hash_dn_destroy(&t);
 
 END_TEST
+
+// clone of a large table with many removed entries (deleted markers): same contents, independent
+START_TEST(hash_table_test17)
+
+int n = 50000;
+htable_hi_t *h = hash_hi_init(0);
+for (int i = 0; i < n; i++) {
+  CHECK(hash_hi_put(h, i, i * 3) == 0);
+}
+for (int i = 0; i < n; i += 2) {
+  CHECK(hash_hi_remove(h, i, NULL) == 1);
+}
+hash_hi_set_update(h, add);
+
+htable_hi_t *c = hash_hi_clone(h);
+CHECK(c != NULL);
+CHECK(hash_hi_size(c) == hash_hi_size(h));
+for (int i = 0; i < n; i++) {
+  int vh = -1, vc = -1;
+  int in_h = hash_hi_get(h, i, &vh);
+  int in_c = hash_hi_get(c, i, &vc);
+  CHECK(in_h == in_c);
+  CHECK(in_h == (i % 2 == 1));
+  if (in_h) {
+    CHECK(vh == vc && vc == i * 3);
+  }
+}
+
+// every entry of the clone is visited once by an iteration
+hiter_hi_t *it = NULL;
+int key, value;
+size_t seen = 0;
+for (int rc = hash_hi_first(c, &it, &key, &value); rc == 0; rc = hash_hi_next(&it, &key, &value)) {
+  CHECK(key % 2 == 1 && value == key * 3);
+  seen++;
+}
+CHECK(seen == hash_hi_size(c));
+
+// the update function was copied, and the two tables are independent
+CHECK(hash_hi_put(c, 1, 100) == 0);
+int v;
+CHECK(hash_hi_get(c, 1, &v) == 1 && v == 3 + 100);
+CHECK(hash_hi_get(h, 1, &v) == 1 && v == 3);
+CHECK(hash_hi_put(c, 0, 5) == 0);
+CHECK(hash_hi_get(h, 0, &v) == 0);
+CHECK(hash_hi_remove(h, 3, NULL) == 1);
+CHECK(hash_hi_get(c, 3, &v) == 1 && v == 9);
+
+// empty tables, and NULL
+htable_hi_t *e = hash_hi_init(0);
+htable_hi_t *ec = hash_hi_clone(e);
+CHECK(ec != NULL);
+CHECK(hash_hi_size(ec) == 0);
+hash_hi_destroy(&e);
+hash_hi_destroy(&ec);
+CHECK(hash_hi_clone(NULL) == NULL);
+
+hash_hi_destroy(&c);
+hash_hi_destroy(&h);
+
+END_TEST
