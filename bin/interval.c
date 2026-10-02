@@ -64,7 +64,11 @@ typedef struct {
 
 interval_t
 interval_from_double(double x) {
-  interval_t rv = {.lo = nextafter(x, -DBL_MAX), .hi = nextafter(x,DBL_MAX), .valid = true};
+  if (isnan(x)) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  interval_t rv = {.lo = nextafter(x, -INFINITY), .hi = nextafter(x, INFINITY), .valid = true};
   return rv;
 }
 
