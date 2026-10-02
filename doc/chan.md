@@ -74,5 +74,14 @@ Closes a channel.  Future `chan_prefix_send` and `chan_prefix_trysend` will
 fail with CHAN_CLOSED.  Future `chan_prefix_recv` and `chan_prefix_tryrecv` will
 work until the channel is drained then fail with CHAN_CLOSED.
 
-Returns CHAN_SUCCESS on success of CHAN_CLOSED if the channel was already
+Returns CHAN_SUCCESS on success or CHAN_CLOSED if the channel was already
 closed.
+
+`close` must not be called while a send is in progress.  Close the channel from
+the sending side, after the last `chan_prefix_send` or `chan_prefix_trysend` has
+returned (when several threads send, after all of them have finished, for
+example by joining them).  A send which started before the close but finishes
+after a receiver has already seen CHAN_CLOSED can return CHAN_SUCCESS for a
+value that no receiver will ever get.  This is the same rule as in Go, where
+closing a channel that is still being sent to is a programming error.  Closing a
+channel more than once, or from a receiver once the senders are done, is fine.

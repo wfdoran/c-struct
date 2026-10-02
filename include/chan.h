@@ -285,6 +285,9 @@ static inline int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
   }
 }
 
+/* Closes the channel.  Call it only after the last send has returned: a send still in
+   progress when the channel is closed can report success for a value which is never
+   received (see doc/chan.md). */
 static inline int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   if (c == NULL) {
     return CHAN_ERROR;
