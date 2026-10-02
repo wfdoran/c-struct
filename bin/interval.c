@@ -325,7 +325,7 @@ interval_exp(interval_t a) {
   rv.hi = interval_ulp_up(exp(a.hi));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = interval_ulp_down(exp(a.lo));
+  rv.lo = fmax(interval_ulp_down(exp(a.lo)), 0.0);   /* exp is positive: do not widen below 0 */
 
   fesetround(save);
 
