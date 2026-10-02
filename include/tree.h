@@ -175,6 +175,9 @@ static inline void GLUE3(tree_, prefix, _node_destroy) (NODE *n, void (*value_fr
 */
 
 static inline void GLUE3(tree_, prefix, _destroy) (TREE **a_ptr) {
+    if (a_ptr == NULL) {
+        return;
+    }
     TREE *a = *a_ptr;
     // in case a user tries a double destroy
     if (a == NULL) {

@@ -214,6 +214,9 @@ static inline size_t GLUE3(phash_, prefix, _capacity) (PHTABLE *h) {
    hash table and free them appropriately. 
 */
 static inline void GLUE3(phash_, prefix, _destroy) (PHTABLE **h_ptr) {
+    if (h_ptr == NULL) {
+        return;
+    }
     PHTABLE *h = *h_ptr;
     if (h == NULL) {
         return;

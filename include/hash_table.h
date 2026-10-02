@@ -203,6 +203,9 @@ static inline size_t GLUE3(hash_, prefix, _capacity) (const HTABLE *h) {
    hash table and free them appropriately. 
 */
 static inline void GLUE3(hash_, prefix, _destroy) (HTABLE **h_ptr) {
+    if (h_ptr == NULL) {
+        return;
+    }
     HTABLE *h = *h_ptr;
     if (h == NULL) {
         return;

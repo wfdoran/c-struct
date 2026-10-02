@@ -67,6 +67,9 @@ static inline void GLUE3(llist_, prefix, _set_comp) (LLIST *a, int (*comp) (data
 }
 
 static inline void GLUE3(llist_, prefix, _destroy) (LLIST **a_ptr) {
+    if (a_ptr == NULL) {
+        return;
+    }
     LLIST *a = *a_ptr;
     if (a == NULL) {
         return;

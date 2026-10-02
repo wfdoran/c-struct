@@ -50,6 +50,12 @@ static void* add_one(void *current, void *new) {
 
 
 
+#define data_t int
+#define prefix dn
+#include <tree.h>
+#undef prefix
+#undef data_t
+
 START_TEST(tree_test1)
 
 tree_int_t *a = tree_int_init();
@@ -384,4 +390,18 @@ tree_int_destroy(&a);
 CHECK(a == NULL);
 free(keys);
       
+END_TEST
+
+// destroy accepts a NULL pointer and an already destroyed container
+START_TEST(tree_test12)
+
+tree_dn_t *t = NULL;
+tree_dn_destroy(NULL);
+tree_dn_destroy(&t);
+CHECK(t == NULL);
+t = tree_dn_init();
+tree_dn_destroy(&t);
+tree_dn_destroy(&t);
+CHECK(t == NULL);
+
 END_TEST

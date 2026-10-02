@@ -58,6 +58,14 @@ static int add_arg(int key, int value, void *arg) {
   return value + *(int *) arg;
 }
 
+#define hkey_t int
+#define value_t int
+#define prefix dn
+#include <hash_table.h>
+#undef prefix
+#undef value_t
+#undef hkey_t
+
 START_TEST(hash_table_test1)
 
 htable_hi_t *h = hash_hi_init(0);
@@ -478,5 +486,19 @@ for (int round = 0; round < 20; round++) {
   hash_hi_destroy(&c);
   hash_hi_destroy(&h);
 }
+
+END_TEST
+
+// destroy accepts a NULL pointer and an already destroyed container
+START_TEST(hash_table_test15)
+
+htable_dn_t *h = NULL;
+hash_dn_destroy(NULL);
+hash_dn_destroy(&h);
+CHECK(h == NULL);
+h = hash_dn_init(0);
+hash_dn_destroy(&h);
+hash_dn_destroy(&h);
+CHECK(h == NULL);
 
 END_TEST

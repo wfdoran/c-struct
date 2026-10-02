@@ -48,6 +48,12 @@ static int comp_desc(const void *a, const void *b) {
   return (x < y) - (x > y);
 }
 
+#define data_t int
+#define prefix dn
+#include <pqueue.h>
+#undef prefix
+#undef data_t
+
 START_TEST(pqueue_test1)
 
 pqueue_pqi_t *q = pqueue_pqi_init();
@@ -266,5 +272,19 @@ for (int round = 0; round < 50; round++) {
 
   pqueue_pqi_destroy(&q);
 }
+
+END_TEST
+
+// destroy accepts a NULL pointer and an already destroyed container
+START_TEST(pqueue_test10)
+
+pqueue_dn_t *q = NULL;
+pqueue_dn_destroy(NULL);
+pqueue_dn_destroy(&q);
+CHECK(q == NULL);
+q = pqueue_dn_init();
+pqueue_dn_destroy(&q);
+pqueue_dn_destroy(&q);
+CHECK(q == NULL);
 
 END_TEST

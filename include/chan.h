@@ -178,6 +178,9 @@ static inline CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
 }
 
 static inline void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
+  if (c_ptr == NULL) {
+    return;
+  }
   CHAN *c = *c_ptr;
   if (c == NULL) {
     return;

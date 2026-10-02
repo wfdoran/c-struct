@@ -41,6 +41,14 @@ static uint64_t pair_hash(phpair_t p) {
   return (uint64_t) p.a * 31 + (uint64_t) p.b;
 }
 
+#define hkey_t int
+#define value_t int
+#define prefix dn
+#include <phash_table.h>
+#undef prefix
+#undef value_t
+#undef hkey_t
+
 START_TEST(phash_table_test1)
 
 phtable_pi_t *h = phash_pi_init(0);
@@ -274,5 +282,19 @@ for (int i = 0; i < n; i++) {
 }
 
 phash_pi_destroy(&h);
+
+END_TEST
+
+// destroy accepts a NULL pointer and an already destroyed container
+START_TEST(phash_table_test10)
+
+phtable_dn_t *h = NULL;
+phash_dn_destroy(NULL);
+phash_dn_destroy(&h);
+CHECK(h == NULL);
+h = phash_dn_init(0);
+phash_dn_destroy(&h);
+phash_dn_destroy(&h);
+CHECK(h == NULL);
 
 END_TEST

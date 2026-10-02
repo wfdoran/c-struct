@@ -8,6 +8,14 @@
 #undef prefix
 #undef data_t
 
+#define data_t int
+#define prefix dn
+#define null_value -1
+#include <linked_list.h>
+#undef null_value
+#undef prefix
+#undef data_t
+
 START_TEST(linked_list_test1)
 
 llist_int_t *a = llist_int_init();
@@ -214,5 +222,19 @@ CHECK(llist_int_size(a) == 0);
 
 llist_int_destroy(&a);
 CHECK(a == NULL);
+
+END_TEST
+
+// destroy accepts a NULL pointer and an already destroyed container
+START_TEST(linked_list_test10)
+
+llist_dn_t *l = NULL;
+llist_dn_destroy(NULL);
+llist_dn_destroy(&l);
+CHECK(l == NULL);
+l = llist_dn_init();
+llist_dn_destroy(&l);
+llist_dn_destroy(&l);
+CHECK(l == NULL);
 
 END_TEST

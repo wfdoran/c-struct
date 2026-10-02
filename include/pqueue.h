@@ -134,6 +134,9 @@ static inline void GLUE3(pqueue_, prefix, _set_value_free) (PQUEUE *q, void (*va
    underlying storage, and sets the pointer to NULL.
 */
 static inline void GLUE3(pqueue_, prefix, _destroy) (PQUEUE **q_ptr) {
+    if (q_ptr == NULL) {
+        return;
+    }
     PQUEUE *q = *q_ptr;
     // in case a user tries a double destroy
     if (q == NULL) {

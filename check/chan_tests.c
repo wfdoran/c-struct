@@ -7,6 +7,12 @@
 #undef prefix
 #undef data_t
 
+#define data_t int
+#define prefix dn
+#include <chan.h>
+#undef prefix
+#undef data_t
+
 START_TEST(chan_test1)
 
 for (int chan_size = 1; chan_size <= 100; chan_size *= 10) {
@@ -160,3 +166,16 @@ CHECK(a == NULL);
 
 END_TEST
 
+// destroy accepts a NULL pointer and an already destroyed container
+START_TEST(chan_test5)
+
+chan_dn_t *c = NULL;
+chan_dn_destroy(NULL);
+chan_dn_destroy(&c);
+CHECK(c == NULL);
+c = chan_dn_init(1);
+chan_dn_destroy(&c);
+chan_dn_destroy(&c);
+CHECK(c == NULL);
+
+END_TEST
