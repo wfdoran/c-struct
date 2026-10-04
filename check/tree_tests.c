@@ -523,8 +523,8 @@ END_TEST
 // Returns the number of nodes below n, or -1 if something is wrong.
 
 static long tree_check_node(tnode_int_t *n, tnode_int_t *parent, long lo, long hi, int *height) {
+  *height = 0;
   if (n == NULL) {
-    *height = 0;
     return 0;
   }
   if (n->parent != parent || n->key <= lo || n->key >= hi) {

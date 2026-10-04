@@ -52,6 +52,7 @@ static inline TYPE *GLUE3(array_, prefix, _init)(void) {
   if (a == NULL) {
     return NULL;
   }
+  memset(&a->null_value, 0, sizeof(a->null_value)); /* always initialized */
   a->alloc = malloc(sizeof(data_t));
   if (a->alloc == NULL) {
     free(a);
@@ -88,6 +89,7 @@ static inline TYPE *GLUE3(array_, prefix, _init2)(size_t size,
   if (a == NULL) {
     return NULL;
   }
+  memset(&a->null_value, 0, sizeof(a->null_value)); /* always initialized */
   /* never malloc(0): NULL would be indistinguishable from failure */
   a->alloc = malloc((size > 0 ? size : 1) * sizeof(data_t));
   if (a->alloc == NULL) {
@@ -126,6 +128,7 @@ GLUE3(array_, prefix, _deep_clone)(const TYPE *in, data_t (*f)(const data_t)) {
   if (out == NULL) {
     return NULL;
   }
+  memset(&out->null_value, 0, sizeof(out->null_value)); /* always initialized */
   out->alloc = malloc((in->size > 0 ? in->size : 1) * sizeof(data_t));
   if (out->alloc == NULL) {
     free(out);
@@ -179,6 +182,7 @@ GLUE3(array_, prefix, _deep_slice)(const TYPE *in, size_t left, size_t right,
   if (out == NULL) {
     return NULL;
   }
+  memset(&out->null_value, 0, sizeof(out->null_value)); /* always initialized */
   out->alloc = malloc((size > 0 ? size : 1) * sizeof(data_t));
   if (out->alloc == NULL) {
     free(out);
