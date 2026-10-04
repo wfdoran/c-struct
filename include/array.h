@@ -346,7 +346,7 @@ static inline int32_t GLUE3(array_, prefix, _sort)(TYPE *a) {
 */
 
 static inline ssize_t GLUE3(array_, prefix, _bisect)(const TYPE *a, data_t v) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   CS_ASSERT_CMP(a->comp);
   ssize_t lo = -1;
   ssize_t hi = (ssize_t) a->size;
@@ -388,7 +388,7 @@ static inline ssize_t GLUE3(array_, prefix, _bisect)(const TYPE *a, data_t v) {
 
 static inline ssize_t GLUE3(array_, prefix, _bisect_upper)(const TYPE *a,
                                                            data_t v) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   CS_ASSERT_CMP(a->comp);
   ssize_t lo = -1;
   ssize_t hi = (ssize_t) a->size;
@@ -414,7 +414,7 @@ static inline ssize_t GLUE3(array_, prefix, _bisect_upper)(const TYPE *a,
 
 static inline ssize_t GLUE3(array_, prefix, _bisect_lower)(const TYPE *a,
                                                            data_t v) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   CS_ASSERT_CMP(a->comp);
   ssize_t lo = -1;
   ssize_t hi = (ssize_t) a->size;
@@ -447,9 +447,9 @@ static inline int32_t GLUE3(array_, prefix, _map)(TYPE *a,
    Takes the first value as the initial value.  */
 static inline data_t
 GLUE3(array_, prefix, _fold)(const TYPE *a, data_t (*f)(data_t, const data_t)) {
-  ASSERT(a != NULL);
-  ASSERT(f != NULL);
-  ASSERT(a->size > 0);
+  CS_ASSERT(a != NULL);
+  CS_ASSERT(f != NULL);
+  CS_ASSERT(a->size > 0);
   data_t rv = a->data[0];
   for (size_t i = 1; i < a->size; i++) {
     rv = f(rv, a->data[i]);
@@ -463,8 +463,8 @@ GLUE3(array_, prefix, _fold)(const TYPE *a, data_t (*f)(data_t, const data_t)) {
 static inline data_t GLUE3(array_, prefix,
                            _fold2)(const TYPE *a, data_t init,
                                    data_t (*f)(data_t, const data_t)) {
-  ASSERT(a != NULL);
-  ASSERT(f != NULL);
+  CS_ASSERT(a != NULL);
+  CS_ASSERT(f != NULL);
   data_t rv = init;
   for (size_t i = 0; i < a->size; i++) {
     rv = f(rv, a->data[i]);
@@ -490,12 +490,12 @@ static inline int32_t GLUE3(array_, prefix,
    index out of range results in an ASSERT failure.
 */
 static inline data_t GLUE3(array_, prefix, _get)(const TYPE *a, size_t idx) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   if (idx >= a->size) {
     if (a->have_null_value) {
       return a->null_value;
     } else {
-      ASSERT(idx < a->size);
+      CS_ASSERT(idx < a->size);
     }
   }
   return a->data[idx];
@@ -506,12 +506,12 @@ static inline data_t GLUE3(array_, prefix, _get)(const TYPE *a, size_t idx) {
    you get a stack.
 */
 static inline data_t GLUE3(array_, prefix, _pop)(TYPE *a) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   if (a->size <= 0) {
     if (a->have_null_value) {
       return a->null_value;
     } else {
-      ASSERT(a->size > 0);
+      CS_ASSERT(a->size > 0);
     }
   }
   a->size--;
@@ -523,12 +523,12 @@ static inline data_t GLUE3(array_, prefix, _pop)(TYPE *a) {
    you get a queue.
 */
 static inline data_t GLUE3(array_, prefix, _pop_first)(TYPE *a) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   if (a->size <= 0) {
     if (a->have_null_value) {
       return a->null_value;
     } else {
-      ASSERT(a->size > 0);
+      CS_ASSERT(a->size > 0);
     }
   }
 
@@ -598,7 +598,7 @@ static inline int32_t GLUE3(array_, prefix, _append)(TYPE *a, data_t value) {
    Returns the number of entries in the array.
 */
 static inline size_t GLUE3(array_, prefix, _size)(const TYPE *a) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   return a->size;
 }
 
@@ -676,13 +676,13 @@ static inline int32_t GLUE3(array_, prefix, _heappush)(TYPE *a, data_t value) {
 */
 
 static inline data_t GLUE3(array_, prefix, _heappop)(TYPE *a) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   CS_ASSERT_CMP(a->comp);
   if (a->size <= 0) {
     if (a->have_null_value) {
       return a->null_value;
     } else {
-      ASSERT(a->size > 0);
+      CS_ASSERT(a->size > 0);
     }
   }
   data_t rv = a->data[0];
@@ -716,7 +716,7 @@ static inline int32_t GLUE3(array_, prefix, _heapify)(TYPE *a) {
 }
 
 static inline ssize_t GLUE3(array_, prefix, _index)(const TYPE *a, data_t v) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   CS_ASSERT_CMP(a->comp);
   for (size_t i = 0; i < a->size; i++) {
     if (CS_CMP(a->comp, &a->data[i], &v) == 0) {

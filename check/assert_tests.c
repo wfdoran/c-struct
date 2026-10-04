@@ -1,4 +1,4 @@
-/* NDEBUG is defined on purpose: ASSERT must stay active, unlike assert(). */
+/* NDEBUG is defined on purpose: CS_ASSERT must stay active, unlike assert(). */
 #define NDEBUG
 #include <check.h>
 #include <stdlib.h>
@@ -61,12 +61,12 @@ static int run_child(void (*f)(void), char *msg, size_t msg_size) {
 }
 
 static void child_true(void) {
-  ASSERT(1 + 1 == 2);
+  CS_ASSERT(1 + 1 == 2);
 }
 
 static void child_false(void) {
   int zero = 0;
-  ASSERT(zero != 0);
+  CS_ASSERT(zero != 0);
 }
 
 static void child_array_get(void) {

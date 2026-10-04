@@ -102,7 +102,7 @@ static inline void GLUE3(llist_, prefix, _destroy)(LLIST **a_ptr) {
    Returns the number of entries in the list.
 */
 static inline size_t GLUE3(llist_, prefix, _size)(const LLIST *a) {
-  ASSERT(a != NULL);
+  CS_ASSERT(a != NULL);
   return a->size;
 }
 

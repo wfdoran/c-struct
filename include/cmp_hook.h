@@ -31,5 +31,5 @@
 #else
 #define CS_CMP(c, x, y) ((c) ((x), (y)))
 #define CS_HAVE_CMP(c) ((c) != NULL)
-#define CS_ASSERT_CMP(c) ASSERT(c != NULL)
+#define CS_ASSERT_CMP(c) CS_ASSERT(c != NULL)
 #endif

@@ -219,7 +219,7 @@ static inline int32_t GLUE3(pqueue_, prefix, _push)(PQUEUE *q, data_t key,
    empty, the returned pqkv_prefix_t has found set to false.
 */
 static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
-  ASSERT(q != NULL);
+  CS_ASSERT(q != NULL);
   CS_ASSERT_CMP(q->comp);
 
   if (q->size == 0) {
@@ -264,7 +264,7 @@ static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
    found set to false.
 */
 static inline PQKV GLUE3(pqueue_, prefix, _peek)(const PQUEUE *q) {
-  ASSERT(q != NULL);
+  CS_ASSERT(q != NULL);
 
   if (q->size == 0) {
     PQKV rv = {.value = NULL, .found = false};
@@ -280,7 +280,7 @@ static inline PQKV GLUE3(pqueue_, prefix, _peek)(const PQUEUE *q) {
   Returns the number of entries in the priority queue.
 */
 static inline size_t GLUE3(pqueue_, prefix, _size)(const PQUEUE *q) {
-  ASSERT(q != NULL);
+  CS_ASSERT(q != NULL);
   return q->size;
 }
 
@@ -289,7 +289,7 @@ static inline size_t GLUE3(pqueue_, prefix, _size)(const PQUEUE *q) {
   Returns true if the priority queue has no entries.
 */
 static inline bool GLUE3(pqueue_, prefix, _is_empty)(const PQUEUE *q) {
-  ASSERT(q != NULL);
+  CS_ASSERT(q != NULL);
   return q->size == 0;
 }
 

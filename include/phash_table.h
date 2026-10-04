@@ -515,7 +515,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
       }
     }
   }
-  ASSERT(0);
+  CS_ASSERT(0);
 }
 
 #undef PHNODE

@@ -227,7 +227,7 @@ static inline int32_t GLUE3(chan_, prefix, _tryrecv)(CHAN *c, data_t *value) {
   while (true) {
     int64_t tail1 = atomic_load(&c->tail1);
     int64_t head0 = atomic_load(&c->head0);
-    ASSERT(tail1 <= head0);
+    CS_ASSERT(tail1 <= head0);
 
     if (tail1 == head0) {
       if (!atomic_load(&c->closed)) {
@@ -271,7 +271,7 @@ static inline int32_t GLUE3(chan_, prefix, _trysend)(CHAN *c, data_t value) {
 
     int64_t head1 = atomic_load(&c->head1);
     int64_t tail0 = atomic_load(&c->tail0);
-    ASSERT(head1 <= tail0 + c->capacity);
+    CS_ASSERT(head1 <= tail0 + c->capacity);
 
     if (head1 == tail0 + c->capacity) {
       return CHAN_FULL;

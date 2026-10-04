@@ -55,7 +55,7 @@ static inline TYPE GLUE3(option_, prefix, _clone)(TYPE x) {
 /* setters */
 
 static inline void GLUE3(option_, prefix, _set)(TYPE *x, data_t value) {
-  ASSERT(x != NULL);
+  CS_ASSERT(x != NULL);
   x->value = value;
   x->set = true;
 }
@@ -84,7 +84,7 @@ static inline data_t GLUE3(option_, prefix, _force_get)(TYPE x) {
   }
 #endif
 
-  ASSERT(x.set);
+  CS_ASSERT(x.set);
   return x.value;
 }
 
@@ -98,7 +98,7 @@ static inline data_t GLUE3(option_, prefix, _get_or_else)(TYPE x,
 }
 
 static inline bool GLUE3(option_, prefix, _get_clear)(TYPE *x, data_t *value) {
-  ASSERT(x != NULL);
+  CS_ASSERT(x != NULL);
   if (x->set) {
     if (value != NULL) {
       *value = x->value;
