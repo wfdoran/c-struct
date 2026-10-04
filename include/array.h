@@ -456,8 +456,6 @@ static inline data_t GLUE3(array_, prefix, _fold2) (const TYPE *a, data_t init,
 
 
 static inline int32_t GLUE3(array_, prefix, _scan) (TYPE *a, data_t (*f) (data_t, data_t)) {
-    ASSERT(a != NULL);
-    ASSERT(f != NULL);
     if (a == NULL || f == NULL) {
         return -1;
     }
