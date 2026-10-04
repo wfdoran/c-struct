@@ -1,27 +1,27 @@
-//  gcc -O2 -frounding-math interval.c -I ../include -o interval -lm
-//
-//  Every operation computes the upper bound under FE_UPWARD and the lower
-//  bound under FE_DOWNWARD.  An optimizer that treats the two computations as
-//  identical and shares them would make the result stop containing the exact
-//  answer, so each operation goes through iv_fence() to keep it in place, and
-//  -frounding-math is passed as an additional precaution.  main() checks at
-//  startup that the rounding modes are honored and refuses to run if not.
+/* Interval arithmetic with directed rounding.  See doc/interval.md.
 
-/* 
-https://www.w3schools.com/c/c_ref_math.php
+   An interval_t holds a lower and an upper bound and a valid flag.  Every
+   function returns an interval which contains every exact result for every
+   value in its argument intervals.  An operation which has no result for any
+   value of its arguments (or is given an invalid interval) returns an invalid
+   interval.
 
-     cbrt
-     fmod
-     log10
-     modf
-     tan
+   Build with   gcc -O2 -frounding-math -I ../include prog.c -o prog -lm
 
-     acos
-     asin
-     atan
-     cosh
-     sinh
+   Every operation computes the upper bound under FE_UPWARD and the lower
+   bound under FE_DOWNWARD.  An optimizer that treats the two computations as
+   identical and shares them would make the result stop containing the exact
+   answer, so each operation goes through iv_fence() to keep it in place, and
+   -frounding-math is passed as an additional precaution.  Check once at
+   startup that the rounding modes are honored with
+   interval_rounding_is_honored().
+
+   Every function is static inline.  Including this file turns on
+   #pragma STDC FENV_ACCESS for clang in the rest of the translation unit.
  */
+
+#ifndef INTERVAL_H
+#define INTERVAL_H
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -31,17 +31,23 @@ https://www.w3schools.com/c/c_ref_math.php
 #include <stdint.h>
 #include <stdlib.h>
 
+/* Math functions not provided yet:
+
+     cbrt fmod log10 modf tan acos asin atan cosh sinh
+
+   (https://www.w3schools.com/c/c_ref_math.php) */
+
 #ifdef __clang__
 #pragma STDC FENV_ACCESS ON
 #endif
 
 /* The math library functions are not guaranteed to honor the rounding mode
    or to be correctly rounded, so results from them are widened by one ulp. */
-static double interval_ulp_up(double x) {
+static inline double interval_ulp_up(double x) {
   return nextafter(x, INFINITY);
 }
 
-static double interval_ulp_down(double x) {
+static inline double interval_ulp_down(double x) {
   return nextafter(x, -INFINITY);
 }
 
@@ -62,7 +68,7 @@ typedef struct {
 } interval_t;
 
 
-interval_t
+static inline interval_t
 interval_from_double(double x) {
   if (isnan(x)) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -72,7 +78,7 @@ interval_from_double(double x) {
   return rv;
 }
 
-interval_t
+static inline interval_t
 interval_from_int64(int64_t x) {
   interval_t rv;
   int save = fegetround();
@@ -93,7 +99,7 @@ interval_from_int64(int64_t x) {
   
 }
 
-interval_t
+static inline interval_t
 interval_add(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -115,7 +121,7 @@ interval_add(interval_t a, interval_t b) {
   return rv;
 }
 
-interval_t
+static inline interval_t
 interval_sub(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -138,7 +144,7 @@ interval_sub(interval_t a, interval_t b) {
   return rv;
 }
 
-interval_t
+static inline interval_t
 interval_mul(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -176,7 +182,7 @@ interval_mul(interval_t a, interval_t b) {
   return rv;  
 }
 
-interval_t
+static inline interval_t
 interval_fma(interval_t a, interval_t b, interval_t c) {
   if (!a.valid || !b.valid || !c.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -216,7 +222,7 @@ interval_fma(interval_t a, interval_t b, interval_t c) {
   
 }
 
-interval_t
+static inline interval_t
 interval_div(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -258,7 +264,7 @@ interval_div(interval_t a, interval_t b) {
   return rv;  
 }
 
-interval_t
+static inline interval_t
 interval_fmax(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -279,7 +285,7 @@ interval_fmax(interval_t a, interval_t b) {
   return rv;  
 }
 
-interval_t
+static inline interval_t
 interval_fmin(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -309,9 +315,7 @@ interval_fmin(interval_t a, interval_t b) {
   return rv;  
 }
 
-
-
-interval_t
+static inline interval_t
 interval_exp(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -333,7 +337,7 @@ interval_exp(interval_t a) {
   return rv;
 }
 
-interval_t
+static inline interval_t
 interval_erf(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -356,7 +360,7 @@ interval_erf(interval_t a) {
 }
 
 
-interval_t
+static inline interval_t
 interval_sqrt(interval_t a) {
   /* the domain is [0, inf): use the part of the interval inside it, and fail only if none of it is */
   if (!a.valid || !(a.hi >= 0.0)) {
@@ -380,7 +384,7 @@ interval_sqrt(interval_t a) {
   return rv;
 }
 
-interval_t
+static inline interval_t
 interval_floor(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -394,7 +398,7 @@ interval_floor(interval_t a) {
   return rv;
 }
   
-interval_t
+static inline interval_t
 interval_ceil(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -410,7 +414,7 @@ interval_ceil(interval_t a) {
   
  
 
-interval_t
+static inline interval_t
 interval_log(interval_t a) {
   /* the domain is (0, inf): use the part of the interval inside it, and fail only if none of it is */
   if (!a.valid || !(a.hi > 0.0)) {
@@ -435,7 +439,7 @@ interval_log(interval_t a) {
 }
 
   
-interval_t
+static inline interval_t
 interval_neg(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -446,7 +450,7 @@ interval_neg(interval_t a) {
   return rv;
 }
 
-interval_t
+static inline interval_t
 interval_fabs(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -473,23 +477,23 @@ interval_fabs(interval_t a) {
 
 #define data_t double
 #define prefix ival
-#include <pqueue.h>
+#include "pqueue.h"
 #undef prefix
 #undef data_t
 
-static double 
+static inline double
 interval_get_key(interval_t a) {
   return fmax(fabs(a.lo), fabs(a.hi));
 }
 
 /* pqueue pops the largest key first; this reverses the order. */
-static int
+static inline int
 interval_key_min_first(double *a, double *b) {
   return comp_double(b, a);
 }
 
 
-void
+static inline void
 interval_print(interval_t a) {
   if (!a.valid) {
     printf("[invalid]\n");
@@ -499,7 +503,7 @@ interval_print(interval_t a) {
 }
 
 
-interval_t
+static inline interval_t
 interval_add_many(int n, interval_t *a) {
   if (n <= 0 || a == NULL) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -554,7 +558,7 @@ done:
   return rv;
 }
 
-interval_t interval_pow_uint(interval_t a, uint32_t e) {
+static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
   interval_t rv = interval_from_double(1.0);
 
   while (e > 0) {
@@ -572,7 +576,7 @@ interval_t interval_pow_uint(interval_t a, uint32_t e) {
 
 /* A negative exponent is the reciprocal of the positive power, which is
    invalid if that power contains zero (interval_div). */
-interval_t interval_pow_int(interval_t a, int32_t e) {
+static inline interval_t interval_pow_int(interval_t a, int32_t e) {
   if (e >= 0) {
     return interval_pow_uint(a, (uint32_t) e);
   }
@@ -580,7 +584,7 @@ interval_t interval_pow_int(interval_t a, int32_t e) {
   return interval_div(one, interval_pow_uint(a, UINT32_C(0) - (uint32_t) e));
 }
 
-interval_t interval_pow_dbl(interval_t a, interval_t b) {
+static inline interval_t interval_pow_dbl(interval_t a, interval_t b) {
   interval_t x1 = interval_log(a);
   interval_t x2 = interval_mul(x1, b);
   return interval_exp(x2);
@@ -593,7 +597,7 @@ interval_t interval_pow_dbl(interval_t a, interval_t b) {
 )(x,e)
 
 
-interval_t interval_sin(interval_t a) {
+static inline interval_t interval_sin(interval_t a) {
   // sin(k * 2pi + 0 * pi/2) = 0
   // sin(k * 2pi + 1 * pi/2) = 1
   // sin(k * 2pi + 2 * pi/2) = 0
@@ -639,7 +643,7 @@ interval_t interval_sin(interval_t a) {
   return rv;
 }
 
-interval_t interval_cos(interval_t a) {
+static inline interval_t interval_cos(interval_t a) {
   // cos(k * 2pi + 0 * pi/2) = 1
   // cos(k * 2pi + 1 * pi/2) = 0
   // cos(k * 2pi + 2 * pi/2) = -1
@@ -683,135 +687,11 @@ interval_t interval_cos(interval_t a) {
   return rv;
 }
 
-void demo_interval_sin_cos(void) {
-  interval_t a = interval_from_double(M_PI_4);
-
-  for (int32_t i = 0; i < 10; i++) {
-    interval_t m = interval_from_double((double) i);
-    interval_t b = interval_mul(a, m);
-    interval_print(interval_sin(b));
-  }
-  printf("\n");
-
-  for (int32_t i = 0; i < 10; i++) {
-    interval_t m = interval_from_double((double) i);
-    interval_t b = interval_mul(a, m);
-    interval_print(interval_cos(b));
-  }
-  printf("\n");
-}
-
-void demo_interval_add_many(void) {
-  int n = 10;
-
-  interval_t a[n];
-  for (int i = 0; i < n; i++) {
-    a[i] = interval_from_double(1.0 + i * i);
-  }
-
-  interval_t sum = interval_add_many(n, a);
-  interval_print(sum);
-
-  for (int i = 1; i < n; i++) {
-    a[0] = interval_add(a[0], a[i]);
-  }
-  interval_print(a[0]);
-  printf("\n");
-}
-
-void demo_interval_pow(void) {
-  interval_t x = interval_from_double(1.7);
-  interval_t y = interval_pow(x, 10);
-  interval_t z = interval_from_double(10.0);
-  interval_t w = interval_pow(x, z);
-  interval_print(y);
-  interval_print(w);
-  printf("\n");
-}
-
-void demo_interval_arith(void) {
-  interval_t a = interval_from_double(4.0);
-  interval_t b = interval_from_double(2.1);
-  interval_t c = interval_add(a, b);
-  interval_print(c);
-  interval_t d = interval_sub(a,b);
-  interval_print(d);
-  interval_t e = interval_mul(a,b);
-  interval_print(e);
-  interval_t f = interval_div(a,b);
-  interval_print(f);
-  printf("\n");
-}
-
-void demo_sqrt(void) {
-  interval_t a = interval_from_double(2.0);
-  interval_t b = interval_sqrt(a);
-  interval_t c = interval_mul(b,b);
-  interval_t d = interval_sub(c, a);
-  interval_t e = interval_fabs(d);
-  interval_print(b);
-  interval_print(c);
-  interval_print(d);
-  interval_print(e);
-  printf("\n");
-}
-
-void demo_interval_fma(void) {
-  interval_t a = interval_from_double(2000000000000000.0);
-  interval_t b = interval_from_double(0.0000000000000005);
-  interval_t c = interval_from_double(-1.0);
-
-  interval_t x = interval_fma(a,b,c);
-  interval_t y = interval_add(interval_mul(a,b), c);
-
-  interval_print(x);
-  interval_print(y);
-  printf("\n");
-}
-
-
-/* 
-   https://oeis.org/A001203
-
-   3, 7, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 2, 1, 1, 2, 2, 2, 2, 1,
- */
-void demo_continued_fraction(void) {
-  interval_t x = interval_from_double(M_PI);
-  interval_t one = interval_from_double(1.0);
-
-  int32_t should_be[] = {3, 7, 15, 1, 292, 1, 1, 1, 2, 1, 3, 1, 14, 2, 1, 1, 2, 2, 2, 2, 1};
-  int32_t max_steps = sizeof(should_be) / sizeof(should_be[0]);
-
-  for (int i = 0; i < max_steps; i++) {
-    interval_t a = interval_floor(x);
-    if (x.hi - x.lo > .5) {
-      printf("%4d %8d : %8.0f %8.0f\n", i, should_be[i], rint(a.lo), rint(a.hi));
-      printf("Lost accuracy\n");
-      break;
-    } else {
-      printf("%4d %8d : %8.0f\n", i, should_be[i], rint(a.lo));
-    }
-
-    x = interval_sub(x, a);
-    x = interval_div(one, x);
-  }
-}
-
-void demo_int_init(void) {
-  int64_t base = UINT64_C(1) << 53;
-  int64_t delta = UINT64_C(1);
-  
-  interval_t a = interval_from_int64(base - delta);
-  interval_t b = interval_from_int64(base + delta);
-
-  interval_print(a);
-  interval_print(b);
-}
-
 /* Returns false if the compiler ignored the rounding mode changes: for
    inputs whose product is not exactly representable, the lower bound of
-   [x,x]*[y,y] must be strictly below the upper bound. */
-static bool rounding_is_honored(void) {
+   [x,x]*[y,y] must be strictly below the upper bound.  Call it once at
+   startup (the demos do) and refuse to run if it fails. */
+static inline bool interval_rounding_is_honored(void) {
   volatile double x = 1.1;
   volatile double y = 1.3;
   interval_t a = {.lo = x, .hi = x, .valid = true};
@@ -820,20 +700,4 @@ static bool rounding_is_honored(void) {
   return p.lo < p.hi;
 }
 
-int main(void) {
-  if (!rounding_is_honored()) {
-    fprintf(stderr, "interval: rounding modes are being ignored; compile with -frounding-math\n");
-    return 1;
-  }
-
-  // demo_interval_arith();
-  // demo_interval_add_many();
-  // demo_interval_pow();
-  // demo_sqrt();
-  // demo_interval_sin_cos();
-  // demo_interval_fma();
-  // demo_continued_fraction();
-  demo_int_init();
-  
-  return 0;
-}
+#endif

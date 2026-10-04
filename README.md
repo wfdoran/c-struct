@@ -59,6 +59,8 @@ pointers refer to, unless you give them a free function.
 * [Channels](doc/chan.md): bounded channels, built on atomics rather than locks,
   for passing values between threads, with a non-blocking select.
 * [Option](doc/option.md): a value which may be absent.
+* [Interval](doc/interval.md): interval arithmetic with directed rounding,
+  for results which are guaranteed to contain the exact answer.
 
 ## Other headers
 
@@ -69,9 +71,6 @@ pointers refer to, unless you give them a free function.
 * `serialize.h`: variable length integer and string encoding used by
   `array_prefix_serialize()`.
 * `any.h`: a small tagged union holding one of the basic C types.
-* `bin/interval.c`: a stand alone interval arithmetic program (build line at the
-  top of the file) which uses the priority queue.
-
 ## Tests and demos
 
 ```

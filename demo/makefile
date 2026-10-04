@@ -172,6 +172,30 @@ pqueue_demo2: pqueue_demo2.c
 pqueue_demo3: pqueue_demo3.c
 	$(CC) $(CFLAGS) $(INCLUDE) pqueue_demo3.c -o pqueue_demo3
 
+interval_demo1: interval_demo1.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo1.c -o interval_demo1 -lm
+
+interval_demo2: interval_demo2.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo2.c -o interval_demo2 -lm
+
+interval_demo3: interval_demo3.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo3.c -o interval_demo3 -lm
+
+interval_demo4: interval_demo4.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo4.c -o interval_demo4 -lm
+
+interval_demo5: interval_demo5.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo5.c -o interval_demo5 -lm
+
+interval_demo6: interval_demo6.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo6.c -o interval_demo6 -lm
+
+interval_demo7: interval_demo7.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo7.c -o interval_demo7 -lm
+
+interval_demo8: interval_demo8.c ../include/interval.h
+	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo8.c -o interval_demo8 -lm
+
 clean:
 	rm -rf array_demo1
 	rm -rf array_demo2
@@ -230,5 +254,13 @@ clean:
 	rm -rf pqueue_demo2
 	rm -rf pqueue_demo3
 	rm -rf comp_demo
+	rm -rf interval_demo1
+	rm -rf interval_demo2
+	rm -rf interval_demo3
+	rm -rf interval_demo4
+	rm -rf interval_demo5
+	rm -rf interval_demo6
+	rm -rf interval_demo7
+	rm -rf interval_demo8
 	rm -rf *~
 
