@@ -343,15 +343,18 @@ static inline NODE *GLUE3(tree_, prefix, _balance)(NODE *n) {
   return n;
 }
 
-/* tree_prefix_insert_node(TREE *a, NODE *n, data_t key, void *value)
+/* tree_prefix_insert_node(TREE *a, NODE *n, data_t key, void *value,
+                           int32_t *rc, bool *added)
 
    Inserts a key/value at node n in the tree.
 */
 /* On an allocation failure, *rc is set to -1 and the subtree is returned
- * unchanged. */
-static inline NODE *GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n,
-                                                       data_t key, void *value,
-                                                       int32_t *rc) {
+ * unchanged.  *added is set to true if a new node was created; if the key
+ * already existed no size or height changed, so the ancestors are not
+ * re-balanced. */
+static inline NODE *GLUE3(tree_, prefix,
+                          _insert_node)(TREE *a, NODE *n, data_t key,
+                                        void *value, int32_t *rc, bool *added) {
   if (n == NULL) {
     NODE *rv = GLUE3(tree_, prefix, _init_node)(key);
     if (rv == NULL) {
@@ -363,12 +366,13 @@ static inline NODE *GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n,
     } else {
       rv->value = a->update(rv->value, value);
     }
+    *added = true;
     return rv;
   }
   int c = a->comp(&key, &(n->key));
   if (c < 0) {
     NODE *child =
-        GLUE3(tree_, prefix, _insert_node)(a, n->left, key, value, rc);
+        GLUE3(tree_, prefix, _insert_node)(a, n->left, key, value, rc, added);
     if (*rc != 0) {
       return n;
     }
@@ -377,7 +381,7 @@ static inline NODE *GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n,
   }
   if (c > 0) {
     NODE *child =
-        GLUE3(tree_, prefix, _insert_node)(a, n->right, key, value, rc);
+        GLUE3(tree_, prefix, _insert_node)(a, n->right, key, value, rc, added);
     if (*rc != 0) {
       return n;
     }
@@ -393,6 +397,9 @@ static inline NODE *GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n,
       }
       n->value = value;
     }
+  }
+  if (!*added) {
+    return n;
   }
 
   n = GLUE3(tree_, prefix, _balance)(n);
@@ -430,7 +437,9 @@ static inline int32_t GLUE3(tree_, prefix, _insert)(TREE *a, data_t key,
     return -1;
   }
   int32_t rc = 0;
-  NODE *root = GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value, &rc);
+  bool added = false;
+  NODE *root =
+      GLUE3(tree_, prefix, _insert_node)(a, a->root, key, value, &rc, &added);
   if (rc != 0) {
     return rc;
   }
