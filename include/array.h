@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include <comp.h>
+#include "comp.h"
 
 #include "serialize.h"
 

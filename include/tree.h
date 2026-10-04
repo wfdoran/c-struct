@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <comp.h>
+#include "comp.h"
 
 #ifndef data_t
 #error "data_t not defined"
