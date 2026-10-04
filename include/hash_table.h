@@ -3,6 +3,7 @@
 #include <string.h>
 #include "hash.h"
 #include "comp.h"
+#include "key_hook.h"
 
 #ifndef hkey_t
 #error "hkey_t not defined"
@@ -315,10 +316,10 @@ static inline int32_t GLUE3(hash_, prefix, _rehash)(HTABLE *h) {
 
 static inline int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, hkey_t key,
                                                  value_t value) {
-  if (h == NULL || h->hash_func == NULL) {
+  if (h == NULL || !CS_HAVE_HASH(h->hash_func)) {
     return -1;
   }
-  const uint64_t hash = hash_mix64(h->hash_func(key));
+  const uint64_t hash = hash_mix64(CS_HASH(h->hash_func, key));
   const uint64_t mask = h->capacity - UINT64_C(1);
   const uint64_t base = hash & mask;
   const uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
@@ -358,7 +359,7 @@ static inline int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, hkey_t key,
     }
 
     if (h->A[pos]->hash == hash) {
-      if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+      if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
         h->A[pos]->value =
             h->update == NULL ? value : h->update(h->A[pos]->value, value);
         break;
@@ -386,10 +387,10 @@ static inline int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, hkey_t key,
 
 static inline int32_t GLUE3(hash_, prefix, _get)(const HTABLE *h, hkey_t key,
                                                  value_t *value) {
-  if (h == NULL || h->hash_func == NULL) {
+  if (h == NULL || !CS_HAVE_HASH(h->hash_func)) {
     return -1;
   }
-  uint64_t hash = hash_mix64(h->hash_func(key));
+  uint64_t hash = hash_mix64(CS_HASH(h->hash_func, key));
   uint64_t mask = h->capacity - UINT64_C(1);
   uint64_t base = hash & mask;
   uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
@@ -399,7 +400,7 @@ static inline int32_t GLUE3(hash_, prefix, _get)(const HTABLE *h, hkey_t key,
       return 0;
     } else {
       if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
-        if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+        if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
           if (value != NULL) {
             *value = h->A[pos]->value;
           }
@@ -417,10 +418,10 @@ static inline int32_t GLUE3(hash_, prefix, _get)(const HTABLE *h, hkey_t key,
 
 static inline int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, hkey_t key,
                                                     value_t *value) {
-  if (h == NULL || h->hash_func == NULL) {
+  if (h == NULL || !CS_HAVE_HASH(h->hash_func)) {
     return -1;
   }
-  uint64_t hash = hash_mix64(h->hash_func(key));
+  uint64_t hash = hash_mix64(CS_HASH(h->hash_func, key));
   uint64_t mask = h->capacity - UINT64_C(1);
   uint64_t base = hash & mask;
   uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
@@ -430,7 +431,7 @@ static inline int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, hkey_t key,
       return 0;
     } else {
       if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
-        if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+        if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
           if (value != NULL) {
             *value = h->A[pos]->value;
           }
@@ -572,3 +573,8 @@ static inline HTABLE *GLUE3(hash_, prefix, _clone)(const HTABLE *h) {
    are removed so that they do not leak into the includer */
 #undef _unused
 #undef LOAD_FACTOR
+#undef CS_KEYEQ
+#undef CS_HASH
+#undef CS_HAVE_HASH
+#undef hkey_hash
+#undef hkey_equal

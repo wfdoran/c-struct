@@ -73,6 +73,15 @@ pointers refer to, unless you give them a free function.
 * `serialize.h`: variable length integer and string encoding used by
   `array_prefix_serialize()`.
 * `any.h`: a small tagged union holding one of the basic C types.
+## Inlining the comparison
+
+By default the ordering of an array, tree, priority queue or linked list is
+called through a function pointer, and so are the hash and equality of a hash
+table.  Defining `data_less(a, b)` (or `hkey_hash(k)` and `hkey_equal(a, b)`
+for the hash tables) before including the header compiles them in, which makes
+sorting about 1.5x faster; see the `Compiled in comparison` section of each
+document in `doc/` and `demo/array_demo17.c`.
+
 ## Tests and demos
 
 ```

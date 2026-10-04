@@ -27,6 +27,9 @@ hash_demo7: hash_demo7.c
 hash_demo8: hash_demo8.c
 	$(CC) $(CFLAGS) $(INCLUDE) hash_demo8.c -o hash_demo8
 
+hash_demo9: hash_demo9.c
+	$(CC) $(CFLAGS) $(INCLUDE) hash_demo9.c -o hash_demo9
+
 phash_demo1: phash_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) phash_demo1.c -o phash_demo1 -lpthread
 
@@ -109,6 +112,9 @@ array_demo15: array_demo15.c
 array_demo16: array_demo16.c
 	$(CC) $(CFLAGS) $(INCLUDE) array_demo16.c -o array_demo16
 
+array_demo17: array_demo17.c
+	$(CC) $(CFLAGS) $(INCLUDE) array_demo17.c -o array_demo17
+
 tree_demo1: tree_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_demo1.c -o tree_demo1
 
@@ -142,6 +148,9 @@ tree_demo10: tree_demo10.c
 tree_demo11: tree_demo11.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_demo11.c -o tree_demo11
 
+tree_demo12: tree_demo12.c
+	$(CC) $(CFLAGS) $(INCLUDE) tree_demo12.c -o tree_demo12
+
 tree_array_demo: tree_array_demo.c
 	$(CC) $(CFLAGS) $(INCLUDE) tree_array_demo.c -o tree_array_demo
 
@@ -171,6 +180,9 @@ pqueue_demo2: pqueue_demo2.c
 
 pqueue_demo3: pqueue_demo3.c
 	$(CC) $(CFLAGS) $(INCLUDE) pqueue_demo3.c -o pqueue_demo3
+
+pqueue_demo4: pqueue_demo4.c
+	$(CC) $(CFLAGS) $(INCLUDE) pqueue_demo4.c -o pqueue_demo4
 
 interval_demo1: interval_demo1.c ../include/interval.h
 	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo1.c -o interval_demo1 -lm
@@ -213,6 +225,7 @@ clean:
 	rm -rf array_demo14
 	rm -rf array_demo15
 	rm -rf array_demo16
+	rm -rf array_demo17
 	rm -rf array_demo16.bin
 	rm -rf hash_demo1
 	rm -rf hash_demo2
@@ -222,6 +235,7 @@ clean:
 	rm -rf hash_demo6
 	rm -rf hash_demo7
 	rm -rf hash_demo8
+	rm -rf hash_demo9
 	rm -rf phash_demo1
 	rm -rf chan_demo1
 	rm -rf chan_demo2
@@ -243,6 +257,7 @@ clean:
 	rm -rf tree_demo9
 	rm -rf tree_demo10
 	rm -rf tree_demo11
+	rm -rf tree_demo12
 	rm -rf tree_array_demo
 	rm -rf option_demo1
 	rm -rf option_demo2
@@ -253,6 +268,7 @@ clean:
 	rm -rf pqueue_demo1
 	rm -rf pqueue_demo2
 	rm -rf pqueue_demo3
+	rm -rf pqueue_demo4
 	rm -rf comp_demo
 	rm -rf interval_demo1
 	rm -rf interval_demo2

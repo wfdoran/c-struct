@@ -56,3 +56,24 @@ phash_words_atomic_update(h, word, 1, add);
 Returns 0 on success, and -1 if `h` is `NULL`, `update` is `NULL`, there is no
 hash function, or memory could not be allocated.  Unlike `put`, it uses the
 `update` argument rather than the function set with `set_update`.
+
+## Compiled in hash and equality
+
+Instead of `hash_prefix_set_hash()` and `hash_prefix_set_comp()` (calls through
+function pointers), the hash and the equality of keys can be compiled in by
+defining `hkey_hash` and/or `hkey_equal` before including the header:
+
+```c
+#define hkey_t cell_t
+#define value_t int
+#define prefix cell
+#define hkey_hash(k) (((uint64_t) (uint32_t) (k).x << 32) | (uint32_t) (k).y)
+#define hkey_equal(a, b) ((a).x == (b).x && (a).y == (b).y)
+#include <phash_table.h>
+```
+
+`hkey_hash` takes an `hkey_t` and returns a `uint64_t` (it is mixed further
+inside the table); `hkey_equal` takes two `hkey_t` and is true for the same key.
+Each is optional and independent of the other.  The arguments are evaluated
+more than once, so they must have no side effects.  A defined hook replaces the
+corresponding function pointer, which is then not used.

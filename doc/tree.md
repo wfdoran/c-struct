@@ -166,3 +166,23 @@ with the root.  This is the order to use to free or destroy things node by node.
 Prints a picture of the tree sideways to standard output, one node per line,
 calling `node_print(key, value)` to print each node's contents.  Useful for
 debugging.
+
+## Compiled in comparison
+
+Instead of calling `tree_prefix_set_comp()` (a call through a function pointer),
+the ordering can be compiled in by defining `data_less` before including the
+header:
+
+```c
+#define data_t int
+#define prefix int
+#define data_less(a, b) ((a) < (b))
+#include <tree.h>
+```
+
+`data_less` takes two `data_t` values and must be a strict weak ordering.  Its
+arguments are evaluated more than once, so they must have no side effects.  The
+compiler can inline it. While `data_less` is defined, `tree_prefix_set_comp()`
+has no effect, and a comparison is always available (so a `struct` needs no
+default).
+See `demo/tree_demo12.c`.

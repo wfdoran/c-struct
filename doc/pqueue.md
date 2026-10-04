@@ -83,3 +83,23 @@ if the queue is empty.
 ### `bool pqueue_prefix_is_empty(const pqueue_prefix_t *q)`
 
 The number of entries, and whether there are none.
+
+## Compiled in comparison
+
+Instead of calling `pqueue_prefix_set_comp()` (a call through a function
+pointer), the ordering can be compiled in by defining `data_less` before
+including the header:
+
+```c
+#define data_t int
+#define prefix int
+#define data_less(a, b) ((a) < (b))
+#include <pqueue.h>
+```
+
+`data_less` takes two `data_t` values and must be a strict weak ordering.  Its
+arguments are evaluated more than once, so they must have no side effects.  The
+compiler can inline it. While `data_less` is defined, `pqueue_prefix_set_comp()`
+has no effect, and a comparison is always available (so a `struct` needs no
+default).
+See `demo/pqueue_demo4.c`.

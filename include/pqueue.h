@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "comp.h"
+#include "cmp_hook.h"
 
 #ifndef data_t
 #error "data_t not defined"
@@ -179,7 +180,7 @@ static inline void GLUE3(pqueue_, prefix, _destroy)(PQUEUE **q_ptr) {
 */
 static inline int32_t GLUE3(pqueue_, prefix, _push)(PQUEUE *q, data_t key,
                                                     void *value) {
-  if (q == NULL || q->comp == NULL) {
+  if (q == NULL || !CS_HAVE_CMP(q->comp)) {
     return -1;
   }
 
@@ -200,7 +201,7 @@ static inline int32_t GLUE3(pqueue_, prefix, _push)(PQUEUE *q, data_t key,
   size_t pos = q->size++;
   while (pos != 0) {
     size_t parent = PQUEUE_PARENT(pos);
-    if (q->comp(&key, &(q->data[parent].key)) <= 0) {
+    if (CS_CMP(q->comp, &key, &(q->data[parent].key)) <= 0) {
       break;
     }
     q->data[pos] = q->data[parent];
@@ -219,7 +220,7 @@ static inline int32_t GLUE3(pqueue_, prefix, _push)(PQUEUE *q, data_t key,
 */
 static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
   ASSERT(q != NULL);
-  ASSERT(q->comp != NULL);
+  CS_ASSERT_CMP(q->comp);
 
   if (q->size == 0) {
     PQKV rv = {.value = NULL, .found = false};
@@ -242,10 +243,10 @@ static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
         break;
       }
       if (child + 1 < q->size &&
-          q->comp(&q->data[child + 1].key, &q->data[child].key) > 0) {
+          CS_CMP(q->comp, &q->data[child + 1].key, &q->data[child].key) > 0) {
         child++;
       }
-      if (q->comp(&q->data[child].key, &last.key) <= 0) {
+      if (CS_CMP(q->comp, &q->data[child].key, &last.key) <= 0) {
         break;
       }
       q->data[pos] = q->data[child];
@@ -306,3 +307,7 @@ static inline bool GLUE3(pqueue_, prefix, _is_empty)(const PQUEUE *q) {
 /* the internal macros of this header (and its optional null/sentinel setting)
    are removed so that they do not leak into the includer */
 #undef _unused
+#undef CS_CMP
+#undef CS_HAVE_CMP
+#undef CS_ASSERT_CMP
+#undef data_less

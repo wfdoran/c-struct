@@ -6,6 +6,7 @@
 #include "cs_assert.h"
 #include "hash.h"
 #include "comp.h"
+#include "key_hook.h"
 
 #ifndef hkey_t
 #error "hkey_t not defined"
@@ -374,7 +375,7 @@ static inline int32_t GLUE3(phash_, prefix,
     }
 
     if (h->A[pos]->hash == hash) {
-      if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+      if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
         h->A[pos]->value =
             update == NULL ? value : update(h->A[pos]->value, value);
         break;
@@ -396,10 +397,10 @@ static inline int32_t GLUE3(phash_, prefix, _put)(PHTABLE *h, hkey_t key,
   }
   uint64_t (*hash_func)(hkey_t) =
       atomic_load_explicit(&h->hash_func, memory_order_acquire);
-  if (hash_func == NULL) {
+  if (!CS_HAVE_HASH(hash_func)) {
     return -1;
   }
-  const uint64_t hash = hash_mix64(hash_func(key));
+  const uint64_t hash = hash_mix64(CS_HASH(hash_func, key));
 
   pthread_rwlock_wrlock(&(h->rwlock));
   int32_t rc =
@@ -416,10 +417,10 @@ GLUE3(phash_, prefix, _atomic_update)(PHTABLE *h, hkey_t key, value_t value,
   }
   uint64_t (*hash_func)(hkey_t) =
       atomic_load_explicit(&h->hash_func, memory_order_acquire);
-  if (hash_func == NULL) {
+  if (!CS_HAVE_HASH(hash_func)) {
     return -1;
   }
-  const uint64_t hash = hash_mix64(hash_func(key));
+  const uint64_t hash = hash_mix64(CS_HASH(hash_func, key));
 
   pthread_rwlock_wrlock(&(h->rwlock));
   int32_t rc = GLUE3(phash_, prefix, _put_locked)(h, hash, key, value, update);
@@ -445,10 +446,10 @@ static inline int32_t GLUE3(phash_, prefix, _get)(PHTABLE *h, hkey_t key,
   }
   uint64_t (*hash_func)(hkey_t) =
       atomic_load_explicit(&h->hash_func, memory_order_acquire);
-  if (hash_func == NULL) {
+  if (!CS_HAVE_HASH(hash_func)) {
     return -1;
   }
-  uint64_t hash = hash_mix64(hash_func(key));
+  uint64_t hash = hash_mix64(CS_HASH(hash_func, key));
 
   pthread_rwlock_rdlock(&(h->rwlock));
   uint64_t mask = h->capacity - UINT64_C(1);
@@ -461,7 +462,7 @@ static inline int32_t GLUE3(phash_, prefix, _get)(PHTABLE *h, hkey_t key,
       return 0;
     } else {
       if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
-        if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+        if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
           if (value != NULL) {
             *value = h->A[pos]->value;
           }
@@ -485,10 +486,10 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
   }
   uint64_t (*hash_func)(hkey_t) =
       atomic_load_explicit(&h->hash_func, memory_order_acquire);
-  if (hash_func == NULL) {
+  if (!CS_HAVE_HASH(hash_func)) {
     return -1;
   }
-  uint64_t hash = hash_mix64(hash_func(key));
+  uint64_t hash = hash_mix64(CS_HASH(hash_func, key));
 
   pthread_rwlock_wrlock(&(h->rwlock));
   uint64_t mask = h->capacity - UINT64_C(1);
@@ -501,7 +502,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
       return 0;
     } else {
       if (h->A[pos] != &(h->deleted) && h->A[pos]->hash == hash) {
-        if (h->comp == NULL || h->comp(key, h->A[pos]->key) == 0) {
+        if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
           if (value != NULL) {
             *value = h->A[pos]->value;
           }
@@ -527,3 +528,8 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
    are removed so that they do not leak into the includer */
 #undef _unused
 #undef LOAD_FACTOR
+#undef CS_KEYEQ
+#undef CS_HASH
+#undef CS_HAVE_HASH
+#undef hkey_hash
+#undef hkey_equal

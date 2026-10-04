@@ -245,3 +245,24 @@ no compare function (the default for floating point keys) equal hashes mean
 equal keys, so all NaNs are one key.  With a compare function built on `==`, a
 NaN key can never be found again, because NaN is not equal to itself, so avoid
 NaN keys in that case.
+
+## Compiled in hash and equality
+
+Instead of `hash_prefix_set_hash()` and `hash_prefix_set_comp()` (calls through
+function pointers), the hash and the equality of keys can be compiled in by
+defining `hkey_hash` and/or `hkey_equal` before including the header:
+
+```c
+#define hkey_t cell_t
+#define value_t int
+#define prefix cell
+#define hkey_hash(k) (((uint64_t) (uint32_t) (k).x << 32) | (uint32_t) (k).y)
+#define hkey_equal(a, b) ((a).x == (b).x && (a).y == (b).y)
+#include <hash_table.h>
+```
+
+`hkey_hash` takes an `hkey_t` and returns a `uint64_t` (it is mixed further
+inside the table); `hkey_equal` takes two `hkey_t` and is true for the same key.
+Each is optional and independent of the other.  The arguments are evaluated
+more than once, so they must have no side effects.  A defined hook replaces the
+corresponding function pointer, which is then not used. See `demo/hash_demo9.c`.

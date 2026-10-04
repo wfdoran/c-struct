@@ -4,6 +4,7 @@
 #include "cs_assert.h"
 
 #include "comp.h"
+#include "cmp_hook.h"
 
 #ifndef data_t
 #error "data_t not defined"
@@ -409,7 +410,7 @@ static inline LNODE *GLUE3(llist_, prefix, _merge_nodes)(LLIST *a, LNODE *x,
   LNODE *tail = &head;
 
   while (x != NULL && y != NULL) {
-    if (a->comp(&y->data, &x->data) < 0) {
+    if (CS_CMP(a->comp, &y->data, &x->data) < 0) {
       tail->next = y;
       y = y->next;
     } else {
@@ -455,7 +456,7 @@ static inline LNODE *GLUE3(llist_, prefix, _msort_nodes)(LLIST *a, LNODE *n,
       0 => ok
 */
 static inline int32_t GLUE3(llist_, prefix, _msort)(LLIST *a) {
-  if (a == NULL || a->comp == NULL) {
+  if (a == NULL || !CS_HAVE_CMP(a->comp)) {
     return -1;
   }
   if (a->size < 2) {
@@ -500,3 +501,7 @@ static inline void GLUE3(llist_, prefix, _add_node)(LLIST *a, LNODE *n) {
    are removed so that they do not leak into the includer */
 #undef _unused
 #undef null_value
+#undef CS_CMP
+#undef CS_HAVE_CMP
+#undef CS_ASSERT_CMP
+#undef data_less

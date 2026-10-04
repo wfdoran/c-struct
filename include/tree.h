@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "comp.h"
+#include "cmp_hook.h"
 
 #ifndef data_t
 #error "data_t not defined"
@@ -369,7 +370,7 @@ static inline NODE *GLUE3(tree_, prefix,
     *added = true;
     return rv;
   }
-  int c = a->comp(&key, &(n->key));
+  int c = CS_CMP(a->comp, &key, &(n->key));
   if (c < 0) {
     NODE *child =
         GLUE3(tree_, prefix, _insert_node)(a, n->left, key, value, rc, added);
@@ -433,7 +434,7 @@ static inline NODE *GLUE3(tree_, prefix,
 
 static inline int32_t GLUE3(tree_, prefix, _insert)(TREE *a, data_t key,
                                                     void *value) {
-  if (a == NULL || a->comp == NULL) {
+  if (a == NULL || !CS_HAVE_CMP(a->comp)) {
     return -1;
   }
   int32_t rc = 0;
@@ -507,7 +508,7 @@ static inline NODE *GLUE3(tree_, prefix,
     return NULL;
   }
 
-  int c = comp(&key, &(n->key));
+  int c = CS_CMP(comp, &key, &(n->key));
   if (c != 0) {
     if (c < 0) {
       n->left = GLUE3(tree_, prefix, _delete_node)(comp, n->left, key, rv);
@@ -563,7 +564,7 @@ static inline NODE *GLUE3(tree_, prefix,
 */
 
 static inline KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
-  if (a->comp == NULL) {
+  if (!CS_HAVE_CMP(a->comp)) {
     KEYVAL rv = {.key = key, .value = NULL, .found = false};
     return rv;
   }
@@ -597,7 +598,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve)(const TREE *a,
       return rv;
     }
 
-    int c = a->comp(&key, &(n->key));
+    int c = CS_CMP(a->comp, &key, &(n->key));
     if (c == 0) {
       KEYVAL rv = {.key = n->key, .value = n->value, .found = true};
       return rv;
@@ -709,7 +710,7 @@ static inline size_t GLUE3(tree_, prefix, _num_less)(const TREE *a,
   size_t total = 0;
   NODE *n = a->root;
   while (n != NULL) {
-    int c = a->comp(&key, &(n->key));
+    int c = CS_CMP(a->comp, &key, &(n->key));
 
     if (c < 0) {
       n = n->left;
@@ -736,7 +737,7 @@ static inline size_t GLUE3(tree_, prefix, _num_less_equal)(const TREE *a,
   size_t total = 0;
   NODE *n = a->root;
   while (n != NULL) {
-    int c = a->comp(&key, &(n->key));
+    int c = CS_CMP(a->comp, &key, &(n->key));
 
     if (c < 0) {
       n = n->left;
@@ -760,7 +761,7 @@ static inline size_t GLUE3(tree_, prefix, _num_greater)(const TREE *a,
   size_t total = 0;
   NODE *n = a->root;
   while (n != NULL) {
-    int c = a->comp(&key, &(n->key));
+    int c = CS_CMP(a->comp, &key, &(n->key));
 
     if (c > 0) {
       n = n->right;
@@ -787,7 +788,7 @@ static inline size_t GLUE3(tree_, prefix, _num_greater_equal)(const TREE *a,
   size_t total = 0;
   NODE *n = a->root;
   while (n != NULL) {
-    int c = a->comp(&key, &(n->key));
+    int c = CS_CMP(a->comp, &key, &(n->key));
 
     if (c > 0) {
       n = n->right;
@@ -893,7 +894,7 @@ static inline int32_t GLUE3(tree_, prefix,
   NODE *best = NULL;
   NODE *n = a->root;
   while (n != NULL) {
-    int c = a->comp(&from, &(n->key));
+    int c = CS_CMP(a->comp, &from, &(n->key));
     if (c == 0) {
       best = n;
       break;
@@ -1045,3 +1046,7 @@ static inline void GLUE3(tree_, prefix,
    are removed so that they do not leak into the includer */
 #undef _unused
 #undef KEYVAL
+#undef CS_CMP
+#undef CS_HAVE_CMP
+#undef CS_ASSERT_CMP
+#undef data_less

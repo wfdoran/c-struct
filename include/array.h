@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include "comp.h"
+#include "cmp_hook.h"
 
 #include "serialize.h"
 
@@ -280,7 +281,7 @@ static inline void GLUE3(array_, prefix,
     for (size_t i = 1; i < n; i++) {
       data_t x = v[i];
       size_t j = i;
-      while (j > 0 && comp(&x, &v[j - 1]) < 0) {
+      while (j > 0 && CS_CMP(comp, &x, &v[j - 1]) < 0) {
         v[j] = v[j - 1];
         j--;
       }
@@ -292,7 +293,7 @@ static inline void GLUE3(array_, prefix,
   size_t half = n / 2;
   GLUE3(array_, prefix, _sort_range)(comp, v, tmp, half);
   GLUE3(array_, prefix, _sort_range)(comp, v + half, tmp, n - half);
-  if (comp(&v[half - 1], &v[half]) <= 0) {
+  if (CS_CMP(comp, &v[half - 1], &v[half]) <= 0) {
     return;
   }
 
@@ -303,7 +304,7 @@ static inline void GLUE3(array_, prefix,
   size_t j = half;
   size_t k = 0;
   while (i < half && j < n) {
-    if (comp(&v[j], &tmp[i]) < 0) {
+    if (CS_CMP(comp, &v[j], &tmp[i]) < 0) {
       v[k++] = v[j++];
     } else {
       v[k++] = tmp[i++];
@@ -321,7 +322,7 @@ static inline int32_t GLUE3(array_, prefix, _sort)(TYPE *a) {
   if (a == NULL) {
     return -1;
   }
-  if (a->comp == NULL) {
+  if (!CS_HAVE_CMP(a->comp)) {
     return -1;
   }
   if (a->size < 2) {
@@ -346,13 +347,13 @@ static inline int32_t GLUE3(array_, prefix, _sort)(TYPE *a) {
 
 static inline ssize_t GLUE3(array_, prefix, _bisect)(const TYPE *a, data_t v) {
   ASSERT(a != NULL);
-  ASSERT(a->comp != NULL);
+  CS_ASSERT_CMP(a->comp);
   ssize_t lo = -1;
   ssize_t hi = (ssize_t) a->size;
 
   while (hi - lo > 1) {
     ssize_t mid = lo + (hi - lo) / 2;
-    int x = a->comp(&a->data[mid], &v);
+    int x = CS_CMP(a->comp, &a->data[mid], &v);
     if (x == 0) {
       return mid;
     }
@@ -388,13 +389,13 @@ static inline ssize_t GLUE3(array_, prefix, _bisect)(const TYPE *a, data_t v) {
 static inline ssize_t GLUE3(array_, prefix, _bisect_upper)(const TYPE *a,
                                                            data_t v) {
   ASSERT(a != NULL);
-  ASSERT(a->comp != NULL);
+  CS_ASSERT_CMP(a->comp);
   ssize_t lo = -1;
   ssize_t hi = (ssize_t) a->size;
 
   while (hi - lo > 1) {
     ssize_t mid = lo + (hi - lo) / 2;
-    int x = a->comp(&a->data[mid], &v);
+    int x = CS_CMP(a->comp, &a->data[mid], &v);
     if (x <= 0) {
       lo = mid;
     } else {
@@ -414,13 +415,13 @@ static inline ssize_t GLUE3(array_, prefix, _bisect_upper)(const TYPE *a,
 static inline ssize_t GLUE3(array_, prefix, _bisect_lower)(const TYPE *a,
                                                            data_t v) {
   ASSERT(a != NULL);
-  ASSERT(a->comp != NULL);
+  CS_ASSERT_CMP(a->comp);
   ssize_t lo = -1;
   ssize_t hi = (ssize_t) a->size;
 
   while (hi - lo > 1) {
     ssize_t mid = lo + (hi - lo) / 2;
-    int x = a->comp(&a->data[mid], &v);
+    int x = CS_CMP(a->comp, &a->data[mid], &v);
     if (x < 0) {
       lo = mid;
     } else {
@@ -624,10 +625,10 @@ static inline void GLUE3(array_, prefix, _sift_down)(TYPE *a, size_t pos) {
       break;
     }
     if (child + 1 < a->size &&
-        a->comp(&a->data[child + 1], &a->data[child]) > 0) {
+        CS_CMP(a->comp, &a->data[child + 1], &a->data[child]) > 0) {
       child++;
     }
-    if (a->comp(&a->data[child], &last) <= 0) {
+    if (CS_CMP(a->comp, &a->data[child], &last) <= 0) {
       break;
     }
     a->data[pos] = a->data[child];
@@ -647,10 +648,10 @@ static inline int32_t GLUE3(array_, prefix, _heappush)(TYPE *a, data_t value) {
   if (a == NULL) {
     return -1;
   }
-  if (a->comp == NULL) {
+  if (!CS_HAVE_CMP(a->comp)) {
     return -1;
   }
-  ASSERT(a->comp != NULL);
+  CS_ASSERT_CMP(a->comp);
   if (GLUE3(array_, prefix, _append)(a, value) != 0) {
     return -1;
   }
@@ -658,7 +659,7 @@ static inline int32_t GLUE3(array_, prefix, _heappush)(TYPE *a, data_t value) {
   size_t pos = a->size - 1;
   while (pos != 0) {
     size_t parent = HEAP_PARENT(pos);
-    if (a->comp(&value, &(a->data[parent])) <= 0) {
+    if (CS_CMP(a->comp, &value, &(a->data[parent])) <= 0) {
       break;
     }
     a->data[pos] = a->data[parent];
@@ -676,7 +677,7 @@ static inline int32_t GLUE3(array_, prefix, _heappush)(TYPE *a, data_t value) {
 
 static inline data_t GLUE3(array_, prefix, _heappop)(TYPE *a) {
   ASSERT(a != NULL);
-  ASSERT(a->comp != NULL);
+  CS_ASSERT_CMP(a->comp);
   if (a->size <= 0) {
     if (a->have_null_value) {
       return a->null_value;
@@ -702,7 +703,7 @@ static inline int32_t GLUE3(array_, prefix, _heapify)(TYPE *a) {
   if (a == NULL) {
     return -1;
   }
-  if (a->comp == NULL) {
+  if (!CS_HAVE_CMP(a->comp)) {
     return -1;
   }
   /* Floyd's construction: sift down every entry that has a child, last to
@@ -716,9 +717,9 @@ static inline int32_t GLUE3(array_, prefix, _heapify)(TYPE *a) {
 
 static inline ssize_t GLUE3(array_, prefix, _index)(const TYPE *a, data_t v) {
   ASSERT(a != NULL);
-  ASSERT(a->comp != NULL);
+  CS_ASSERT_CMP(a->comp);
   for (size_t i = 0; i < a->size; i++) {
-    if (a->comp(&a->data[i], &v) == 0) {
+    if (CS_CMP(a->comp, &a->data[i], &v) == 0) {
       return i;
     }
   }
@@ -845,3 +846,7 @@ fail:
    are removed so that they do not leak into the includer */
 #undef _unused
 #undef default_null_value
+#undef CS_CMP
+#undef CS_HAVE_CMP
+#undef CS_ASSERT_CMP
+#undef data_less

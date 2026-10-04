@@ -120,3 +120,23 @@ available.
 Appends an already allocated node to the end of the list without allocating.
 The node must not be in any list.  This is mainly a building block for code
 which rearranges nodes itself.
+
+## Compiled in comparison
+
+Instead of calling `llist_prefix_set_comp()` (a call through a function
+pointer), the ordering can be compiled in by defining `data_less` before
+including the header:
+
+```c
+#define data_t int
+#define prefix int
+#define data_less(a, b) ((a) < (b))
+#define null_value -1
+#include <linked_list.h>
+```
+
+`data_less` takes two `data_t` values and must be a strict weak ordering.  Its
+arguments are evaluated more than once, so they must have no side effects.  The
+compiler can inline it. While `data_less` is defined, `llist_prefix_set_comp()`
+has no effect, and a comparison is always available (so a `struct` needs no
+default).
