@@ -209,7 +209,7 @@ static inline TYPE *GLUE3(array_, prefix, _slice)(const TYPE *in, size_t left,
 
 /* array_prefix_set_comp(array_prefix_t *a, int (*comp) (data_t*, data_t*)
 
-   Sets a comparision function.  This is required in order to call
+   Sets a comparison function.  This is required in order to call
    array_prefix_sort().
 */
 
@@ -377,7 +377,7 @@ static inline ssize_t GLUE3(array_, prefix, _bisect)(const TYPE *a, data_t v) {
        ...
    }
 
-   will loop over all indicies with values between v1 and v2 inclusive.
+   will loop over all indices with values between v1 and v2 inclusive.
    Also, this handles empty ranges as well.
 */
 

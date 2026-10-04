@@ -54,7 +54,7 @@ typedef struct PHTABLE {
 
 /*
    void hash_prefix_filter(htable_prefix_t *h, bool (*filter)(hkey_t, value_t));
-   void Hash_prefix_apply_r(htable_prefix_t *h, value_t (*apply_r) (hkey_t,
+   void hash_prefix_apply_r(htable_prefix_t *h, value_t (*apply_r) (hkey_t,
 value_t, void*), void *arg); htable_prefix_t* hash_prefix_duplicate(const
 htable_prefix_t *h)
 
@@ -86,9 +86,9 @@ static inline int64_t GLUE3(phash_, prefix, _roundup_pow2)(int64_t x) {
    allocates and initializes a hash table.  This includes
 
    - allocating the htable_prefix_t.
-   - the initial allocation of the the hash table itself.
-   - setting the hash fucntion if hash.h recognizes the hkey_t type.
-   - setting the comp function if comp.h recognizes teh hkey_t type.
+   - the initial allocation of the hash table itself.
+   - setting the hash function if hash.h recognizes the hkey_t type.
+   - setting the comp function if comp.h recognizes the hkey_t type.
 
 */
 
@@ -145,10 +145,10 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
 /* void hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func)
    (hkey_t));
 
-   The hash table needs a hash fuction which maps hkey_t to uint64_t.  hash.h
-   will reconginze many basic types and provide a hash function.  These include
+   The hash table needs a hash function which maps hkey_t to uint64_t.  hash.h
+   will recognize many basic types and provide a hash function.  These include
    int32_t, int, float, double, char*.  For more complicated types, the user
-   must use write their own and use this routine to tell the hash table to
+   must write their own and use this routine to tell the hash table to
    use it.
 */
 static inline void GLUE3(phash_, prefix,
@@ -160,7 +160,7 @@ static inline void GLUE3(phash_, prefix,
 
    If no comp function is given, it is assumed the hash value means
    the same hkey_t.  If hash collisions with different hkey_ts are
-   possible, a further compare function function can be set.  If should
+   possible, a further compare function can be set.  It should
    return 0 if the two hkey_t are the same, and non-zero if different.
 
    Note: if hkey_t is char*, strcmp is used.
@@ -177,8 +177,8 @@ static inline void GLUE3(phash_, prefix,
    value_t));
 
    When putting a hkey_t/value_t pair into a hash table where the hkey_t already
-   exists, the default is overwrite the previous value_t with the this new one.
-   Using the routine, you can set the an update routine which combines the
+   exists, the default is to overwrite the previous value_t with this new one.
+   Using the routine, you can set an update routine which combines the
    previous value_t with the new value_t.
 
    For example, if value_t is int, the following update function
@@ -319,7 +319,7 @@ static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
 
    2) If the user has provided an update function (via
       hash_prefix_set_update), then the current value is combined with
-      the new value.  If not update function is avaiable, the new
+      the new value.  If no update function is available, the new
       value replaces the current value.
 
    return value:

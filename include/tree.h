@@ -576,7 +576,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
 
 /*
 
-   Searchs for a node with a given key.  The node is not removed if found.
+   Searches for a node with a given key.  The node is not removed if found.
 */
 static inline KEYVAL GLUE3(tree_, prefix, _retrieve)(const TREE *a,
                                                      data_t key) {
@@ -645,7 +645,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _delete_max)(TREE *a) {
 
 /*
 
-  Retrieves the ke/value of the minimum node.
+  Retrieves the key/value of the minimum node.
 */
 static inline KEYVAL GLUE3(tree_, prefix, _retrieve_min)(const TREE *a) {
   NODE *n = a->root;
@@ -665,7 +665,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve_min)(const TREE *a) {
 
 /*
 
-  Retrieves teh key/value of the maximum node.
+  Retrieves the key/value of the maximum node.
 */
 static inline KEYVAL GLUE3(tree_, prefix, _retrieve_max)(const TREE *a) {
   NODE *n = a->root;
