@@ -3,6 +3,7 @@
 
 #define data_t int64_t
 #define prefix int64
+#define data_less(x,y) ((x) < (y))
 
 #include <array.h>
 
