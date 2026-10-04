@@ -13,18 +13,18 @@
 #undef data_t
 
 int main(void) {
-    pqueue_int_t *q = pqueue_int_init();
+  pqueue_int_t *q = pqueue_int_init();
 
-    for (int i = 0; i < 10; i++) {
-        pqueue_int_push(q, (i * 7) % 10, NULL);
-    }
+  for (int i = 0; i < 10; i++) {
+    pqueue_int_push(q, (i * 7) % 10, NULL);
+  }
 
-    while (!pqueue_int_is_empty(q)) {
-        pqkv_int_t top = pqueue_int_pop(q);
-        printf("%d ", top.key);
-    }
-    printf("\n");
+  while (!pqueue_int_is_empty(q)) {
+    pqkv_int_t top = pqueue_int_pop(q);
+    printf("%d ", top.key);
+  }
+  printf("\n");
 
-    pqueue_int_destroy(&q);
-    return 0;
+  pqueue_int_destroy(&q);
+  return 0;
 }

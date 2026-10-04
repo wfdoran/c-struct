@@ -47,22 +47,21 @@ int main(void) {
   for (int32_t a = 1; a < n; a++) {
     for (int32_t b = a + 1; b < n; b++) {
       for (int32_t c = b + 1; c < n; c++) {
-	if (a * a + b * b == c * c) {
-	  triple_t t = {.x[0] = a, .x[1] = b, .x[2] = c};
-	  hash_trip_put(h, t, true);
-	}
+        if (a * a + b * b == c * c) {
+          triple_t t = {.x[0] = a, .x[1] = b, .x[2] = c};
+          hash_trip_put(h, t, true);
+        }
       }
     }
   }
 
   hiter_trip_t iter;
   triple_t t;
-  for (int32_t rc = hash_trip_first(h, &iter, &t, NULL); rc == 0; rc = hash_trip_next(&iter, &t, NULL)) {
+  for (int32_t rc = hash_trip_first(h, &iter, &t, NULL); rc == 0;
+       rc = hash_trip_next(&iter, &t, NULL)) {
     printf("%8d %8d %8d\n", t.x[0], t.x[1], t.x[2]);
   }
 
   hash_trip_destroy(&h);
   return 0;
 }
-
-

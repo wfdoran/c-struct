@@ -38,20 +38,20 @@ int main(void) {
   chan_int64_t *ch1 = chan_int64_init(capacity);
   chan_int64_t *ch2 = chan_int64_init(capacity);
   chan_int64_t *ch3 = chan_int64_init(capacity);
-  
+
   int64_t n = 1000;
-  
-  #pragma omp parallel
+
+#pragma omp parallel
   {
-    #pragma omp sections
+#pragma omp sections
     {
-      #pragma omp section
+#pragma omp section
       produce(ch1, n);
 
-      #pragma omp section
+#pragma omp section
       square_em(ch1, ch2);
 
-      #pragma omp section
+#pragma omp section
       sum_em(ch2, ch3);
     }
   }

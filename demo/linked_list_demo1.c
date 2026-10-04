@@ -22,10 +22,11 @@ int main(void) {
 
   lnode_float_t *n;
   float d;
-  for (int32_t rc = llist_float_first(a, &n, &d); rc == 0; rc = llist_float_next(&n, &d)) {
+  for (int32_t rc = llist_float_first(a, &n, &d); rc == 0;
+       rc = llist_float_next(&n, &d)) {
     printf("%12.4f \n", d);
   }
-  
+
   while (1) {
     float v = llist_float_remove_start(a);
     if (isnan(v)) {
@@ -33,7 +34,7 @@ int main(void) {
     }
     printf("-- %.2f --\n", v);
   }
-  
+
   llist_float_destroy(&a);
   return 0;
 }

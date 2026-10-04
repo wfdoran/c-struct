@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#define hkey_t char*
+#define hkey_t char *
 #define value_t int
 #define prefix count
 #include <hash_table.h>
@@ -26,16 +26,14 @@ int main(void) {
   hash_count_put(h, "Alice", 4);
   hash_count_put(h, "Bill", 2);
 
-
   hiter_count_t iter;
   char *name;
   int count;
-  for (int32_t rc = hash_count_first(h, &iter, &name, &count); rc == 0; rc = hash_count_next(&iter, &name, &count)) {
+  for (int32_t rc = hash_count_first(h, &iter, &name, &count); rc == 0;
+       rc = hash_count_next(&iter, &name, &count)) {
     printf("%-20s %d\n", name, count);
   }
 
   hash_count_destroy(&h);
   return 0;
 }
-
-

@@ -15,7 +15,7 @@ int64_t sqr(int key, int64_t value) {
 }
 
 int64_t sum(int key, int64_t value, void *arg) {
-  int64_t *a = (int64_t*) arg;
+  int64_t *a = (int64_t *) arg;
   *a += value;
   return value;
 }
@@ -33,4 +33,3 @@ int main(void) {
   hash_int_destroy(&h);
   return 0;
 }
-

@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <math.h>
 
-typedef enum {i64, f64} data_type_t;
+typedef enum { i64, f64 } data_type_t;
 
 typedef struct {
   data_type_t type;
@@ -25,7 +25,7 @@ void option_generic_print(option_generic_t x) {
   } else {
     generic_t v = option_generic_force_get(x);
 
-    switch(v.type) {
+    switch (v.type) {
     case i64:
       printf("%ld\n", v.i64_value);
       break;
@@ -64,4 +64,3 @@ int main(void) {
 
   return 0;
 }
-    

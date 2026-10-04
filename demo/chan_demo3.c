@@ -7,18 +7,19 @@
 #undef prefix
 #undef data_t
 
-void produce_and_sum(chan_int64_t *ch1, chan_int64_t *ch2, chan_int64_t *ch3, int64_t n) {
+void produce_and_sum(chan_int64_t *ch1, chan_int64_t *ch2, chan_int64_t *ch3,
+                     int64_t n) {
   int64_t idx = 1;
   int64_t total = 0;
   int64_t x;
 
-  while(true) {
+  while (true) {
     if (idx <= n) {
       if (chan_int64_trysend(ch1, idx) == CHAN_SUCCESS) {
-	idx++;
-	if (idx > n) {
-	  chan_int64_close(ch1);
-	}
+        idx++;
+        if (idx > n) {
+          chan_int64_close(ch1);
+        }
       }
     }
 
@@ -48,16 +49,16 @@ int main(void) {
   chan_int64_t *ch1 = chan_int64_init(capacity);
   chan_int64_t *ch2 = chan_int64_init(capacity);
   chan_int64_t *ch3 = chan_int64_init(capacity);
-  
+
   int64_t n = 1000;
-  #pragma omp parallel
+#pragma omp parallel
   {
-    #pragma omp sections
+#pragma omp sections
     {
-      #pragma omp section
+#pragma omp section
       produce_and_sum(ch1, ch2, ch3, n);
 
-      #pragma omp section
+#pragma omp section
       square_em(ch1, ch2);
     }
   }

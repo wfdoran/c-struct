@@ -28,10 +28,9 @@ int main(void) {
   printf("\n");
 
   tree_int32_delete(t, 4);
-  tree_int32_print(t, node_print);  
-  
+  tree_int32_print(t, node_print);
+
   tree_int32_destroy(&t);
-  
+
   return 0;
 }
-  

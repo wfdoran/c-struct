@@ -16,7 +16,7 @@ typedef struct {
   chan_int64_t *ch;
 } produce_args_t;
 
-void* produce(void *args) {
+void *produce(void *args) {
   produce_args_t *x = (produce_args_t *) args;
 
   for (int64_t i = x->my_thread; i <= x->max_n; i += x->num_threads) {
@@ -33,7 +33,7 @@ typedef struct {
   chan_int64_t *out;
 } consume_args_t;
 
-void* consume(void *args) {
+void *consume(void *args) {
   consume_args_t *x = (consume_args_t *) args;
 
   int64_t sum = 0;
@@ -53,7 +53,6 @@ void* consume(void *args) {
   chan_int64_send(x->out, sum);
   return NULL;
 }
-
 
 int main(void) {
   int32_t capacity = 5;
@@ -75,7 +74,7 @@ int main(void) {
     p_args[th].max_n = max_n;
     p_args[th].ch = ch1;
 
-    pthread_create(&p_threads[th], NULL, produce, (void*) &p_args[th]);
+    pthread_create(&p_threads[th], NULL, produce, (void *) &p_args[th]);
   }
 
   int64_t num_consumer_threads = 2;
@@ -88,7 +87,7 @@ int main(void) {
     c_args[th].in = ch1;
     c_args[th].out = ch2;
 
-    pthread_create(&c_threads[th], NULL, consume, (void*) &c_args[th]);
+    pthread_create(&c_threads[th], NULL, consume, (void *) &c_args[th]);
   }
 
   int64_t total = 0;
@@ -113,6 +112,6 @@ int main(void) {
   for (int64_t th = 0; th < num_consumer_threads; th++) {
     pthread_join(c_threads[th], NULL);
   }
-  
+
   return 0;
 }

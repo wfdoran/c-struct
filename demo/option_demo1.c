@@ -9,7 +9,7 @@
 void option_int_print(option_int_t x) {
   int value;
 
-  switch(option_int_get(x, &value)) {
+  switch (option_int_get(x, &value)) {
   case true:
     printf("%d\n", value);
     break;
@@ -36,9 +36,8 @@ int main(void) {
   printf("%d\n", option_int_get_or_else(y, -1));
   option_int_print(y);
   option_int_set(&y, 8);
-  printf("%d\n", option_int_get_or_else(y, -1));  
+  printf("%d\n", option_int_get_or_else(y, -1));
   option_int_print(y);
-  
-  return 0;
-}  
 
+  return 0;
+}

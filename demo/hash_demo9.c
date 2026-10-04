@@ -7,8 +7,8 @@
    hash_prefix_set_comp, which are called through function pointers. */
 
 typedef struct {
-    int32_t x;
-    int32_t y;
+  int32_t x;
+  int32_t y;
 } cell_t;
 
 #define hkey_t cell_t
@@ -22,22 +22,22 @@ typedef struct {
 #undef hkey_t
 
 int main(void) {
-    htable_cell_t *h = hash_cell_init(0);
+  htable_cell_t *h = hash_cell_init(0);
 
-    for (int i = 0; i < 100; i++) {
-        cell_t c = { .x = i % 10, .y = i / 10 };
-        hash_cell_put(h, c, i);
-    }
-    printf("cells: %zu\n", hash_cell_size(h));
+  for (int i = 0; i < 100; i++) {
+    cell_t c = {.x = i % 10, .y = i / 10};
+    hash_cell_put(h, c, i);
+  }
+  printf("cells: %zu\n", hash_cell_size(h));
 
-    cell_t c = { .x = 3, .y = 7 };
-    int v;
-    if (hash_cell_get(h, c, &v) == 1) {
-        printf("(3, 7) -> %d\n", v);
-    }
-    c.x = 30;
-    printf("(30, 7) %s\n", hash_cell_get(h, c, &v) == 1 ? "found" : "missing");
+  cell_t c = {.x = 3, .y = 7};
+  int v;
+  if (hash_cell_get(h, c, &v) == 1) {
+    printf("(3, 7) -> %d\n", v);
+  }
+  c.x = 30;
+  printf("(30, 7) %s\n", hash_cell_get(h, c, &v) == 1 ? "found" : "missing");
 
-    hash_cell_destroy(&h);
-    return 0;
+  hash_cell_destroy(&h);
+  return 0;
 }

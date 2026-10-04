@@ -4,8 +4,6 @@
 #undef prefix
 #undef data_t
 
-
-
 int main(void) {
   array_int32_t *a = array_int32_init();
 
@@ -21,9 +19,8 @@ int main(void) {
   for (int32_t i = 0; i < 10; i++) {
     printf("%3d %8d %8d\n", i, array_int32_get(a, i), array_int32_get(b, i));
   }
-  
+
   array_int32_destroy(&b);
   array_int32_destroy(&a);
   return 0;
 }
-

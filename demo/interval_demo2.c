@@ -1,11 +1,13 @@
-/* interval_add_many adds the smallest intervals first, so rounding errors stay small.  The second line adds the same numbers in order. */
+/* interval_add_many adds the smallest intervals first, so rounding errors stay
+ * small.  The second line adds the same numbers in order. */
 
 #include <stdio.h>
 #include <interval.h>
 
 int main(void) {
   if (!interval_rounding_is_honored()) {
-    fprintf(stderr, "interval: rounding modes are being ignored; compile with -frounding-math\n");
+    fprintf(stderr, "interval: rounding modes are being ignored; compile with "
+                    "-frounding-math\n");
     return 1;
   }
 

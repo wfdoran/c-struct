@@ -10,7 +10,7 @@ void print_range(const array_int_t *a, int left, int right) {
   printf("%d %d:", left, right);
   int idx_lower = array_int_bisect_lower(a, left);
   int idx_upper = array_int_bisect_upper(a, right);
-  
+
   for (int i = idx_lower; i <= idx_upper; i++) {
     printf(" %d", a->data[i]);
   }
@@ -37,10 +37,11 @@ int main(void) {
 
   printf("\n");
   for (int v = 0; v <= 10; v++) {
-    printf("%2d %2ld %2ld\n", v, array_int_bisect_lower(a, v), array_int_bisect_upper(a,v));
+    printf("%2d %2ld %2ld\n", v, array_int_bisect_lower(a, v),
+           array_int_bisect_upper(a, v));
   }
 
   array_int_destroy(&a);
-  
+
   return 0;
 }

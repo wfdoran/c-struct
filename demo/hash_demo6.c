@@ -24,12 +24,14 @@ int main(void) {
 
   hiter_int_t iter;
   int value;
-  for (int32_t rc = hash_int_first(h, &iter, NULL, &value); rc == 0; rc = hash_int_next(&iter, NULL, &value)) {
+  for (int32_t rc = hash_int_first(h, &iter, NULL, &value); rc == 0;
+       rc = hash_int_next(&iter, NULL, &value)) {
     printf("%d ", value);
   }
   printf("\n");
 
-  for (int32_t rc = hash_int_first(q, &iter, NULL, &value); rc == 0; rc = hash_int_next(&iter, NULL, &value)) {
+  for (int32_t rc = hash_int_first(q, &iter, NULL, &value); rc == 0;
+       rc = hash_int_next(&iter, NULL, &value)) {
     printf("%d ", value);
   }
   printf("\n");

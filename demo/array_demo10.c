@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#define data_t char*
+#define data_t char *
 #define prefix str
 #include <array.h>
 #undef prefix
 #undef data_t
 
-
-char* my_strcat(char *a, const char *b) {
+char *my_strcat(char *a, const char *b) {
   char *rv = malloc((strlen(a) + strlen(b) + 1) * sizeof(char));
   strcpy(rv, a);
   strcat(rv, b);
@@ -16,7 +15,7 @@ char* my_strcat(char *a, const char *b) {
   return rv;
 }
 
-char* append_space(char *s) {
+char *append_space(char *s) {
   char *rv = malloc((strlen(s) + 2) * sizeof(char));
   strcpy(rv, s);
   strcat(rv, " ");
@@ -24,7 +23,7 @@ char* append_space(char *s) {
   return rv;
 }
 
-char* free_entry(char *s) {
+char *free_entry(char *s) {
   free(s);
   return NULL;
 }
@@ -39,7 +38,7 @@ int main(void) {
   array_str_append(a, "is");
   array_str_append(a, "a");
   array_str_append(a, "test");
-  
+
   array_str_t *b = array_str_deep_clone(a, strdup);
 
   array_str_map(b, append_space);
@@ -50,9 +49,9 @@ int main(void) {
   printf("%s\n", s);
   free(s);
 
-  // strdup malloced the char* used in b.  These need to be freed.  
+  // strdup malloced the char* used in b.  These need to be freed.
   array_str_map(b, free_entry);
-  
+
   array_str_destroy(&a);
   array_str_destroy(&b);
 }

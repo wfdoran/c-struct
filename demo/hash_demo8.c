@@ -8,7 +8,6 @@ typedef enum {
   TYPE_DOUBLE,
 } val_type_t;
 
-
 typedef struct {
   val_type_t type;
   union {
@@ -17,20 +16,19 @@ typedef struct {
   };
 } vals_t;
 
-#define hkey_t char*
+#define hkey_t char *
 #define value_t vals_t
 #define prefix vals
 #include <hash_table.h>
 #undef prefix
 #undef value_t
 #undef hkey_t
-  
 
 int main(void) {
   htable_vals_t *h = hash_vals_init(0);
-  
-  vals_t x = { .type = TYPE_INT64, .i_value = INT64_C(5)};
-  vals_t y = { .type = TYPE_DOUBLE, .d_value = 4.5};
+
+  vals_t x = {.type = TYPE_INT64, .i_value = INT64_C(5)};
+  vals_t y = {.type = TYPE_DOUBLE, .d_value = 4.5};
 
   hash_vals_put(h, "x", x);
   hash_vals_put(h, "y", y);

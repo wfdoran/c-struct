@@ -12,22 +12,22 @@
 
 int main(void) {
   /* Example of using hash.h */
-  char* a = "Bill Doran";
-  uint64_t (*my_hash)(char*) = DEFAULT_HASH(a);
+  char *a = "Bill Doran";
+  uint64_t (*my_hash)(char *) = DEFAULT_HASH(a);
   uint64_t a_hash = my_hash(a);
   printf("hash of \"Bill Doran\" = %016lx\n", a_hash);
   printf("\n");
 
-  /* Create a hash table which gives us inverse 
+  /* Create a hash table which gives us inverse
      square root for integers. */
   htable_int_t *h = hash_int_init(0);
 
   for (int i = 1; i <= 100; i++) {
-    int rc = hash_int_put(h, i*i, i);
+    int rc = hash_int_put(h, i * i, i);
     assert(rc == 0);
   }
-  printf("hash table size = %zu  capacity = %zu\n",
-	 hash_int_size(h), hash_int_capacity(h));
+  printf("hash table size = %zu  capacity = %zu\n", hash_int_size(h),
+         hash_int_capacity(h));
   printf("\n");
 
   /* Try getting a few values. */
@@ -41,30 +41,29 @@ int main(void) {
     }
   }
   printf("\n");
-  
+
   /* Remove a few values */
   {
     for (int i = 100; i <= 200; i++) {
       int rc = hash_int_remove(h, i, NULL);
       if (rc == 1) {
-	printf("Removed %d\n", i);
+        printf("Removed %d\n", i);
       }
     }
   }
 
-  printf("hash table size = %zu  capacity = %zu\n",
-	 hash_int_size(h), hash_int_capacity(h));
+  printf("hash table size = %zu  capacity = %zu\n", hash_int_size(h),
+         hash_int_capacity(h));
   printf("\n");
-  
+
   hiter_int_t iter;
   int key;
   int value;
-  for (int32_t rc = hash_int_first(h, &iter, &key, &value); rc == 0; rc = hash_int_next(&iter, &key, &value)) {
-    printf("sqrt(%8d) =  %8d\n", key, value); 
+  for (int32_t rc = hash_int_first(h, &iter, &key, &value); rc == 0;
+       rc = hash_int_next(&iter, &key, &value)) {
+    printf("sqrt(%8d) =  %8d\n", key, value);
   }
 
   hash_int_destroy(&h);
   return 0;
 }
-
-

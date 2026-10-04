@@ -15,9 +15,9 @@
 #undef prefix
 #undef data_t
 
-void* update(void *cur, void *value) {
+void *update(void *cur, void *value) {
   array_int32_t *arr = cur == NULL ? array_int32_init() : cur;
-  int32_t v = *(int32_t*)value;
+  int32_t v = *(int32_t *) value;
   array_int32_append(arr, v);
   return arr;
 }
@@ -43,11 +43,12 @@ int main(void) {
   titer_intarr_t it;
   int32_t key;
   void *value;
-  for (int32_t rc = tree_intarr_first(t, &it, &key, &value); rc == 0; rc = tree_intarr_next(&it, &key, &value)) {
+  for (int32_t rc = tree_intarr_first(t, &it, &key, &value); rc == 0;
+       rc = tree_intarr_next(&it, &key, &value)) {
     printf("%3d :", key);
     array_int32_t *arr = value;
     for (int i = 0; i < array_int32_size(arr); i++) {
-      printf(" %d", array_int32_get(arr,i));
+      printf(" %d", array_int32_get(arr, i));
     }
     printf("\n");
   }

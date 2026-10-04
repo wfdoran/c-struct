@@ -10,44 +10,45 @@
 #undef data_t
 
 void *update(void *prev, void *curr) {
-	if (prev == NULL) {
-		int *rv = malloc(sizeof(int));
-		*rv = 1;
-		return rv;
-	}
-	
-	int *t = (int*) prev;
-	int t_val = *t;
-	*t = t_val + 1;
-	return (void*) t;
+  if (prev == NULL) {
+    int *rv = malloc(sizeof(int));
+    *rv = 1;
+    return rv;
+  }
+
+  int *t = (int *) prev;
+  int t_val = *t;
+  *t = t_val + 1;
+  return (void *) t;
 }
 
 int main(void) {
-    srand(time(NULL));
-    
-    tree_int_t *t = tree_int_init();
-    tree_int_set_update(t, &update);
-    tree_int_set_value_free(t, &free);
-    
-    int n = 100;
-    int samples = 1000;
-    
-    for (int i = 0; i < samples; i++) {
-		int v = rand() % n;
-		tree_int_insert(t, v, NULL);
-    }
-    printf("Tree Size: %zu\n", tree_int_size(t));
-    printf("Tree Height: %d\n", tree_int_height(t));
-    printf("\n");
-    
-    titer_int_t it;
-    int key;
-    void *value;
-    for (int32_t rc = tree_int_first(t, &it, &key, &value); rc == 0; rc = tree_int_next(&it, &key, &value)) {
-		printf("%5d %5d\n", key, *((int *)value));
-    }
-    printf("\n");
-        
-    tree_int_destroy(&t);    
-    return 0;
+  srand(time(NULL));
+
+  tree_int_t *t = tree_int_init();
+  tree_int_set_update(t, &update);
+  tree_int_set_value_free(t, &free);
+
+  int n = 100;
+  int samples = 1000;
+
+  for (int i = 0; i < samples; i++) {
+    int v = rand() % n;
+    tree_int_insert(t, v, NULL);
+  }
+  printf("Tree Size: %zu\n", tree_int_size(t));
+  printf("Tree Height: %d\n", tree_int_height(t));
+  printf("\n");
+
+  titer_int_t it;
+  int key;
+  void *value;
+  for (int32_t rc = tree_int_first(t, &it, &key, &value); rc == 0;
+       rc = tree_int_next(&it, &key, &value)) {
+    printf("%5d %5d\n", key, *((int *) value));
+  }
+  printf("\n");
+
+  tree_int_destroy(&t);
+  return 0;
 }

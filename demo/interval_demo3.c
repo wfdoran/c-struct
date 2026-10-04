@@ -5,7 +5,8 @@
 
 int main(void) {
   if (!interval_rounding_is_honored()) {
-    fprintf(stderr, "interval: rounding modes are being ignored; compile with -frounding-math\n");
+    fprintf(stderr, "interval: rounding modes are being ignored; compile with "
+                    "-frounding-math\n");
     return 1;
   }
 

@@ -25,8 +25,7 @@ int main(void) {
     pair_t z = array_pair_get(a, i);
     printf("%2d %8.4f\n", z.x, z.y);
   }
- 
+
   array_pair_destroy(&a);
   return 0;
 }
-
