@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -O2 -std=gnu11 -g -Wall -fopenmp
 INCLUDE = -I../include -I./
 
-TESTS = assert array linked_list tree chan hash_table phash_table pqueue option serialize comp any link
+TESTS = assert array linked_list tree chan hash_table phash_table pqueue option serialize comp any interval link
 SRC = $(addsuffix _tests.c, $(TESTS))
 OBJS = $(addsuffix _tests.o, $(TESTS))
 
@@ -17,6 +17,9 @@ unit_tests: $(OBJS) make_header.awk make_test.awk
 
 %_tests.o: %_tests.c $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+
+# the interval code depends on the rounding mode being honored
+interval_tests.o: CFLAGS += -frounding-math
 
 .PHONY: clean
 clean:

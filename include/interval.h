@@ -589,6 +589,13 @@ static inline interval_t interval_sin(interval_t a) {
 
   double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
 
+  /* M_PI_2 is pi/2 rounded to a double (relative error 0.18 DBL_EPSILON), which
+     makes every quotient too large by that fraction of itself, so a lower end
+     just before an extremum can be judged to lie after it.  That is less than
+     one unit in the last place, so step both quotients outward by one. */
+  mult_lo = nextafter(mult_lo, -INFINITY);
+  mult_hi = nextafter(mult_hi, INFINITY);
+
   /* The interval contains an extremum if it spans a point c + 4k in units of
      pi/2 (c = 1 and 3 for the sin maximum and minimum).  That is the case when
      floor((x - c) / 4) differs at the two ends; floor, not trunc, so that this
@@ -634,6 +641,13 @@ static inline interval_t interval_cos(interval_t a) {
   rv.lo = fmin(cos(a.lo), cos(a.hi));
 
   double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
+
+  /* M_PI_2 is pi/2 rounded to a double (relative error 0.18 DBL_EPSILON), which
+     makes every quotient too large by that fraction of itself, so a lower end
+     just before an extremum can be judged to lie after it.  That is less than
+     one unit in the last place, so step both quotients outward by one. */
+  mult_lo = nextafter(mult_lo, -INFINITY);
+  mult_hi = nextafter(mult_hi, INFINITY);
 
   /* Same test as in interval_sin, with c = 0 and 2 for the cos maximum and
      minimum. */
