@@ -85,3 +85,63 @@ after a receiver has already seen CHAN_CLOSED can return CHAN_SUCCESS for a
 value that no receiver will ever get.  This is the same rule as in Go, where
 closing a channel that is still being sent to is a programming error.  Closing a
 channel more than once, or from a receiver once the senders are done, is fine.
+
+## Select
+
+`select` waits for the first of several channel operations which can be done
+without blocking, like `select` in Go (but without blocking: it returns at once
+if nothing is ready, so call it in a loop).  The cases are an array of
+`select_prefix_t`:
+
+```c
+typedef struct {
+  chan_prefix_t *c;      /* the channel */
+  int select_type;       /* SELECT_SEND, SELECT_RECV or SELECT_OMIT */
+  data_t *value;         /* what to send, or where to put what is received */
+} select_prefix_t;
+```
+
+```c
+select_int_t s[] = {
+  {.c = in, .select_type = SELECT_RECV, .value = &x},
+  {.c = out, .select_type = SELECT_SEND, .value = &y},
+};
+for (bool done = false; !done;) {
+  switch (select_int_one(2, s)) {
+  case 0:            /* a value was received into x */         break;
+  case 1:            /* y was sent */                           break;
+  case 2:            /* nothing was ready: do something else */ break;
+  case SELECT_DONE:  /* every channel is closed */      done = true; break;
+  default:           /* CHAN_ERROR */                   done = true; break;
+  }
+}
+```
+
+### `int32_t select_prefix_one(int32_t num_select, select_prefix_t *s)`
+
+Tries the `num_select` cases in random order, so that no ready case can starve
+the others, and does the first one which can be done at once.  A send case
+needs a `value` to send; a receive case may have `value` set to `NULL`, and the
+value is then discarded.  A case with type `SELECT_OMIT` is skipped.
+
+Returns
+
+* the index of the case which was done;
+* `num_select` if no case could be done;
+* `SELECT_DONE` if there are no cases, or every case is already `SELECT_OMIT`;
+* `CHAN_ERROR` if `num_select` is negative or above `SELECT_MAX_CASES` (256),
+  `s` is `NULL`, a case has a `NULL` channel, or a send case has a `NULL`
+  `value`.  All the cases are checked before any is tried, so this does not
+  depend on which one is visited first.
+
+A case whose channel is found closed (a receive from a channel which is closed
+and empty, or a send to a closed one) is changed to `SELECT_OMIT` in the array
+you passed.  The call which finds the last channel closed returns
+`num_select`, and the next call returns `SELECT_DONE`.
+
+### `int32_t select_prefix_option_done(int32_t num_select, select_prefix_t *s, int32_t i)`
+
+Finishes case `i` of the `num_select` cases in `s`: it becomes `SELECT_OMIT`
+and its channel is closed.  Returns 0 (also if the channel was already
+closed), or `CHAN_ERROR` if `s` is `NULL`, `i` is not in `[0, num_select)`, or
+the channel is `NULL`.

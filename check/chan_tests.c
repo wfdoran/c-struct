@@ -637,9 +637,54 @@ CHECK(select_int_one(2, s) == 1 && b_value == 99);
 // select_option_done finishes a case and closes its channel
 chan_int_t *f = chan_int_init(1);
 s[0] = (select_int_t) {f, SELECT_RECV, &a_value};
-CHECK(select_int_option_done(s, 0) == 0);
+CHECK(select_int_option_done(1, s, 0) == 0);
 CHECK(s[0].select_type == SELECT_OMIT);
 CHECK(chan_int_trysend(f, 1) == CHAN_CLOSED);
+CHECK(select_int_option_done(1, s, 0) == 0);   // closing a closed channel is fine
+
+// select_option_done checks its arguments
+CHECK(select_int_option_done(1, NULL, 0) == CHAN_ERROR);
+CHECK(select_int_option_done(1, s, -1) == CHAN_ERROR);
+CHECK(select_int_option_done(1, s, 1) == CHAN_ERROR);
+CHECK(select_int_option_done(0, s, 0) == CHAN_ERROR);
+s[0] = (select_int_t) {NULL, SELECT_RECV, &a_value};
+CHECK(select_int_option_done(1, s, 0) == CHAN_ERROR);   // a NULL channel
+
+// A SEND case needs a value to send.  The cases are checked first, so this is an error whether
+// or not another case happens to be ready, and nothing is received.
+chan_int_t *g = chan_int_init(1);
+chan_int_t *h = chan_int_init(1);
+chan_int_trysend(g, 5);
+for (int i = 0; i < 40; i++) {
+  s[0] = (select_int_t) {g, SELECT_RECV, &a_value};
+  s[1] = (select_int_t) {h, SELECT_SEND, NULL};
+  CHECK(select_int_one(2, s) == CHAN_ERROR);
+}
+CHECK(chan_int_tryrecv(g, &c_value) == CHAN_SUCCESS && c_value == 5);   // still there
+CHECK(chan_int_tryrecv(h, &c_value) == CHAN_EMPTY);
+
+// a RECV case may have no value pointer: the value is discarded
+chan_int_trysend(g, 6);
+s[0] = (select_int_t) {g, SELECT_RECV, NULL};
+CHECK(select_int_one(1, s) == 0);
+CHECK(chan_int_tryrecv(g, &c_value) == CHAN_EMPTY);
+
+// the number of cases is limited
+select_int_t many[SELECT_MAX_CASES + 1];
+for (int i = 0; i <= SELECT_MAX_CASES; i++) {
+  many[i] = (select_int_t) {g, SELECT_OMIT, NULL};
+}
+CHECK(select_int_one(SELECT_MAX_CASES, many) == SELECT_DONE);
+CHECK(select_int_one(SELECT_MAX_CASES + 1, many) == CHAN_ERROR);
+CHECK(select_int_one(1 << 30, many) == CHAN_ERROR);
+// and the largest number works for a case which is ready, wherever it is
+for (int i = 0; i < SELECT_MAX_CASES; i++) {
+  many[i] = (select_int_t) {g, SELECT_RECV, &a_value};
+}
+chan_int_trysend(g, 77);
+CHECK(select_int_one(SELECT_MAX_CASES, many) >= 0 && a_value == 77);
+chan_int_destroy(&g);
+chan_int_destroy(&h);
 
 chan_int_destroy(&a);
 chan_int_destroy(&b);

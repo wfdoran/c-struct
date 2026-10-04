@@ -31,6 +31,9 @@
 #define SELECT_RECV (1)
 #define SELECT_OMIT (2)
 
+/* the most cases one call of select_prefix_one can handle */
+#define SELECT_MAX_CASES (256)
+
 /* size of a cache line; producer and consumer counters live on separate ones */
 #define CHAN_CACHE_LINE (64)
 
@@ -323,17 +326,46 @@ static inline int32_t GLUE3(chan_, prefix, _close)(CHAN *c) {
   return was_closed ? CHAN_CLOSED : CHAN_SUCCESS;
 }
 
+/* int32_t select_prefix_one(int32_t num_select, select_prefix_t *s);
+
+   Tries the num_select cases in s, in random order, and does the first one
+   which can be done at once without blocking:
+
+     SELECT_SEND  trysend *s[i].value to s[i].c
+     SELECT_RECV  tryrecv from s[i].c into *s[i].value (which may be NULL to
+                  discard the value)
+     SELECT_OMIT  a finished case, which is skipped
+
+   Returns the index of the case which was done, or
+
+     num_select    no case could be done (nothing is ready);
+     SELECT_DONE   every case was already finished (SELECT_OMIT), or there are
+                   no cases;
+     CHAN_ERROR    num_select is negative or above SELECT_MAX_CASES, s is NULL,
+                   a case has a NULL channel, or a SELECT_SEND case has a NULL
+                   value pointer.  The cases are checked before any is tried.
+
+   A case which finds its channel closed (a receive from a channel which is
+   closed and empty, or a send to a closed one) is changed to SELECT_OMIT, so
+   the call which finds the last channel closed returns num_select and the
+   next one returns SELECT_DONE. */
 static inline int32_t GLUE3(select_, prefix, _one)(int32_t num_select,
                                                    SELECT *s) {
-  if (num_select < 0 || (num_select > 0 && s == NULL)) {
+  if (num_select < 0 || num_select > SELECT_MAX_CASES ||
+      (num_select > 0 && s == NULL)) {
     return CHAN_ERROR;
   }
   if (num_select == 0) {
     return SELECT_DONE;
   }
+  for (int32_t i = 0; i < num_select; i++) {
+    if (s[i].select_type == SELECT_SEND && s[i].value == NULL) {
+      return CHAN_ERROR;
+    }
+  }
   int32_t rc;
   bool all_omits = true;
-  int32_t perm[num_select];
+  int32_t perm[SELECT_MAX_CASES];
   for (int32_t i = 0; i < num_select; i++) {
     perm[i] = i;
   }
@@ -383,8 +415,18 @@ static inline int32_t GLUE3(select_, prefix, _one)(int32_t num_select,
   return num_select;
 }
 
-static inline int32_t GLUE3(select_, prefix, _option_done)(SELECT *s,
-                                                           int32_t i) {
+/* int32_t select_prefix_option_done(int32_t num_select, select_prefix_t *s,
+                                      int32_t i);
+
+   Finishes case i of the num_select cases in s: it becomes SELECT_OMIT and its
+   channel is closed.  Returns 0 (also if the channel was already closed), or
+   CHAN_ERROR if s is NULL, i is not in [0, num_select), or the channel is
+   NULL. */
+static inline int32_t
+GLUE3(select_, prefix, _option_done)(int32_t num_select, SELECT *s, int32_t i) {
+  if (s == NULL || i < 0 || i >= num_select) {
+    return CHAN_ERROR;
+  }
   s[i].select_type = SELECT_OMIT;
   int32_t rc = GLUE3(chan_, prefix, _close)(s[i].c);
   if (rc == CHAN_ERROR) {
