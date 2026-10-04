@@ -56,10 +56,10 @@ int main(void) {
 	 hash_int_size(h), hash_int_capacity(h));
   printf("\n");
   
-  hiter_int_t *iter;
+  hiter_int_t iter;
   int key;
   int value;
-  for (hash_int_first(h, &iter, &key, &value); iter != NULL; hash_int_next(&iter, &key, &value)) {
+  for (int32_t rc = hash_int_first(h, &iter, &key, &value); rc == 0; rc = hash_int_next(&iter, &key, &value)) {
     printf("sqrt(%8d) =  %8d\n", key, value); 
   }
 

@@ -22,14 +22,14 @@ int main(void) {
   hash_int_put(h, 4, 16);
   hash_int_put(q, 4, 11);
 
-  hiter_int_t *iter;
+  hiter_int_t iter;
   int value;
-  for (hash_int_first(h, &iter, NULL, &value); iter != NULL; hash_int_next(&iter, NULL, &value)) {
+  for (int32_t rc = hash_int_first(h, &iter, NULL, &value); rc == 0; rc = hash_int_next(&iter, NULL, &value)) {
     printf("%d ", value);
   }
   printf("\n");
 
-  for (hash_int_first(q, &iter, NULL, &value); iter != NULL; hash_int_next(&iter, NULL, &value)) {
+  for (int32_t rc = hash_int_first(q, &iter, NULL, &value); rc == 0; rc = hash_int_next(&iter, NULL, &value)) {
     printf("%d ", value);
   }
   printf("\n");

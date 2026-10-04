@@ -40,13 +40,12 @@ int main(void) {
     tree_intarr_insert(t, key, &value);
   }
 
-  void *state;
-  key_intarr_value_t pair;
-  tree_intarr_walk_init(t, &state);
-  while (state != NULL) {
-    pair = tree_intarr_walk_next(&state);
-    printf("%3d :", pair.key);
-    array_int32_t *arr = pair.value;
+  titer_intarr_t it;
+  int32_t key;
+  void *value;
+  for (int32_t rc = tree_intarr_first(t, &it, &key, &value); rc == 0; rc = tree_intarr_next(&it, &key, &value)) {
+    printf("%3d :", key);
+    array_int32_t *arr = value;
     for (int i = 0; i < array_int32_size(arr); i++) {
       printf(" %d", array_int32_get(arr,i));
     }

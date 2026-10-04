@@ -41,11 +41,11 @@ int main(void) {
       tree_trip_insert(t, key, value);
     }
     
-    void *state;
-    tree_trip_walk_init(t, &state);
-    while (state != NULL) {
-      key_trip_value_t q = tree_trip_walk_next(&state);
-      printf("%12d %12d %12d  %12.4f \n", q.key.x[0], q.key.x[1], q.key.x[2], *(double*)q.value);
+    titer_trip_t it;
+    triple_t key;
+    void *value;
+    for (int32_t rc = tree_trip_first(t, &it, &key, &value); rc == 0; rc = tree_trip_next(&it, &key, &value)) {
+      printf("%12d %12d %12d  %12.4f \n", key.x[0], key.x[1], key.x[2], *(double*)value);
     }	
     
     tree_trip_destroy(&t);

@@ -20,7 +20,8 @@ int main(void) {
   }
 
   lnode_int_t *n;
-  for (int d = llist_int_walk_init_start(a, &n); n != NULL; d = llist_int_walk_forward(&n)) {
+  int d;
+  for (int32_t rc = llist_int_first(a, &n, &d); rc == 0; rc = llist_int_next(&n, &d)) {
     printf("%8d\n", d);
   }
   printf("\n");
@@ -31,7 +32,7 @@ int main(void) {
     return 1;
   }
 
-  for (int d = llist_int_walk_init_start(a, &n); n != NULL; d = llist_int_walk_forward(&n)) {
+  for (int32_t rc = llist_int_first(a, &n, &d); rc == 0; rc = llist_int_next(&n, &d)) {
     printf("%8d\n", d);
   }
   printf("\n");

@@ -55,9 +55,9 @@ int main(void) {
     }
   }
 
-  hiter_trip_t *iter;
+  hiter_trip_t iter;
   triple_t t;
-  for (hash_trip_first(h, &iter, &t, NULL); iter != NULL; hash_trip_next(&iter, &t, NULL)) {
+  for (int32_t rc = hash_trip_first(h, &iter, &t, NULL); rc == 0; rc = hash_trip_next(&iter, &t, NULL)) {
     printf("%8d %8d %8d\n", t.x[0], t.x[1], t.x[2]);
   }
 

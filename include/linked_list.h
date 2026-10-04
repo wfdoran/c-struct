@@ -197,34 +197,75 @@ static inline data_t GLUE3(llist_, prefix, _remove_end) (LLIST *a) {
 /*                     walk the linked list                                */
 /* ----------------------------------------------------------------------- */
 
-static inline data_t GLUE3(llist_, prefix, _walk_init_start) (LLIST *a, LNODE **n_ptr) {
+/* Walks over the list.  The iterator is a node pointer (lnode_prefix_t *), a plain variable owned
+   by the caller: nothing is allocated, and the editing functions below (remove_forward,
+   insert_before, ...) take the same pointer.  The functions return
+
+     0 => the iterator is at an entry, and *value (may be NULL) holds it
+     1 => there is no entry (the end of the list, or an empty list); the iterator is NULL
+
+   so a loop is
+
+     lnode_prefix_t *it;
+     for (int32_t rc = llist_prefix_first(a, &it, &value); rc == 0;
+          rc = llist_prefix_next(&it, &value)) {
+       ...
+     }
+
+   and llist_prefix_last / llist_prefix_prev walk from the end backwards.
+*/
+static inline int32_t GLUE3(llist_, prefix, _first) (const LLIST *a, LNODE **n_ptr, data_t *value) {
     LNODE *n = a->head;
     *n_ptr = n;
-    return n == NULL ? null_value : n->data;
+    if (n == NULL) {
+        return 1;
+    }
+    if (value != NULL) {
+        *value = n->data;
+    }
+    return 0;
 }
 
-static inline data_t GLUE3(llist_, prefix, _walk_init_end) (LLIST *a, LNODE **n_ptr) {
+static inline int32_t GLUE3(llist_, prefix, _last) (const LLIST *a, LNODE **n_ptr, data_t *value) {
     LNODE *n = a->tail;
     *n_ptr = n;
-    return n == NULL ? null_value : n->data;
+    if (n == NULL) {
+        return 1;
+    }
+    if (value != NULL) {
+        *value = n->data;
+    }
+    return 0;
 }
 
-static inline data_t GLUE3(llist_, prefix, _walk_forward) (LNODE **n_ptr) {
+static inline int32_t GLUE3(llist_, prefix, _next) (LNODE **n_ptr, data_t *value) {
     LNODE *n = *n_ptr;
     if (n != NULL) {
         n = n->next;
     }
     *n_ptr = n;
-    return n == NULL ? null_value : n->data;
+    if (n == NULL) {
+        return 1;
+    }
+    if (value != NULL) {
+        *value = n->data;
+    }
+    return 0;
 }
 
-static inline data_t GLUE3(llist_, prefix, _walk_backwards) (LNODE **n_ptr) {
+static inline int32_t GLUE3(llist_, prefix, _prev) (LNODE **n_ptr, data_t *value) {
     LNODE *n = *n_ptr;
     if (n != NULL) {
         n = n->prev;
     }
     *n_ptr = n;
-    return n == NULL ? null_value : n->data;
+    if (n == NULL) {
+        return 1;
+    }
+    if (value != NULL) {
+        *value = n->data;
+    }
+    return 0;
 }
 
 /* ----------------------------------------------------------------------- */

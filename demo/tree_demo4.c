@@ -40,11 +40,11 @@ int main(void) {
     printf("Tree Height: %d\n", tree_int_height(t));
     printf("\n");
     
-    void *state;
-    tree_int_walk_init(t, &state);
-    while (state != NULL) {
-		key_int_value_t pair = tree_int_walk_next(&state);
-		printf("%5d %5d\n", pair.key, *((int *)pair.value));
+    titer_int_t it;
+    int key;
+    void *value;
+    for (int32_t rc = tree_int_first(t, &it, &key, &value); rc == 0; rc = tree_int_next(&it, &key, &value)) {
+		printf("%5d %5d\n", key, *((int *)value));
     }
     printf("\n");
         

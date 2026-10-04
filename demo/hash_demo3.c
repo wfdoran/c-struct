@@ -27,10 +27,10 @@ int main(void) {
   hash_count_put(h, "Bill", 2);
 
 
-  hiter_count_t *iter;
+  hiter_count_t iter;
   char *name;
   int count;
-  for (hash_count_first(h, &iter, &name, &count); iter != NULL; hash_count_next(&iter, &name, &count)) {
+  for (int32_t rc = hash_count_first(h, &iter, &name, &count); rc == 0; rc = hash_count_next(&iter, &name, &count)) {
     printf("%-20s %d\n", name, count);
   }
 

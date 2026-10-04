@@ -22,10 +22,10 @@ int main(void) {
   }
   hash_int_apply(h, f);
  
-  hiter_int_t *iter;
+  hiter_int_t iter;
   int key;
   double value;
-  for (hash_int_first(h, &iter, &key, &value); iter != NULL; hash_int_next(&iter, &key, &value)) {
+  for (int32_t rc = hash_int_first(h, &iter, &key, &value); rc == 0; rc = hash_int_next(&iter, &key, &value)) {
     printf("%8d %12.6f\n", key, value); 
   }
 

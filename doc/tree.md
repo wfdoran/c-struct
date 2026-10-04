@@ -127,36 +127,36 @@ to be in the tree.
 
 ## Walking the Tree
 
-A walk uses a `void *` state variable.  Initialize it, then step it with the
-matching `next` function while it is not `NULL`.
+A walk uses an iterator, `titer_prefix_t`, which is an ordinary variable:
+nothing is allocated, so there is nothing to free and you can stop at any time.
+`first` starts the walk and `next` steps it.  Both return 0 and fill in `*key`
+and `*value` (either may be `NULL`), or return 1 when there are no more
+entries; once a walk has returned 1 it keeps returning 1.  The tree must not be
+modified during a walk.
 
 ```c
-void *state;
-for (tree_prefix_walk_init(t, &state); state != NULL; ) {
-    key_prefix_value_t kv = tree_prefix_walk_next(&state);
+titer_prefix_t it;
+data_t key;
+void *value;
+for (int32_t rc = tree_prefix_first(t, &it, &key, &value); rc == 0;
+     rc = tree_prefix_next(&it, &key, &value)) {
     ...
 }
 ```
 
-### `void tree_prefix_walk_init(const tree_prefix_t *t, void **state);`
+### `int32_t tree_prefix_first(const tree_prefix_t *t, titer_prefix_t *it, data_t *key, void **value)`
+### `int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, void **value)`
 
-Initializes an in-order walk of the tree, starting at the smallest key.
-`*state` is `NULL` if the tree is empty.
+An in-order walk, starting at the smallest key.
 
-### `void tree_prefix_walk_init2(const tree_prefix_t *t, data_t key, void **state)`
+### `int32_t tree_prefix_first_from(const tree_prefix_t *t, data_t from, titer_prefix_t *it, data_t *key, void **value)`
 
-Initializes the in-order walk at the first node which is equal to or greater
-than key.  If there is no such node, `*state` is set to `NULL`.
+Starts the in-order walk at the first node which is equal to or greater than
+`from`, which need not be in the tree.  Returns 1 if there is no such node.
+Continue with `tree_prefix_next()`.
 
-### `key_prefix_value_t tree_prefix_walk_next(void **state);`
-
-Returns the key-value pair for the current node in the walk and steps `state` to
-the next node.  At the last node, `state` is set to `NULL`.  Nothing is
-allocated, so there is nothing to free if you stop early.  Do not call it when
-`state` is `NULL`.  The tree must not be modified during a walk.
-
-### `void tree_prefix_postwalk_init(const tree_prefix_t *t, void **state)`
-### `key_prefix_value_t tree_prefix_postwalk_next(void **state)`
+### `int32_t tree_prefix_post_first(const tree_prefix_t *t, titer_prefix_t *it, data_t *key, void **value)`
+### `int32_t tree_prefix_post_next(titer_prefix_t *it, data_t *key, void **value)`
 
 The same, but a post-order walk: every node comes after its children, ending
 with the root.  This is the order to use to free or destroy things node by node.

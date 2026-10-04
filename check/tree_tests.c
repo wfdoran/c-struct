@@ -337,14 +337,12 @@ for (int i = 0; i < n; i++) {
   tree_int_insert(a, key, NULL);
 }
 
-void *state;
+titer_int_t it;
 int prev = -1;
-tree_int_walk_init(a, &state);
-while (state != NULL) {
-  key_int_value_t kv = tree_int_walk_next(&state);
-  CHECK(kv.found);
-  CHECK(kv.key > prev);
-  prev = kv.key;
+int key;
+for (int32_t rc = tree_int_first(a, &it, &key, NULL); rc == 0; rc = tree_int_next(&it, &key, NULL)) {
+  CHECK(key > prev);
+  prev = key;
 }
 
 
@@ -403,5 +401,81 @@ t = tree_dn_init();
 tree_dn_destroy(&t);
 tree_dn_destroy(&t);
 CHECK(t == NULL);
+
+END_TEST
+
+// first / next, first_from, and the post-order walk, against a model
+START_TEST(tree_test13)
+
+tree_int_t *t = tree_int_init();
+titer_int_t it;
+int key;
+void *value;
+
+// an empty tree
+CHECK(tree_int_first(t, &it, &key, &value) == 1);
+CHECK(tree_int_next(&it, &key, &value) == 1);
+CHECK(tree_int_first_from(t, 5, &it, &key, &value) == 1);
+CHECK(tree_int_post_first(t, &it, &key, &value) == 1);
+CHECK(tree_int_post_next(&it, &key, &value) == 1);
+
+seed_rand(13);
+int present[300] = {0};
+for (int i = 0; i < 200; i++) {
+  int k = get_rand() % 300;
+  tree_int_insert(t, k, (void *) (long) (k * 2));
+  present[k] = 1;
+}
+size_t count = tree_int_size(t);
+
+// in order, with the values, with NULL for key and value, and the end is sticky
+int expect = 0;
+size_t seen = 0;
+for (int32_t rc = tree_int_first(t, &it, &key, &value); rc == 0; rc = tree_int_next(&it, &key, &value)) {
+  while (!present[expect]) {
+    expect++;
+  }
+  CHECK(key == expect && (long) value == 2 * key);
+  expect++;
+  seen++;
+}
+CHECK(seen == count);
+CHECK(tree_int_next(&it, &key, &value) == 1);
+seen = 0;
+for (int32_t rc = tree_int_first(t, &it, NULL, NULL); rc == 0; rc = tree_int_next(&it, NULL, NULL)) {
+  seen++;
+}
+CHECK(seen == count);
+
+// first_from starts at the first key which is >= the one asked for, present or not
+for (int from = -2; from < 305; from++) {
+  int want = from < 0 ? 0 : from;
+  while (want < 300 && !present[want]) {
+    want++;
+  }
+  int32_t rc = tree_int_first_from(t, from, &it, &key, &value);
+  if (want >= 300) {
+    CHECK(rc == 1);
+  } else {
+    CHECK(rc == 0 && key == want);
+  }
+}
+
+// post order: every node after its children, each node once, the root last
+int visited = 0;
+int last_key = -1;
+for (int32_t rc = tree_int_post_first(t, &it, &key, NULL); rc == 0; rc = tree_int_post_next(&it, &key, NULL)) {
+  visited++;
+  last_key = key;
+}
+CHECK((size_t) visited == count);
+CHECK(last_key == t->root->key);
+CHECK(tree_int_post_next(&it, &key, NULL) == 1);
+
+// stopping early needs no clean up
+CHECK(tree_int_first(t, &it, &key, NULL) == 0);
+CHECK(tree_int_next(&it, &key, NULL) == 0);
+
+tree_int_destroy(&t);
 
 END_TEST

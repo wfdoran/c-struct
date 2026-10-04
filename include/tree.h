@@ -24,6 +24,7 @@
 #define TREE GLUE3(tree_, prefix, _t)
 #define NODE GLUE3(tnode_, prefix, _t)
 #define KEYVAL GLUE3(key_, prefix, _value_t)
+#define TITER GLUE3(titer_, prefix, _t)
 
 // rank
 // move routines which the caller should not see to <tree_private.h> 
@@ -57,6 +58,12 @@ typedef struct {
     void *value;
     bool found;
 } KEYVAL;
+
+/* The position of a walk (see tree_prefix_first): the node which is returned next, or NULL
+   at the end. */
+typedef struct {
+    struct NODE *node;
+} TITER;
 
 /* ----------------------------------------------------------------------- */
 /*                         constructors                                    */
@@ -780,85 +787,38 @@ static inline int GLUE3(tree_, prefix, _height) (const TREE *a) {
 }
 
 
-static inline NODE *GLUE3(tree_, prefix, _postwalk_descent) (NODE *n) {
-    while (true) {
-        if (n->left != NULL) {
-            n = n->left;
-            continue;
-        }
+/* Walks over the tree.  An iterator is a plain variable owned by the caller (titer_prefix_t):
+   nothing is allocated and a walk can be stopped at any time.  The functions return
 
-        if (n->right != NULL) {
-            n = n->right;
-            continue;
-        }
+     0 => *key and *value (either may be NULL) hold the next entry
+     1 => there are no more entries
 
-        return n;
-    }
-}
+   so a loop over the keys in increasing order is
 
-static inline void GLUE3(tree_, prefix, _postwalk_init) (const TREE *a, void **state) {
-    if (a->root == NULL) {
-        *state = NULL;
-    } else {
-        NODE *n = GLUE3(tree_, prefix, _postwalk_descent) (a->root);
-        *state = n;
-    }
-}
+     titer_prefix_t it;
+     for (int32_t rc = tree_prefix_first(t, &it, &key, &value); rc == 0;
+          rc = tree_prefix_next(&it, &key, &value)) {
+       ...
+     }
 
-static inline KEYVAL GLUE3(tree_, prefix, _postwalk_next) (void **state) {
-    NODE *n = *state;
-    KEYVAL rv = {.key = n->key,.value = n->value,.found = true };
-
-    NODE *p = n->parent;
-    if (p != NULL && n == p->left && p->right != NULL) {
-        *state = GLUE3(tree_, prefix, _postwalk_descent) (p->right);
-    } else {
-        *state = p;
-    }
-    return rv;
-}
-
-/* void tree_prefix_walk_init2(tree_prefix_t *a, data_t key, void **state);
-
-   Initializes an in-order walk at the first node with a key greater
-   than or equal to the given key.  If there is no such node, state is
-   set to NULL, so the caller must check state before calling
-   tree_prefix_walk_next().
+   The tree must not be changed during a walk.
 */
-static inline void GLUE3(tree_, prefix, _walk_init2) (const TREE *a, data_t key, void **state) {
-    NODE *best = NULL;
-    NODE *n = a->root;
-    while (n != NULL) {
-        int c = a->comp(&key, &(n->key));
-        if (c == 0) {
-            best = n;
-            break;
-        }
-        if (c < 0) {
-            best = n;
-            n = n->left;
-        } else {
-            n = n->right;
-        }
-    }
-    *state = best;
-}
 
-static inline void GLUE3(tree_, prefix, _walk_init) (const TREE *a, void **state) {
-    if (a->root == NULL) {
-        *state = NULL;
-    } else {
-        NODE *n = a->root;
-        while (n->left != NULL) {
-            n = n->left;
-        }
-        *state = n;
-    }
-}
+/* int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, void **value);
 
-static inline KEYVAL GLUE3(tree_, prefix, _walk_next) (void **state) {
-    NODE *n = *state;
-    KEYVAL rv = {.key = n->key,.value = n->value,.found = true };
+   Returns the entry at the iterator and steps the iterator to the next one in key order.
+*/
+static inline int32_t GLUE3(tree_, prefix, _next) (TITER *it, data_t *key, void **value) {
+    NODE *n = it->node;
+    if (n == NULL) {
+        return 1;
+    }
+    if (key != NULL) {
+        *key = n->key;
+    }
+    if (value != NULL) {
+        *value = n->value;
+    }
 
     if (n->right != NULL) {
         n = n->right;
@@ -874,8 +834,102 @@ static inline KEYVAL GLUE3(tree_, prefix, _walk_next) (void **state) {
             }
         }
     }
-    *state = n;
-    return rv;
+    it->node = n;
+    return 0;
+}
+
+/* int32_t tree_prefix_first(const tree_prefix_t *a, titer_prefix_t *it, data_t *key,
+                             void **value);
+
+   Starts a walk at the smallest key.
+*/
+static inline int32_t GLUE3(tree_, prefix, _first) (const TREE *a, TITER *it, data_t *key,
+                                                     void **value) {
+    NODE *n = a->root;
+    if (n != NULL) {
+        while (n->left != NULL) {
+            n = n->left;
+        }
+    }
+    it->node = n;
+    return GLUE3(tree_, prefix, _next) (it, key, value);
+}
+
+/* int32_t tree_prefix_first_from(const tree_prefix_t *a, data_t from, titer_prefix_t *it,
+                                  data_t *key, void **value);
+
+   Starts a walk at the first node with a key greater than or equal to from, and returns 1 if
+   there is none.
+*/
+static inline int32_t GLUE3(tree_, prefix, _first_from) (const TREE *a, data_t from, TITER *it,
+                                                          data_t *key, void **value) {
+    NODE *best = NULL;
+    NODE *n = a->root;
+    while (n != NULL) {
+        int c = a->comp(&from, &(n->key));
+        if (c == 0) {
+            best = n;
+            break;
+        }
+        if (c < 0) {
+            best = n;
+            n = n->left;
+        } else {
+            n = n->right;
+        }
+    }
+    it->node = best;
+    return GLUE3(tree_, prefix, _next) (it, key, value);
+}
+
+static inline NODE *GLUE3(tree_, prefix, _post_descent) (NODE *n) {
+    while (true) {
+        if (n->left != NULL) {
+            n = n->left;
+            continue;
+        }
+
+        if (n->right != NULL) {
+            n = n->right;
+            continue;
+        }
+
+        return n;
+    }
+}
+
+/* int32_t tree_prefix_post_next(titer_prefix_t *it, data_t *key, void **value);
+   int32_t tree_prefix_post_first(const tree_prefix_t *a, titer_prefix_t *it, data_t *key,
+                                  void **value);
+
+   The same, but a post-order walk: every node comes after its children, ending with the root.
+   This is the order to use to free or destroy things node by node.
+*/
+static inline int32_t GLUE3(tree_, prefix, _post_next) (TITER *it, data_t *key, void **value) {
+    NODE *n = it->node;
+    if (n == NULL) {
+        return 1;
+    }
+    if (key != NULL) {
+        *key = n->key;
+    }
+    if (value != NULL) {
+        *value = n->value;
+    }
+
+    NODE *p = n->parent;
+    if (p != NULL && n == p->left && p->right != NULL) {
+        it->node = GLUE3(tree_, prefix, _post_descent) (p->right);
+    } else {
+        it->node = p;
+    }
+    return 0;
+}
+
+static inline int32_t GLUE3(tree_, prefix, _post_first) (const TREE *a, TITER *it, data_t *key,
+                                                          void **value) {
+    it->node = a->root == NULL ? NULL : GLUE3(tree_, prefix, _post_descent) (a->root);
+    return GLUE3(tree_, prefix, _post_next) (it, key, value);
 }
 
 static inline KEYVAL GLUE3(tree_, prefix, _get_rank) (const TREE *a, size_t rank) {
@@ -948,6 +1002,7 @@ static inline void GLUE3(tree_, prefix, _print) (const TREE *a, void (*node_prin
 }
 
 #undef NODE
+#undef TITER
 #undef TREE
 #undef GLUE3
 #undef GLUE

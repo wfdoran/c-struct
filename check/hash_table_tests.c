@@ -379,7 +379,7 @@ int expected = n - n / 5;
 int count = 0;
 int key_sum = 0;
 int key, value;
-hiter_hi_t *iter = NULL;
+hiter_hi_t iter;
 int rc = hash_hi_first(h, &iter, &key, &value);
 while (rc == 0) {
   CHECK(value == 2 * key);
@@ -388,7 +388,9 @@ while (rc == 0) {
   count++;
   rc = hash_hi_next(&iter, &key, &value);
 }
-CHECK(iter == NULL);
+CHECK(rc == 1);
+// an iterator which has finished keeps reporting the end
+CHECK(hash_hi_next(&iter, &key, &value) == 1);
 CHECK(count == expected);
 
 int expected_sum = 0;
@@ -400,9 +402,12 @@ for (int i = 0; i < n; i++) {
 CHECK(key_sum == expected_sum);
 
 htable_hi_t *empty = hash_hi_init(0);
-iter = NULL;
 CHECK(hash_hi_first(empty, &iter, &key, &value) == 1);
-CHECK(iter == NULL);
+CHECK(hash_hi_next(&iter, &key, &value) == 1);
+
+// stopping an iteration early needs no clean up, and key and value may be NULL
+CHECK(hash_hi_first(h, &iter, NULL, NULL) == 0);
+CHECK(hash_hi_next(&iter, NULL, NULL) == 0);
 
 hash_hi_destroy(&empty);
 hash_hi_destroy(&h);
@@ -557,7 +562,7 @@ for (int i = 0; i < n; i++) {
 }
 
 // every entry of the clone is visited once by an iteration
-hiter_hi_t *it = NULL;
+hiter_hi_t it;
 int key, value;
 size_t seen = 0;
 for (int rc = hash_hi_first(c, &it, &key, &value); rc == 0; rc = hash_hi_next(&it, &key, &value)) {

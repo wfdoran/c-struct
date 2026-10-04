@@ -18,10 +18,10 @@ below, `prefix` stands for whatever label you chose.  Every function is
 `static inline`, so the header can be included from as many `.c` files as you
 like.
 
-`null_value` is returned by the functions that return a value when there is
-nothing to return: removing from an empty list, or stepping past either end.
-Since it cannot be told apart from a stored value equal to `null_value`, walk
-loops should test the node variable, not the returned value (see below).  The
+`null_value` is returned by the functions that remove and return a value when
+there is nothing to remove: removing from an empty list, or with a `NULL` node
+variable.  It cannot be told apart from a stored value equal to `null_value`,
+so use `size` to check.  The walking functions do not use it (see below).  The
 header undefines `null_value` again after it has used it.
 
 The list does not own what the entries refer to: if `data_t` is a pointer, the
@@ -62,27 +62,30 @@ is empty.
 
 ## Walking the List
 
-A walk is controlled by a node variable.  The functions return the value at the
-new position, and set the node variable to `NULL` when they run off the end.
+A walk is controlled by a node variable, `lnode_prefix_t *`, which is an
+ordinary variable: nothing is allocated.  The functions return 0 when the node
+variable is at an entry, in which case `*value` (which may be `NULL`) holds its
+value, and 1 when there is no entry, in which case the node variable is `NULL`.
+That happens at the end of the list, and for an empty list.  Once the node
+variable is `NULL`, `next` and `prev` keep returning 1.
 
 ```c
 lnode_int_t *n;
-for (int x = llist_int_walk_init_start(a, &n); n != NULL; x = llist_int_walk_forward(&n)) {
+int x;
+for (int32_t rc = llist_int_first(a, &n, &x); rc == 0; rc = llist_int_next(&n, &x)) {
     ...
 }
 ```
 
-### `data_t llist_prefix_walk_init_start(llist_prefix_t *a, lnode_prefix_t **n_ptr)`
-### `data_t llist_prefix_walk_init_end(llist_prefix_t *a, lnode_prefix_t **n_ptr)`
+### `int32_t llist_prefix_first(const llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
+### `int32_t llist_prefix_last(const llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
 
-Put `*n_ptr` at the first or last node and return its value.  If the list is
-empty, `*n_ptr` is `NULL` and `null_value` is returned.
+Put `*n_ptr` at the first or last node.
 
-### `data_t llist_prefix_walk_forward(lnode_prefix_t **n_ptr)`
-### `data_t llist_prefix_walk_backwards(lnode_prefix_t **n_ptr)`
+### `int32_t llist_prefix_next(lnode_prefix_t **n_ptr, data_t *value)`
+### `int32_t llist_prefix_prev(lnode_prefix_t **n_ptr, data_t *value)`
 
-Move `*n_ptr` to the next or previous node and return its value.  Past the end,
-`*n_ptr` is `NULL` and `null_value` is returned.
+Move `*n_ptr` to the next or previous node.
 
 ## Changing the List While Walking
 

@@ -117,7 +117,8 @@ for (int i = 0; i < 10; i++) {
 
 int y = 0;
 lnode_int_t *nn = NULL;
-for (int x = llist_int_walk_init_start(a, &nn); x != -1; x = llist_int_walk_forward(&nn)) {
+int x;
+for (int32_t rc = llist_int_first(a, &nn, &x); rc == 0; rc = llist_int_next(&nn, &x)) {
   CHECK(x == y);
   y++;
 }
@@ -140,7 +141,8 @@ for (int i = 0; i < 10; i++) {
 
 int y = n;
 lnode_int_t *nn = NULL;
-for (int x = llist_int_walk_init_end(a, &nn); x != -1; x = llist_int_walk_backwards(&nn)) {
+int x;
+for (int32_t rc = llist_int_last(a, &nn, &x); rc == 0; rc = llist_int_prev(&nn, &x)) {
   y--;
   CHECK(x == y);
 }
@@ -201,7 +203,7 @@ llist_int_remove_end(a);
 CHECK(llist_int_size(a) == 9);
 
 lnode_int_t *n;
-llist_int_walk_init_start(a, &n);
+llist_int_first(a, &n, NULL);
 llist_int_insert_after(a, &n, 100);
 CHECK(llist_int_size(a) == 10);
 llist_int_insert_before(a, &n, 101);
@@ -236,5 +238,44 @@ l = llist_dn_init();
 llist_dn_destroy(&l);
 llist_dn_destroy(&l);
 CHECK(l == NULL);
+
+END_TEST
+
+// first / last / next / prev: the end of the list, an empty list, and NULL for the value
+START_TEST(linked_list_test11)
+
+llist_int_t *a = llist_int_init();
+lnode_int_t *n = (lnode_int_t *) 0x1;
+int v = 99;
+CHECK(llist_int_first(a, &n, &v) == 1);
+CHECK(n == NULL && v == 99);
+n = (lnode_int_t *) 0x1;
+CHECK(llist_int_last(a, &n, &v) == 1);
+CHECK(n == NULL && v == 99);
+CHECK(llist_int_next(&n, &v) == 1);
+CHECK(llist_int_prev(&n, &v) == 1);
+
+for (int i = 1; i <= 3; i++) {
+  llist_int_add_end(a, i);
+}
+CHECK(llist_int_first(a, &n, &v) == 0 && v == 1);
+CHECK(llist_int_next(&n, &v) == 0 && v == 2);
+CHECK(llist_int_next(&n, NULL) == 0);
+CHECK(llist_int_next(&n, &v) == 1 && n == NULL);
+CHECK(llist_int_next(&n, &v) == 1);
+
+CHECK(llist_int_last(a, &n, &v) == 0 && v == 3);
+CHECK(llist_int_prev(&n, &v) == 0 && v == 2);
+CHECK(llist_int_prev(&n, &v) == 0 && v == 1);
+CHECK(llist_int_prev(&n, &v) == 1 && n == NULL);
+
+// the iterator is the node, so the editing functions work from it
+CHECK(llist_int_first(a, &n, NULL) == 0);
+CHECK(llist_int_next(&n, NULL) == 0);
+CHECK(llist_int_remove_forward(a, &n) == 2);
+CHECK(n != NULL && n->data == 3);
+CHECK(llist_int_size(a) == 2);
+
+llist_int_destroy(&a);
 
 END_TEST

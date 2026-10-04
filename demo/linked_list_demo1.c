@@ -21,9 +21,8 @@ int main(void) {
   }
 
   lnode_float_t *n;
-  for (float d = llist_float_walk_init_start(a, &n);
-       !isnan(d);
-       d = llist_float_walk_forward(&n)) {
+  float d;
+  for (int32_t rc = llist_float_first(a, &n, &d); rc == 0; rc = llist_float_next(&n, &d)) {
     printf("%12.4f \n", d);
   }
   

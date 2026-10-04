@@ -16,26 +16,21 @@ int main(void) {
   }
 
   lnode_int_t *n;
-  for (int d = llist_int_walk_init_start(a, &n);
-       d != -1;
-       d = llist_int_walk_forward(&n)) {
+  int d;
+  for (int32_t rc = llist_int_first(a, &n, &d); rc == 0; rc = llist_int_next(&n, &d)) {
     if (d > 0 && (d % 3) == 0) {
       llist_int_insert_before(a, &n, -10);
-      llist_int_walk_forward(&n);
+      llist_int_next(&n, NULL);
     }
   }
 
-  for (int d = llist_int_walk_init_start(a, &n);
-       d != -1;
-       d = llist_int_walk_forward(&n)) {
+  for (int32_t rc = llist_int_first(a, &n, &d); rc == 0; rc = llist_int_next(&n, &d)) {
     if (d > 0 && (d % 5) == 0) {
       llist_int_insert_after(a, &n, -20);
     }
   }
   
-  for (int d = llist_int_walk_init_start(a, &n);
-       d != -1;
-       d = llist_int_walk_forward(&n)) {
+  for (int32_t rc = llist_int_first(a, &n, &d); rc == 0; rc = llist_int_next(&n, &d)) {
     printf("%d\n", d);
   }
   

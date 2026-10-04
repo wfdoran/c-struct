@@ -51,11 +51,11 @@ int main(void) {
     hash_intp_put(h, k, new); 
   }
 
-  hiter_intp_t *iter;
+  hiter_intp_t iter;
   int key;
   array_int_t *value;
 
-  for (hash_intp_first(h, &iter, &key, &value); iter != NULL; hash_intp_next(&iter, &key, &value)) {
+  for (int32_t rc = hash_intp_first(h, &iter, &key, &value); rc == 0; rc = hash_intp_next(&iter, &key, &value)) {
     printf("%4d %4ld :", key, array_int_size(value));
     for (int i = 0; i < array_int_size(value); i++) {
       int v = array_int_get(value, i);

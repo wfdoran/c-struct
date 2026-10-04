@@ -427,47 +427,51 @@ static inline int32_t GLUE3(hash_, prefix, _remove) (HTABLE *h, hkey_t key, valu
     }
 }
 
-static inline int32_t GLUE3(hash_, prefix, _next) (HITER **iter_ptr, hkey_t *key, value_t *value) {
-    HITER *iter = *iter_ptr;
-    const HTABLE *h = iter->h;
-    int64_t curr = iter->curr;
+/* int32_t hash_prefix_first(const htable_prefix_t *h, hiter_prefix_t *it,
+                             hkey_t *key, value_t *value);
+   int32_t hash_prefix_next(hiter_prefix_t *it, hkey_t *key, value_t *value);
 
-    while (1) {
-        if (curr == h->capacity) {
-            iter->h = NULL;
-            iter->curr = -1;
-            free(iter);
-            *iter_ptr = NULL;
-            return 1;
-        }
+   Iterate over the entries of the table, each once, in no particular order.  The
+   iterator is a plain variable owned by the caller: nothing is allocated, so
+   there is nothing to free, and an iteration can be stopped at any time.  first
+   starts the iteration and next steps it, and both return
 
-        if (h->A[curr] != NULL && h->A[curr] != &(h->deleted)) {
+     0 => *key and *value (either may be NULL) hold the next entry
+     1 => there are no more entries
+
+   so a loop is
+
+     hiter_prefix_t it;
+     for (int32_t rc = hash_prefix_first(h, &it, &key, &value); rc == 0;
+          rc = hash_prefix_next(&it, &key, &value)) {
+       ...
+     }
+
+   The table must not be changed during an iteration.
+*/
+static inline int32_t GLUE3(hash_, prefix, _next) (HITER *it, hkey_t *key, value_t *value) {
+    const HTABLE *h = it->h;
+
+    while (it->curr < h->capacity) {
+        const HNODE *n = h->A[it->curr++];
+        if (n != NULL && n != &(h->deleted)) {
             if (key != NULL) {
-                *key = h->A[curr]->key;
+                *key = n->key;
             }
             if (value != NULL) {
-                *value = h->A[curr]->value;
+                *value = n->value;
             }
-            curr++;
-            iter->curr = curr;
             return 0;
         }
-
-        curr++;
     }
+    return 1;
 }
 
-static inline int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER **iter_ptr, hkey_t *key, value_t *value) {
-    HITER *iter = malloc(sizeof(HITER));
-    if (iter == NULL) {
-        *iter_ptr = NULL;
-        return -1;
-    }
-    iter->h = h;
-    iter->curr = 0;
-    *iter_ptr = iter;
-
-    return GLUE3(hash_, prefix, _next) (iter_ptr, key, value);
+static inline int32_t GLUE3(hash_, prefix, _first) (const HTABLE *h, HITER *it, hkey_t *key,
+                                                     value_t *value) {
+    it->h = h;
+    it->curr = 0;
+    return GLUE3(hash_, prefix, _next) (it, key, value);
 }
 
 static inline void GLUE3(hash_, prefix, _apply) (HTABLE *h, value_t (*f) (hkey_t, value_t)) {

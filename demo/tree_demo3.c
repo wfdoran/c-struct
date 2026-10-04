@@ -26,11 +26,10 @@ int main(void) {
     printf("Tree Height: %d\n", tree_double_height(t));
     printf("\n");
     
-    void *state;
-    tree_double_walk_init(t, &state);
-    while (state != NULL) {
-	key_double_value_t pair = tree_double_walk_next(&state);
-        printf("%.4f ", pair.key);
+    titer_double_t it;
+    double key;
+    for (int32_t rc = tree_double_first(t, &it, &key, NULL); rc == 0; rc = tree_double_next(&it, &key, NULL)) {
+        printf("%.4f ", key);
     }
     printf("\n");
         
@@ -43,10 +42,8 @@ int main(void) {
     printf("Tree Height: %d\n", tree_double_height(t));
     printf("\n");
     
-    tree_double_walk_init(t, &state);
-    while (state != NULL) {
-        key_double_value_t pair = tree_double_walk_next(&state);
-        printf("%.4f ", pair.key);
+    for (int32_t rc = tree_double_first(t, &it, &key, NULL); rc == 0; rc = tree_double_next(&it, &key, NULL)) {
+        printf("%.4f ", key);
     }
     printf("\n");
         

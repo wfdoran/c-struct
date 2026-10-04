@@ -23,8 +23,8 @@ int main(void) {
     printf("Tree Height: %d\n", tree_int32_height(t));
     printf("\n");
     
-    void *state;
-    key_int32_value_t pair;
+    titer_int32_t it;
+    int32_t key;
     int32_t left = 0x3fff;
     int32_t right = 0xcfff;
 
@@ -38,13 +38,11 @@ int main(void) {
     tree_int32_insert(t, right + 1, NULL);
    
     
-    tree_int32_walk_init2(t, left, &state);
-    while (state != NULL) {
-        pair = tree_int32_walk_next(&state);
-	if (pair.key > right) {
+    for (int32_t rc = tree_int32_first_from(t, left, &it, &key, NULL); rc == 0; rc = tree_int32_next(&it, &key, NULL)) {
+	if (key > right) {
 	  break;
 	}
-        printf("%d ", pair.key);
+        printf("%d ", key);
     }
     printf("\n");
     

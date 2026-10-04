@@ -184,29 +184,29 @@ is rebuilt, doubling in size if it needs the room.
 ## Iteration
 
 Each entry is visited once, in no particular order.  Do not put or remove
-entries during an iteration.
+entries during an iteration.  The iterator is an ordinary variable: nothing is
+allocated, so there is nothing to free, and you can stop at any time.
 
 ```c
 hkey_t key;
 value_t value;
-hiter_prefix_t *iter;
-for (int rc = hash_prefix_first(h, &iter, &key, &value); rc == 0; rc = hash_prefix_next(&iter, &key, &value)) {
+hiter_prefix_t it;
+for (int32_t rc = hash_prefix_first(h, &it, &key, &value); rc == 0;
+     rc = hash_prefix_next(&it, &key, &value)) {
     ...
 }
 ```
 
-### `int32_t hash_prefix_first(const htable_prefix_t *h, hiter_prefix_t **iter_state, hkey_t *key, value_t *value)`
+### `int32_t hash_prefix_first(const htable_prefix_t *h, hiter_prefix_t *it, hkey_t *key, value_t *value)`
 
 Starts an iteration.  Returns 0 and fills in `*key` and `*value` with the first
-entry, or returns 1 if the table is empty, or -1 if memory for the iterator
-could not be allocated (`*iter_state` is then `NULL`).  Either of `key` and
-`value` may be `NULL`.
+entry, or returns 1 if the table is empty.  Either of `key` and `value` may be
+`NULL`.
 
-### `int32_t hash_prefix_next(hiter_prefix_t **iter_state, hkey_t *key, value_t *value)`
+### `int32_t hash_prefix_next(hiter_prefix_t *it, hkey_t *key, value_t *value)`
 
 Returns 0 and fills in the next entry, or returns 1 when there are no more.
-When it returns 1 the iterator has been freed and `*iter_state` is `NULL`.  If
-you stop an iteration early, `free()` the iterator yourself.
+Once it has returned 1 it keeps returning 1.
 
 ## Global Operations
 
