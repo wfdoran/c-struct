@@ -28,8 +28,29 @@ COMP_DEFINE(uint, unsigned int)
 COMP_DEFINE(ulong, unsigned long)
 COMP_DEFINE(ullong, unsigned long long)
 COMP_DEFINE(bool, _Bool)
-COMP_DEFINE(float, float)
-COMP_DEFINE(double, double)
+
+/* A total order for floating point, which sorting and the ordered containers
+   need: every NaN is equal to every other NaN and greater than every number,
+   and -0.0 equals 0.0 (as hash_double() assumes).  With the plain comparison a
+   NaN would compare equal to every key. */
+#define COMP_DEFINE_FLOAT(name, T)                                             \
+  static inline int comp_##name(T *a, T *b) {                                  \
+    if (*a < *b) {                                                             \
+      return -1;                                                               \
+    }                                                                          \
+    if (*a > *b) {                                                             \
+      return 1;                                                                \
+    }                                                                          \
+    if (*a == *b) {                                                            \
+      return 0;                                                                \
+    }                                                                          \
+    return (*a != *a) - (*b != *b); /* unordered: a NaN is the larger */       \
+  }
+
+COMP_DEFINE_FLOAT(float, float)
+COMP_DEFINE_FLOAT(double, double)
+#undef COMP_DEFINE_FLOAT
+
 COMP_DEFINE(char, char)
 
 COMP_DEFINE(int64, int64_t)

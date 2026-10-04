@@ -67,7 +67,9 @@ pointers refer to, unless you give them a free function.
 * `comp.h` and `hash.h`: the default comparison and hash functions the
   containers pick for basic key types (`DEFAULT_COMP`, `DEFAULT_HASH`), and the
   64-bit mixing function used by the hash tables.  Write your own for other
-  types.
+  types.  The floating point comparisons are a total order: a NaN equals a NaN
+  and is greater than every number, and `-0.0` equals `0.0`, so a NaN is an
+  ordinary key in a tree, array or queue.
 * `serialize.h`: variable length integer and string encoding used by
   `array_prefix_serialize()`.
 * `any.h`: a small tagged union holding one of the basic C types.

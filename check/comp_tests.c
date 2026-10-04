@@ -1,6 +1,7 @@
 #include <check.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 #include <sys/types.h>
 #include <comp.h>
 #include <hash.h>
@@ -35,6 +36,31 @@
 #undef prefix
 #undef value_t
 #undef hkey_t
+
+// containers of floating point numbers, which may hold NaN
+#define data_t double
+#define prefix dbl
+#include <array.h>
+#undef prefix
+#undef data_t
+
+#define data_t double
+#define prefix dbl
+#include <tree.h>
+#undef prefix
+#undef data_t
+
+#define data_t double
+#define prefix dbl
+#include <pqueue.h>
+#undef prefix
+#undef data_t
+
+#define data_t float
+#define prefix flt
+#include <array.h>
+#undef prefix
+#undef data_t
 
 typedef struct {
   int x;
@@ -292,5 +318,101 @@ CHECK(hash_size_put(z, (size_t) 12345, 1) == 0);
 CHECK(hash_size_get(z, (size_t) 12345, &v) == 1 && v == 1);
 CHECK(hash_size_get(z, (size_t) 12346, &v) == 0);
 hash_size_destroy(&z);
+
+END_TEST
+
+// The floating point comparators are a total order: a NaN equals a NaN and is greater than every
+// number, -0.0 equals 0.0, and the usual order holds for everything else.
+START_TEST(comp_test7)
+
+double v[] = {-INFINITY, -1e300, -1.5, -0.0, 0.0, 1e-300, 2.5, 1e300, INFINITY, NAN, -NAN};
+int n = (int) (sizeof(v) / sizeof(v[0]));
+for (int i = 0; i < n; i++) {
+  for (int j = 0; j < n; j++) {
+    int c = comp_double(&v[i], &v[j]);
+    int d = comp_double(&v[j], &v[i]);
+    CHECK((c < 0) == (d > 0) && (c == 0) == (d == 0));          // antisymmetric
+    for (int k = 0; k < n; k++) {
+      if (c <= 0 && comp_double(&v[j], &v[k]) <= 0) {
+        CHECK(comp_double(&v[i], &v[k]) <= 0);                   // transitive
+      }
+    }
+  }
+}
+double nan1 = NAN, nan2 = -NAN, inf = INFINITY, big = 1e308, neg0 = -0.0, pos0 = 0.0;
+CHECK(comp_double(&nan1, &nan1) == 0);
+CHECK(comp_double(&nan1, &nan2) == 0);
+CHECK(comp_double(&nan1, &inf) > 0 && comp_double(&inf, &nan1) < 0);
+CHECK(comp_double(&nan1, &big) > 0 && comp_double(&big, &nan1) < 0);
+CHECK(comp_double(&neg0, &pos0) == 0);
+CHECK(comp_double(&big, &inf) < 0);
+
+float fn = NAN, f1 = 1.5f, f2 = -2.5f, finf = INFINITY;
+CHECK(comp_float(&fn, &fn) == 0);
+CHECK(comp_float(&fn, &finf) > 0 && comp_float(&f1, &fn) < 0);
+CHECK(comp_float(&f1, &f2) > 0 && comp_float(&f2, &f1) < 0 && comp_float(&f1, &f1) == 0);
+
+// the order is the one the generic picks
+double d = 0;
+CHECK(DEFAULT_COMP(d) == &comp_double);
+
+END_TEST
+
+// A NaN is an ordinary key: it does not disturb the other keys of a tree, and sorting and heaps
+// put it after every number.
+START_TEST(comp_test8)
+
+tree_dbl_t *t = tree_dbl_init();
+for (int i = 1; i <= 5; i++) {
+  CHECK(tree_dbl_insert(t, (double) i, (void *) (long) (i * 10)) == 0);
+}
+CHECK(tree_dbl_insert(t, NAN, (void *) 999L) == 0);
+CHECK(tree_dbl_size(t) == 6);                                    // a node was added
+for (int i = 1; i <= 5; i++) {
+  key_dbl_value_t r = tree_dbl_retrieve(t, (double) i);
+  CHECK(r.found && (long) r.value == i * 10);                    // nothing was overwritten
+}
+CHECK(tree_dbl_retrieve(t, NAN).found && (long) tree_dbl_retrieve(t, -NAN).value == 999);
+CHECK(tree_dbl_insert(t, NAN, (void *) 7L) == 0);                // the NaN is one key
+CHECK(tree_dbl_size(t) == 6 && (long) tree_dbl_retrieve(t, NAN).value == 7);
+CHECK(isnan(tree_dbl_retrieve_max(t).key));
+CHECK(tree_dbl_retrieve_min(t).key == 1.0);
+CHECK(tree_dbl_num_less(t, NAN) == 5 && tree_dbl_num_greater(t, 5.0) == 1);
+CHECK(tree_dbl_delete(t, NAN).found && tree_dbl_size(t) == 5);
+tree_dbl_destroy(&t);
+
+double v[] = {3, NAN, 1, 2, NAN, 0, -INFINITY, INFINITY};
+array_dbl_t *a = array_dbl_init();
+for (int i = 0; i < 8; i++) {
+  array_dbl_append(a, v[i]);
+}
+CHECK(array_dbl_sort(a) == 0);
+double expect[] = {-INFINITY, 0, 1, 2, 3, INFINITY};
+for (int i = 0; i < 6; i++) {
+  CHECK(array_dbl_get(a, i) == expect[i]);
+}
+CHECK(isnan(array_dbl_get(a, 6)) && isnan(array_dbl_get(a, 7)));
+CHECK(array_dbl_bisect(a, 2.0) == 3);
+CHECK(array_dbl_bisect_lower(a, NAN) == 6 && array_dbl_bisect_upper(a, NAN) == 7);
+array_dbl_destroy(&a);
+
+array_flt_t *fa = array_flt_init();
+float fv[] = {2.0f, NAN, -1.0f, NAN, 0.5f};
+for (int i = 0; i < 5; i++) {
+  array_flt_append(fa, fv[i]);
+}
+CHECK(array_flt_sort(fa) == 0);
+CHECK(array_flt_get(fa, 0) == -1.0f && array_flt_get(fa, 1) == 0.5f && array_flt_get(fa, 2) == 2.0f);
+CHECK(isnan(array_flt_get(fa, 3)) && isnan(array_flt_get(fa, 4)));
+array_flt_destroy(&fa);
+
+// a max-heap of keys with NaNs: the NaNs come out first, then the numbers in order
+pqueue_dbl_t *q = pqueue_dbl_init();
+for (int i = 0; i < 8; i++) {
+  pqueue_dbl_push(q, v[i], NULL);
+}
+CHECK(isnan(pqueue_dbl_pop(q).key) && isnan(pqueue_dbl_pop(q).key));
+CHECK(pqueue_dbl_pop(q).key == INFINITY && pqueue_dbl_pop(q).key == 3.0);
+pqueue_dbl_destroy(&q);
 
 END_TEST
