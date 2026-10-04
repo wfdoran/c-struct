@@ -16,7 +16,6 @@
 #error "prefix not defined"
 #endif
 
-
 #ifndef CHAN_CONSTS
 #define CHAN_CONSTS
 
@@ -45,13 +44,14 @@ static inline void chan_wait(int32_t *spins) {
   }
 }
 
-/* Called between the attempts of a blocking send or receive, which wait for another thread
-   to make room or to send something.  The wait may be short or long, so the first attempts
-   are made one after the other, then the thread yields the processor between attempts
-   (waits up to a millisecond or two behave as if there were no backoff), and after that it
-   sleeps for a short time.  A thread which waits for a long time then uses almost no CPU;
-   the price is some extra delay (about 100 to 200 microseconds) once the wait has become
-   long.  n counts the attempts of one call and starts at 0. */
+/* Called between the attempts of a blocking send or receive, which wait for
+   another thread to make room or to send something.  The wait may be short or
+   long, so the first attempts are made one after the other, then the thread
+   yields the processor between attempts (waits up to a millisecond or two
+   behave as if there were no backoff), and after that it sleeps for a short
+   time.  A thread which waits for a long time then uses almost no CPU; the
+   price is some extra delay (about 100 to 200 microseconds) once the wait has
+   become long.  n counts the attempts of one call and starts at 0. */
 #define CHAN_BACKOFF_SPINS (32)
 #define CHAN_BACKOFF_YIELDS (4000)
 
@@ -93,7 +93,8 @@ static inline uint64_t chan_rng_next(void) {
       timespec_get(&ts, TIME_UTC);
       seed = ((uint64_t) ts.tv_sec << 30) ^ (uint64_t) ts.tv_nsec;
       seed ^= (uint64_t) (uintptr_t) &chan_rng_state;
-      seed += UINT64_C(0x9e3779b97f4a7c15) * (1 + (uint64_t) atomic_fetch_add(&chan_rng_counter, 1));
+      seed += UINT64_C(0x9e3779b97f4a7c15) *
+              (1 + (uint64_t) atomic_fetch_add(&chan_rng_counter, 1));
     }
     chan_rng_state = seed;
     chan_rng_seeded = true;
@@ -107,7 +108,7 @@ static inline uint64_t chan_rng_next(void) {
 
 /* Uniform value in [0, n) for n > 0, without modulo bias. */
 static inline uint32_t chan_rng_below(uint32_t n) {
-  const uint32_t threshold = (uint32_t) (-n) % n;   /* 2^32 mod n */
+  const uint32_t threshold = (uint32_t) (-n) % n; /* 2^32 mod n */
   uint32_t r;
   do {
     r = (uint32_t) (chan_rng_next() >> 32);
@@ -116,27 +117,26 @@ static inline uint32_t chan_rng_below(uint32_t n) {
 }
 #endif
 
-
-
 #define GLUE_HELPER(x, y) x##y
-#define GLUE(x, y) GLUE_HELPER(x,y)
-#define GLUE3(x, y, z) GLUE(GLUE(x,y), z)
+#define GLUE(x, y) GLUE_HELPER(x, y)
+#define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
 
 #define CHAN GLUE3(chan_, prefix, _t)
 
-/* 
+/*
      assert tail0 <= tail1 <= head0 <= head1
 
      tail0   been read, ready for overwrite
      tail1   read position
      head0   been written, ready for reading
      head1   write position
-*/ 
+*/
 
 typedef struct CHAN {
   data_t *data;
-  int64_t capacity;           /* most values the channel holds at once */
-  int64_t mask;               /* the slot array has mask + 1 entries, a power of two >= capacity */
+  int64_t capacity; /* most values the channel holds at once */
+  int64_t mask;     /* the slot array has mask + 1 entries, a power of two >=
+                       capacity */
   atomic_bool closed;
 
   /* written by the producers, on their own cache line */
@@ -162,12 +162,13 @@ typedef struct SELECT {
    below 1 is rounded up to 1: unbuffered (rendezvous) channels are not
    provided.
 */
-static inline CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
+static inline CHAN *GLUE3(chan_, prefix, _init)(int64_t capacity) {
   if (capacity < 1) {
     capacity = 1;
   }
 
-  /* slots are found with a mask, so round the slot array up to a power of two */
+  /* slots are found with a mask, so round the slot array up to a power of two
+   */
   int64_t slots = 1;
   while (slots < capacity) {
     if (slots > INT64_MAX / 2) {
@@ -201,7 +202,7 @@ static inline CHAN *GLUE3(chan_, prefix, _init) (int64_t capacity) {
   return c;
 }
 
-static inline void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
+static inline void GLUE3(chan_, prefix, _destroy)(CHAN **c_ptr) {
   if (c_ptr == NULL) {
     return;
   }
@@ -215,16 +216,16 @@ static inline void GLUE3(chan_, prefix, _destroy) (CHAN **c_ptr) {
   *c_ptr = NULL;
 }
 
-static inline int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
+static inline int32_t GLUE3(chan_, prefix, _tryrecv)(CHAN *c, data_t *value) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
-  
+
   while (true) {
     int64_t tail1 = atomic_load(&c->tail1);
     int64_t head0 = atomic_load(&c->head0);
     ASSERT(tail1 <= head0);
-    
+
     if (tail1 == head0) {
       if (!atomic_load(&c->closed)) {
         return CHAN_EMPTY;
@@ -255,11 +256,11 @@ static inline int32_t GLUE3(chan_, prefix, _tryrecv) (CHAN *c, data_t *value) {
   }
 }
 
-static inline int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
+static inline int32_t GLUE3(chan_, prefix, _trysend)(CHAN *c, data_t value) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
-  
+
   while (true) {
     if (c->closed) {
       return CHAN_CLOSED;
@@ -268,7 +269,7 @@ static inline int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
     int64_t head1 = atomic_load(&c->head1);
     int64_t tail0 = atomic_load(&c->tail0);
     ASSERT(head1 <= tail0 + c->capacity);
-    
+
     if (head1 == tail0 + c->capacity) {
       return CHAN_FULL;
     }
@@ -289,7 +290,7 @@ static inline int32_t GLUE3(chan_, prefix, _trysend) (CHAN *c, data_t value) {
   }
 }
 
-static inline int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
+static inline int32_t GLUE3(chan_, prefix, _recv)(CHAN *c, data_t *value) {
   int32_t attempts = 0;
   while (true) {
     int32_t rc = GLUE3(chan_, prefix, _tryrecv)(c, value);
@@ -300,7 +301,7 @@ static inline int32_t GLUE3(chan_, prefix, _recv) (CHAN *c, data_t *value) {
   }
 }
 
-static inline int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
+static inline int32_t GLUE3(chan_, prefix, _send)(CHAN *c, data_t value) {
   int32_t attempts = 0;
   while (true) {
     int32_t rc = GLUE3(chan_, prefix, _trysend)(c, value);
@@ -311,10 +312,10 @@ static inline int32_t GLUE3(chan_, prefix, _send) (CHAN *c, data_t value) {
   }
 }
 
-/* Closes the channel.  Call it only after the last send has returned: a send still in
-   progress when the channel is closed can report success for a value which is never
-   received (see doc/chan.md). */
-static inline int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
+/* Closes the channel.  Call it only after the last send has returned: a send
+   still in progress when the channel is closed can report success for a value
+   which is never received (see doc/chan.md). */
+static inline int32_t GLUE3(chan_, prefix, _close)(CHAN *c) {
   if (c == NULL) {
     return CHAN_ERROR;
   }
@@ -322,7 +323,8 @@ static inline int32_t GLUE3(chan_, prefix, _close) (CHAN *c) {
   return was_closed ? CHAN_CLOSED : CHAN_SUCCESS;
 }
 
-static inline int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *s) {
+static inline int32_t GLUE3(select_, prefix, _one)(int32_t num_select,
+                                                   SELECT *s) {
   if (num_select < 0 || (num_select > 0 && s == NULL)) {
     return CHAN_ERROR;
   }
@@ -343,36 +345,36 @@ static inline int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *
   }
   for (int32_t i_idx = 0; i_idx < num_select; i_idx++) {
     int32_t i = perm[i_idx];
-    switch(s[i].select_type) {
-      case SELECT_SEND:
-        all_omits = false;
-        rc = GLUE3(chan_, prefix, _trysend)(s[i].c, *s[i].value);
-        if (rc == CHAN_SUCCESS) {
-          return i;
-        }
-        if (rc == CHAN_ERROR) {
-          return CHAN_ERROR;
-        }
-	if (rc == CHAN_CLOSED) {
-	  s[i].select_type = SELECT_OMIT;
-	}
-        break;  // CHAN_FULL or CHAN_CLOSED
-      case SELECT_RECV:
-        all_omits = false;
-        rc = GLUE3(chan_, prefix, _tryrecv)(s[i].c, s[i].value);
-        if (rc == CHAN_SUCCESS) {
-          return i;
-        }
-        if (rc == CHAN_ERROR) {
-          return CHAN_ERROR;
-        }
-        if (rc == CHAN_CLOSED) {
-          s[i].select_type = SELECT_OMIT;
-        }
-        break;  // CHAN_EMPTY or CHAN_CLOSED
+    switch (s[i].select_type) {
+    case SELECT_SEND:
+      all_omits = false;
+      rc = GLUE3(chan_, prefix, _trysend)(s[i].c, *s[i].value);
+      if (rc == CHAN_SUCCESS) {
+        return i;
+      }
+      if (rc == CHAN_ERROR) {
+        return CHAN_ERROR;
+      }
+      if (rc == CHAN_CLOSED) {
+        s[i].select_type = SELECT_OMIT;
+      }
+      break; // CHAN_FULL or CHAN_CLOSED
+    case SELECT_RECV:
+      all_omits = false;
+      rc = GLUE3(chan_, prefix, _tryrecv)(s[i].c, s[i].value);
+      if (rc == CHAN_SUCCESS) {
+        return i;
+      }
+      if (rc == CHAN_ERROR) {
+        return CHAN_ERROR;
+      }
+      if (rc == CHAN_CLOSED) {
+        s[i].select_type = SELECT_OMIT;
+      }
+      break; // CHAN_EMPTY or CHAN_CLOSED
 
-      default:
-        break;
+    default:
+      break;
     }
   }
   if (all_omits) {
@@ -381,7 +383,8 @@ static inline int32_t GLUE3(select_, prefix, _one) (int32_t num_select, SELECT *
   return num_select;
 }
 
-static inline int32_t GLUE3(select_, prefix, _option_done)(SELECT *s, int32_t i) {
+static inline int32_t GLUE3(select_, prefix, _option_done)(SELECT *s,
+                                                           int32_t i) {
   s[i].select_type = SELECT_OMIT;
   int32_t rc = GLUE3(chan_, prefix, _close)(s[i].c);
   if (rc == CHAN_ERROR) {

@@ -1,0 +1,8 @@
+ColumnLimit: 80
+SpaceAfterCStyleCast: true
+AllowShortFunctionsOnASingleLine: None
+AlignArrayOfStructures: Left
+AllowShortCaseLabelsOnASingleLine: false
+IndentCaseBlocks: true
+SortIncludes: Never
+IndentWidth: 2

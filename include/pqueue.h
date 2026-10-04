@@ -18,45 +18,45 @@
 #endif
 
 #define GLUE_HELPER(x, y) x##y
-#define GLUE(x, y) GLUE_HELPER(x,y)
-#define GLUE3(x, y, z) GLUE(GLUE(x,y), z)
+#define GLUE(x, y) GLUE_HELPER(x, y)
+#define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
 
 #define PQUEUE GLUE3(pqueue_, prefix, _t)
 #define PNODE GLUE3(pnode_, prefix, _t)
 #define PQKV GLUE3(pqkv_, prefix, _t)
 
-#define PQUEUE_PARENT(x) (((x)-1)/2)
-#define PQUEUE_LEFT_CHILD(x) (2*(x) + 1)
-#define PQUEUE_RIGHT_CHILD(x) (2*(x) + 2)
+#define PQUEUE_PARENT(x) (((x) -1) / 2)
+#define PQUEUE_LEFT_CHILD(x) (2 * (x) + 1)
+#define PQUEUE_RIGHT_CHILD(x) (2 * (x) + 2)
 
 /* ----------------------------------------------------------------------- */
 /*                         data structures                                 */
 /* ----------------------------------------------------------------------- */
 
 typedef struct {
-    data_t key;
-    void *value;
+  data_t key;
+  void *value;
 } PNODE;
 
 typedef struct {
-    PNODE *data;
-    size_t size;
-    size_t capacity;
-    int (*comp) (data_t *, data_t *);
-    void (*value_free) (void *);
+  PNODE *data;
+  size_t size;
+  size_t capacity;
+  int (*comp)(data_t *, data_t *);
+  void (*value_free)(void *);
 } PQUEUE;
 
 typedef struct {
-    data_t key;
-    void *value;
-    bool found;
+  data_t key;
+  void *value;
+  bool found;
 } PQKV;
 
 /* ----------------------------------------------------------------------- */
 /*                         constructors                                    */
 /* ----------------------------------------------------------------------- */
 
-#define _unused(x) ((void)(x))
+#define _unused(x) ((void) (x))
 
 /* pqueue_prefix_t* pqueue_prefix_init(void);
 
@@ -68,30 +68,31 @@ typedef struct {
    comp function.  To get min-first behavior, supply a comp function
    via pqueue_prefix_set_comp() which reverses the usual ordering.
 */
-static inline PQUEUE *GLUE3(pqueue_, prefix, _init) (void) {
-    PQUEUE *q = malloc(sizeof(PQUEUE));
-    if (q == NULL) {
-        return q;
-    }
-
-    q->data = malloc(sizeof(PNODE));
-    if (q->data == NULL) {
-        free(q);
-        return NULL;
-    }
-    q->size = 0;
-    q->capacity = 1;
-    data_t temp;
-    q->comp = DEFAULT_COMP(temp);
-    _unused(temp);
-    q->value_free = NULL;
-
-    _unused(DEFAULT_COMP_TYPE(temp));
-
+static inline PQUEUE *GLUE3(pqueue_, prefix, _init)(void) {
+  PQUEUE *q = malloc(sizeof(PQUEUE));
+  if (q == NULL) {
     return q;
+  }
+
+  q->data = malloc(sizeof(PNODE));
+  if (q->data == NULL) {
+    free(q);
+    return NULL;
+  }
+  q->size = 0;
+  q->capacity = 1;
+  data_t temp;
+  q->comp = DEFAULT_COMP(temp);
+  _unused(temp);
+  q->value_free = NULL;
+
+  _unused(DEFAULT_COMP_TYPE(temp));
+
+  return q;
 }
 
-/* int32_t pqueue_prefix_set_comp(pqueue_prefix_t *q, int (*comp) (data_t *, data_t *));
+/* int32_t pqueue_prefix_set_comp(pqueue_prefix_t *q, int (*comp) (data_t *,
+   data_t *));
 
    Attaches a comparison function to the priority queue.  For basic
    data_t such as int8_t, int16_t, int32_t, int64_t, float, double,
@@ -103,15 +104,17 @@ static inline PQUEUE *GLUE3(pqueue_, prefix, _init) (void) {
      -1 => error (q or comp is NULL; the queue is unchanged)
       0 => ok
 */
-static inline int32_t GLUE3(pqueue_, prefix, _set_comp) (PQUEUE *q, int (*comp) (data_t *, data_t *)) {
-    if (q == NULL || comp == NULL) {
-        return -1;
-    }
-    q->comp = comp;
-    return 0;
+static inline int32_t
+GLUE3(pqueue_, prefix, _set_comp)(PQUEUE *q, int (*comp)(data_t *, data_t *)) {
+  if (q == NULL || comp == NULL) {
+    return -1;
+  }
+  q->comp = comp;
+  return 0;
 }
 
-/* void pqueue_prefix_set_value_free(pqueue_prefix_t *q, void (*value_free)(void *));
+/* void pqueue_prefix_set_value_free(pqueue_prefix_t *q, void (*value_free)(void
+   *));
 
    Attaches a free function for the values held in the queue.  This is
    used when pqueue_prefix_destroy() is called, to free the value of
@@ -119,8 +122,9 @@ static inline int32_t GLUE3(pqueue_, prefix, _set_comp) (PQUEUE *q, int (*comp) 
    free() for the value_free assuming the values were allocated by the
    system malloc().
 */
-static inline void GLUE3(pqueue_, prefix, _set_value_free) (PQUEUE *q, void (*value_free) (void *)) {
-    q->value_free = value_free;
+static inline void
+GLUE3(pqueue_, prefix, _set_value_free)(PQUEUE *q, void (*value_free)(void *)) {
+  q->value_free = value_free;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -133,30 +137,30 @@ static inline void GLUE3(pqueue_, prefix, _set_value_free) (PQUEUE *q, void (*va
    function to the value of every remaining entry, frees the
    underlying storage, and sets the pointer to NULL.
 */
-static inline void GLUE3(pqueue_, prefix, _destroy) (PQUEUE **q_ptr) {
-    if (q_ptr == NULL) {
-        return;
-    }
-    PQUEUE *q = *q_ptr;
-    // in case a user tries a double destroy
-    if (q == NULL) {
-        return;
-    }
+static inline void GLUE3(pqueue_, prefix, _destroy)(PQUEUE **q_ptr) {
+  if (q_ptr == NULL) {
+    return;
+  }
+  PQUEUE *q = *q_ptr;
+  // in case a user tries a double destroy
+  if (q == NULL) {
+    return;
+  }
 
-    if (q->value_free != NULL) {
-        for (size_t i = 0; i < q->size; i++) {
-            q->value_free(q->data[i].value);
-        }
+  if (q->value_free != NULL) {
+    for (size_t i = 0; i < q->size; i++) {
+      q->value_free(q->data[i].value);
     }
+  }
 
-    free(q->data);
-    q->data = NULL;
-    q->size = 0;
-    q->capacity = 0;
-    q->comp = NULL;
-    q->value_free = NULL;
-    free(q);
-    *q_ptr = NULL;
+  free(q->data);
+  q->data = NULL;
+  q->size = 0;
+  q->capacity = 0;
+  q->comp = NULL;
+  q->value_free = NULL;
+  free(q);
+  *q_ptr = NULL;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -173,37 +177,38 @@ static inline void GLUE3(pqueue_, prefix, _destroy) (PQUEUE **q_ptr) {
            the queue is unchanged)
       0 => ok
 */
-static inline int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void *value) {
-    if (q == NULL || q->comp == NULL) {
-        return -1;
-    }
+static inline int32_t GLUE3(pqueue_, prefix, _push)(PQUEUE *q, data_t key,
+                                                    void *value) {
+  if (q == NULL || q->comp == NULL) {
+    return -1;
+  }
 
-    if (q->size == q->capacity) {
-        size_t new_capacity = q->capacity == 0 ? 1 : 2 * q->capacity;
-        if (q->capacity > SIZE_MAX / 2 / sizeof(PNODE)) {
-            return -1;
-        }
-        PNODE *tmp = realloc(q->data, new_capacity * sizeof(PNODE));
-        if (tmp == NULL) {
-            return -1;
-        }
-        q->data = tmp;
-        q->capacity = new_capacity;
+  if (q->size == q->capacity) {
+    size_t new_capacity = q->capacity == 0 ? 1 : 2 * q->capacity;
+    if (q->capacity > SIZE_MAX / 2 / sizeof(PNODE)) {
+      return -1;
     }
+    PNODE *tmp = realloc(q->data, new_capacity * sizeof(PNODE));
+    if (tmp == NULL) {
+      return -1;
+    }
+    q->data = tmp;
+    q->capacity = new_capacity;
+  }
 
-    /* move a hole up from the new last slot instead of swapping at every level */
-    size_t pos = q->size++;
-    while (pos != 0) {
-        size_t parent = PQUEUE_PARENT(pos);
-        if (q->comp(&key, &(q->data[parent].key)) <= 0) {
-            break;
-        }
-        q->data[pos] = q->data[parent];
-        pos = parent;
+  /* move a hole up from the new last slot instead of swapping at every level */
+  size_t pos = q->size++;
+  while (pos != 0) {
+    size_t parent = PQUEUE_PARENT(pos);
+    if (q->comp(&key, &(q->data[parent].key)) <= 0) {
+      break;
     }
-    q->data[pos].key = key;
-    q->data[pos].value = value;
-    return 0;
+    q->data[pos] = q->data[parent];
+    pos = parent;
+  }
+  q->data[pos].key = key;
+  q->data[pos].value = value;
+  return 0;
 }
 
 /* pqkv_prefix_t pqueue_prefix_pop(pqueue_prefix_t *q);
@@ -212,43 +217,43 @@ static inline int32_t GLUE3(pqueue_, prefix, _push) (PQUEUE *q, data_t key, void
    queue (the largest key, using the default comp).  If the queue is
    empty, the returned pqkv_prefix_t has found set to false.
 */
-static inline PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
-    ASSERT(q != NULL);
-    ASSERT(q->comp != NULL);
+static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
+  ASSERT(q != NULL);
+  ASSERT(q->comp != NULL);
 
-    if (q->size == 0) {
-        PQKV rv = {.value = NULL,.found = false };
-        return rv;
-    }
-
-    PQKV rv = {.key = q->data[0].key,.value = q->data[0].value,.found = true };
-    q->size--;
-
-    if (q->size > 0) {
-        /* Move a hole down from the root, always toward the larger child, until
-           the last element fits.  This takes two comparisons per level, one
-           assignment per level, and stops early when keys are equal. */
-        PNODE last = q->data[q->size];
-        size_t pos = 0;
-
-        while (true) {
-            size_t child = PQUEUE_LEFT_CHILD(pos);
-            if (child >= q->size) {
-                break;
-            }
-            if (child + 1 < q->size
-                && q->comp(&q->data[child + 1].key, &q->data[child].key) > 0) {
-                child++;
-            }
-            if (q->comp(&q->data[child].key, &last.key) <= 0) {
-                break;
-            }
-            q->data[pos] = q->data[child];
-            pos = child;
-        }
-        q->data[pos] = last;
-    }
+  if (q->size == 0) {
+    PQKV rv = {.value = NULL, .found = false};
     return rv;
+  }
+
+  PQKV rv = {.key = q->data[0].key, .value = q->data[0].value, .found = true};
+  q->size--;
+
+  if (q->size > 0) {
+    /* Move a hole down from the root, always toward the larger child, until
+       the last element fits.  This takes two comparisons per level, one
+       assignment per level, and stops early when keys are equal. */
+    PNODE last = q->data[q->size];
+    size_t pos = 0;
+
+    while (true) {
+      size_t child = PQUEUE_LEFT_CHILD(pos);
+      if (child >= q->size) {
+        break;
+      }
+      if (child + 1 < q->size &&
+          q->comp(&q->data[child + 1].key, &q->data[child].key) > 0) {
+        child++;
+      }
+      if (q->comp(&q->data[child].key, &last.key) <= 0) {
+        break;
+      }
+      q->data[pos] = q->data[child];
+      pos = child;
+    }
+    q->data[pos] = last;
+  }
+  return rv;
 }
 
 /* pqkv_prefix_t pqueue_prefix_peek(const pqueue_prefix_t *q);
@@ -257,34 +262,34 @@ static inline PQKV GLUE3(pqueue_, prefix, _pop) (PQUEUE *q) {
    removing it.  If the queue is empty, the returned pqkv_prefix_t has
    found set to false.
 */
-static inline PQKV GLUE3(pqueue_, prefix, _peek) (const PQUEUE *q) {
-    ASSERT(q != NULL);
+static inline PQKV GLUE3(pqueue_, prefix, _peek)(const PQUEUE *q) {
+  ASSERT(q != NULL);
 
-    if (q->size == 0) {
-        PQKV rv = {.value = NULL,.found = false };
-        return rv;
-    }
-
-    PQKV rv = {.key = q->data[0].key,.value = q->data[0].value,.found = true };
+  if (q->size == 0) {
+    PQKV rv = {.value = NULL, .found = false};
     return rv;
+  }
+
+  PQKV rv = {.key = q->data[0].key, .value = q->data[0].value, .found = true};
+  return rv;
 }
 
 /*
 
   Returns the number of entries in the priority queue.
 */
-static inline size_t GLUE3(pqueue_, prefix, _size) (const PQUEUE *q) {
-    ASSERT(q != NULL);
-    return q->size;
+static inline size_t GLUE3(pqueue_, prefix, _size)(const PQUEUE *q) {
+  ASSERT(q != NULL);
+  return q->size;
 }
 
 /*
 
   Returns true if the priority queue has no entries.
 */
-static inline bool GLUE3(pqueue_, prefix, _is_empty) (const PQUEUE *q) {
-    ASSERT(q != NULL);
-    return q->size == 0;
+static inline bool GLUE3(pqueue_, prefix, _is_empty)(const PQUEUE *q) {
+  ASSERT(q != NULL);
+  return q->size == 0;
 }
 
 #undef PQUEUE_RIGHT_CHILD
@@ -298,6 +303,6 @@ static inline bool GLUE3(pqueue_, prefix, _is_empty) (const PQUEUE *q) {
 #undef GLUE
 #undef GLUE_HELPER
 
-/* the internal macros of this header (and its optional null/sentinel setting) are
-   removed so that they do not leak into the includer */
+/* the internal macros of this header (and its optional null/sentinel setting)
+   are removed so that they do not leak into the includer */
 #undef _unused

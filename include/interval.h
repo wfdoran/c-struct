@@ -67,22 +67,21 @@ typedef struct {
   bool valid;
 } interval_t;
 
-
-static inline interval_t
-interval_from_double(double x) {
+static inline interval_t interval_from_double(double x) {
   if (isnan(x)) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  interval_t rv = {.lo = nextafter(x, -INFINITY), .hi = nextafter(x, INFINITY), .valid = true};
+  interval_t rv = {.lo = nextafter(x, -INFINITY),
+                   .hi = nextafter(x, INFINITY),
+                   .valid = true};
   return rv;
 }
 
-static inline interval_t
-interval_from_int64(int64_t x) {
+static inline interval_t interval_from_int64(int64_t x) {
   interval_t rv;
   int save = fegetround();
-  
+
   volatile int64_t vx = x;
 
   fesetround(FE_UPWARD);
@@ -95,17 +94,14 @@ interval_from_int64(int64_t x) {
 
   rv.valid = true;
   return rv;
-  
-  
 }
 
-static inline interval_t
-interval_add(interval_t a, interval_t b) {
+static inline interval_t interval_add(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-        
+
   interval_t rv;
   int save = fegetround();
 
@@ -121,15 +117,14 @@ interval_add(interval_t a, interval_t b) {
   return rv;
 }
 
-static inline interval_t
-interval_sub(interval_t a, interval_t b) {
+static inline interval_t interval_sub(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
 
   interval_t rv;
-  
+
   int save = fegetround();
 
   fesetround(FE_UPWARD);
@@ -144,13 +139,12 @@ interval_sub(interval_t a, interval_t b) {
   return rv;
 }
 
-static inline interval_t
-interval_mul(interval_t a, interval_t b) {
+static inline interval_t interval_mul(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  
+
   double temp[4];
 
   interval_t rv;
@@ -161,14 +155,14 @@ interval_mul(interval_t a, interval_t b) {
   temp[1] = iv_fence(iv_fence(a.lo) * iv_fence(b.hi));
   temp[2] = iv_fence(iv_fence(a.hi) * iv_fence(b.lo));
   temp[3] = iv_fence(iv_fence(a.hi) * iv_fence(b.hi));
-  rv.hi = fmax(fmax(fmax(temp[0],temp[1]), temp[2]), temp[3]);
+  rv.hi = fmax(fmax(fmax(temp[0], temp[1]), temp[2]), temp[3]);
 
   fesetround(FE_DOWNWARD);
   temp[0] = iv_fence(iv_fence(a.lo) * iv_fence(b.lo));
   temp[1] = iv_fence(iv_fence(a.lo) * iv_fence(b.hi));
   temp[2] = iv_fence(iv_fence(a.hi) * iv_fence(b.lo));
   temp[3] = iv_fence(iv_fence(a.hi) * iv_fence(b.hi));
-  rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
+  rv.lo = fmin(fmin(fmin(temp[0], temp[1]), temp[2]), temp[3]);
 
   fesetround(save);
 
@@ -179,16 +173,16 @@ interval_mul(interval_t a, interval_t b) {
   }
 
   rv.valid = true;
-  return rv;  
+  return rv;
 }
 
-static inline interval_t
-interval_fma(interval_t a, interval_t b, interval_t c) {
+static inline interval_t interval_fma(interval_t a, interval_t b,
+                                      interval_t c) {
   if (!a.valid || !b.valid || !c.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  
+
   double temp[4];
 
   interval_t rv;
@@ -199,14 +193,14 @@ interval_fma(interval_t a, interval_t b, interval_t c) {
   temp[1] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.hi), iv_fence(c.hi)));
   temp[2] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.lo), iv_fence(c.hi)));
   temp[3] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.hi), iv_fence(c.hi)));
-  rv.hi = fmax(fmax(fmax(temp[0],temp[1]), temp[2]), temp[3]);
+  rv.hi = fmax(fmax(fmax(temp[0], temp[1]), temp[2]), temp[3]);
 
   fesetround(FE_DOWNWARD);
   temp[0] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.lo), iv_fence(c.lo)));
   temp[1] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.hi), iv_fence(c.lo)));
   temp[2] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.lo), iv_fence(c.lo)));
   temp[3] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.hi), iv_fence(c.lo)));
-  rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
+  rv.lo = fmin(fmin(fmin(temp[0], temp[1]), temp[2]), temp[3]);
 
   fesetround(save);
 
@@ -217,13 +211,10 @@ interval_fma(interval_t a, interval_t b, interval_t c) {
   }
 
   rv.valid = true;
-  return rv;  
-  
-  
+  return rv;
 }
 
-static inline interval_t
-interval_div(interval_t a, interval_t b) {
+static inline interval_t interval_div(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
@@ -232,7 +223,7 @@ interval_div(interval_t a, interval_t b) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  
+
   double temp[4];
 
   interval_t rv;
@@ -243,14 +234,14 @@ interval_div(interval_t a, interval_t b) {
   temp[1] = iv_fence(iv_fence(a.lo) / iv_fence(b.hi));
   temp[2] = iv_fence(iv_fence(a.hi) / iv_fence(b.lo));
   temp[3] = iv_fence(iv_fence(a.hi) / iv_fence(b.hi));
-  rv.hi = fmax(fmax(fmax(temp[0],temp[1]), temp[2]), temp[3]);
+  rv.hi = fmax(fmax(fmax(temp[0], temp[1]), temp[2]), temp[3]);
 
   fesetround(FE_DOWNWARD);
   temp[0] = iv_fence(iv_fence(a.lo) / iv_fence(b.lo));
   temp[1] = iv_fence(iv_fence(a.lo) / iv_fence(b.hi));
   temp[2] = iv_fence(iv_fence(a.hi) / iv_fence(b.lo));
   temp[3] = iv_fence(iv_fence(a.hi) / iv_fence(b.hi));
-  rv.lo = fmin(fmin(fmin(temp[0],temp[1]), temp[2]), temp[3]);
+  rv.lo = fmin(fmin(fmin(temp[0], temp[1]), temp[2]), temp[3]);
 
   fesetround(save);
 
@@ -261,11 +252,10 @@ interval_div(interval_t a, interval_t b) {
   }
 
   rv.valid = true;
-  return rv;  
+  return rv;
 }
 
-static inline interval_t
-interval_fmax(interval_t a, interval_t b) {
+static inline interval_t interval_fmax(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
@@ -282,11 +272,10 @@ interval_fmax(interval_t a, interval_t b) {
   fesetround(save);
 
   rv.valid = true;
-  return rv;  
+  return rv;
 }
 
-static inline interval_t
-interval_fmin(interval_t a, interval_t b) {
+static inline interval_t interval_fmin(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
@@ -299,7 +288,6 @@ interval_fmin(interval_t a, interval_t b) {
   if (b.hi < a.lo) {
     return b;
   }
-  
 
   interval_t rv;
   int save = fegetround();
@@ -312,11 +300,10 @@ interval_fmin(interval_t a, interval_t b) {
   fesetround(save);
 
   rv.valid = true;
-  return rv;  
+  return rv;
 }
 
-static inline interval_t
-interval_exp(interval_t a) {
+static inline interval_t interval_exp(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
@@ -329,7 +316,8 @@ interval_exp(interval_t a) {
   rv.hi = interval_ulp_up(exp(a.hi));
 
   fesetround(FE_DOWNWARD);
-  rv.lo = fmax(interval_ulp_down(exp(a.lo)), 0.0);   /* exp is positive: do not widen below 0 */
+  rv.lo = fmax(interval_ulp_down(exp(a.lo)),
+               0.0); /* exp is positive: do not widen below 0 */
 
   fesetround(save);
 
@@ -337,8 +325,7 @@ interval_exp(interval_t a) {
   return rv;
 }
 
-static inline interval_t
-interval_erf(interval_t a) {
+static inline interval_t interval_erf(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
@@ -359,10 +346,9 @@ interval_erf(interval_t a) {
   return rv;
 }
 
-
-static inline interval_t
-interval_sqrt(interval_t a) {
-  /* the domain is [0, inf): use the part of the interval inside it, and fail only if none of it is */
+static inline interval_t interval_sqrt(interval_t a) {
+  /* the domain is [0, inf): use the part of the interval inside it, and fail
+   * only if none of it is */
   if (!a.valid || !(a.hi >= 0.0)) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
@@ -384,39 +370,27 @@ interval_sqrt(interval_t a) {
   return rv;
 }
 
-static inline interval_t
-interval_floor(interval_t a) {
+static inline interval_t interval_floor(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  interval_t rv = {
-    .hi = floor(a.hi),
-    .lo = floor(a.lo),
-    .valid = true
-  };
+  interval_t rv = {.hi = floor(a.hi), .lo = floor(a.lo), .valid = true};
   return rv;
 }
-  
-static inline interval_t
-interval_ceil(interval_t a) {
-  if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
-  }
-  interval_t rv = {
-    .hi = ceil(a.hi),
-    .lo = ceil(a.lo),
-    .valid = true
-  };
-  return rv;
-}
-  
- 
 
-static inline interval_t
-interval_log(interval_t a) {
-  /* the domain is (0, inf): use the part of the interval inside it, and fail only if none of it is */
+static inline interval_t interval_ceil(interval_t a) {
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  interval_t rv = {.hi = ceil(a.hi), .lo = ceil(a.lo), .valid = true};
+  return rv;
+}
+
+static inline interval_t interval_log(interval_t a) {
+  /* the domain is (0, inf): use the part of the interval inside it, and fail
+   * only if none of it is */
   if (!a.valid || !(a.hi > 0.0)) {
     interval_t bad = {.lo = 0.0, .hi = 0.0, .valid = false};
     return bad;
@@ -429,7 +403,8 @@ interval_log(interval_t a) {
   rv.hi = interval_ulp_up(log(a.hi));
 
   fesetround(FE_DOWNWARD);
-  double lo = a.lo > 0 ? a.lo : 0.0;       /* log(0) is -inf: the lower bound is unbounded */
+  double lo =
+      a.lo > 0 ? a.lo : 0.0; /* log(0) is -inf: the lower bound is unbounded */
   rv.lo = interval_ulp_down(log(lo));
 
   fesetround(save);
@@ -438,20 +413,17 @@ interval_log(interval_t a) {
   return rv;
 }
 
-  
-static inline interval_t
-interval_neg(interval_t a) {
+static inline interval_t interval_neg(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  
+
   interval_t rv = {.lo = -a.hi, .hi = -a.lo, .valid = true};
   return rv;
 }
 
-static inline interval_t
-interval_fabs(interval_t a) {
+static inline interval_t interval_fabs(interval_t a) {
   if (!a.valid) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
@@ -469,11 +441,10 @@ interval_fabs(interval_t a) {
 
   fesetround(FE_UPWARD);
   interval_t rv = {.lo = 0.0, .hi = fmax(fabs(a.lo), a.hi), .valid = true};
-  
+
   fesetround(save);
   return rv;
 }
-
 
 #define data_t double
 #define prefix ival
@@ -481,20 +452,16 @@ interval_fabs(interval_t a) {
 #undef prefix
 #undef data_t
 
-static inline double
-interval_get_key(interval_t a) {
+static inline double interval_get_key(interval_t a) {
   return fmax(fabs(a.lo), fabs(a.hi));
 }
 
 /* pqueue pops the largest key first; this reverses the order. */
-static inline int
-interval_key_min_first(double *a, double *b) {
+static inline int interval_key_min_first(double *a, double *b) {
   return comp_double(b, a);
 }
 
-
-static inline void
-interval_print(interval_t a) {
+static inline void interval_print(interval_t a) {
   if (!a.valid) {
     printf("[invalid]\n");
   } else {
@@ -502,14 +469,12 @@ interval_print(interval_t a) {
   }
 }
 
-
-static inline interval_t
-interval_add_many(int n, interval_t *a) {
+static inline interval_t interval_add_many(int n, interval_t *a) {
   if (n <= 0 || a == NULL) {
     interval_t bad = {.lo = 0, .hi = 0, .valid = false};
     return bad;
   }
-  
+
   for (int i = 0; i < n; i++) {
     if (!a[i].valid) {
       interval_t bad = {.lo = 0, .hi = 0, .valid = false};
@@ -520,15 +485,17 @@ interval_add_many(int n, interval_t *a) {
   if (n == 1) {
     return a[0];
   }
-  
+
   /* Repeatedly add the two intervals of smallest magnitude.  A priority queue
-     is used rather than a tree because several intervals can have the same key. */
+     is used rather than a tree because several intervals can have the same key.
+   */
   interval_t bad = {.lo = 0, .hi = 0, .valid = false};
   interval_t rv = bad;
 
   pqueue_ival_t *q = pqueue_ival_init();
   interval_t *temp = malloc((n - 1) * sizeof(interval_t));
-  if (q == NULL || temp == NULL || pqueue_ival_set_comp(q, interval_key_min_first) != 0) {
+  if (q == NULL || temp == NULL ||
+      pqueue_ival_set_comp(q, interval_key_min_first) != 0) {
     goto done;
   }
 
@@ -590,12 +557,11 @@ static inline interval_t interval_pow_dbl(interval_t a, interval_t b) {
   return interval_exp(x2);
 }
 
-#define interval_pow(x, e) _Generic((e),  \
-  int: interval_pow_int,                  \
-  uint32_t: interval_pow_uint,            \
-  interval_t: interval_pow_dbl            \
-)(x,e)
-
+#define interval_pow(x, e)                                                     \
+  _Generic((e), int                                                            \
+           : interval_pow_int, uint32_t                                        \
+           : interval_pow_uint, interval_t                                     \
+           : interval_pow_dbl)(x, e)
 
 static inline interval_t interval_sin(interval_t a) {
   // sin(k * 2pi + 0 * pi/2) = 0
@@ -609,7 +575,7 @@ static inline interval_t interval_sin(interval_t a) {
   }
 
   interval_t rv;
-  
+
   int save = fegetround();
 
   /* start with the min and max of values from a. */
@@ -617,7 +583,7 @@ static inline interval_t interval_sin(interval_t a) {
   rv.hi = fmax(sin(a.lo), sin(a.hi));
 
   double mult_hi = iv_fence(iv_fence(a.hi) / M_PI_2);
-  
+
   fesetround(FE_DOWNWARD);
   rv.lo = fmin(sin(a.lo), sin(a.hi));
 
@@ -639,7 +605,7 @@ static inline interval_t interval_sin(interval_t a) {
   rv.hi = fmin(interval_ulp_up(rv.hi), 1.0);
   rv.lo = fmax(interval_ulp_down(rv.lo), -1.0);
   rv.valid = true;
-       
+
   return rv;
 }
 
@@ -655,7 +621,7 @@ static inline interval_t interval_cos(interval_t a) {
   }
 
   interval_t rv;
-  
+
   int save = fegetround();
 
   /* start with the min and max of values from a. */
@@ -663,7 +629,7 @@ static inline interval_t interval_cos(interval_t a) {
   rv.hi = fmax(cos(a.lo), cos(a.hi));
 
   double mult_hi = iv_fence(iv_fence(a.hi) / M_PI_2);
-  
+
   fesetround(FE_DOWNWARD);
   rv.lo = fmin(cos(a.lo), cos(a.hi));
 
@@ -683,7 +649,7 @@ static inline interval_t interval_cos(interval_t a) {
   rv.hi = fmin(interval_ulp_up(rv.hi), 1.0);
   rv.lo = fmax(interval_ulp_down(rv.lo), -1.0);
   rv.valid = true;
-       
+
   return rv;
 }
 

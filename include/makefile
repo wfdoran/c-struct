@@ -1,20 +1,36 @@
-DEFAULT=-i4 -brs -br -ce -bap -nut -npcs -l100
+# make format        reformat every header in place with ../etc/style.yaml
+# make check-format  list the headers which are not formatted; changes nothing
+#
+# A header is replaced only if clang-format succeeded, wrote something, and
+# changed nothing but whitespace and comments (the code tokens are compared).
+# Formatting is run twice, since a rewrapped comment can need a second pass.
 
-tree: tree.h
-	indent $(DEFAULT) -T NODE -T TREE -T KEYVAL -T data_t tree.h -o tree_indent.h
+STYLE = ../etc/style.yaml
+HEADERS = $(filter-out __temp.h, $(wildcard *.h))
+# the code of a file without comments and whitespace
+TOKENS = gcc -fpreprocessed -dD -E -P -x c
 
-array: array.h
-	indent $(DEFAULT) -T TYPE -T data_t array.h -o array_indent.h
+.PHONY: all format check-format clean
 
-hash_table: hash_table.h
-	indent $(DEFAULT) -T TYPE -T HNODE -T HTABLE -T HITER -T hkey_t -T value_t -T uint64_t hash_table.h -o hash_table_indent.h
+all: check-format
 
-linked_list: linked_list.h
-	indent $(DEFAULT) -T LNODE -T LLIST -T data_t linked_list.h -o linked_list_indent.h
+format:
+	@for pass in 1 2; do \
+	  for f in $(HEADERS); do \
+	    clang-format --style=file:$(STYLE) $$f > __temp.h \
+	      || { echo "$$f: clang-format failed, not changed"; rm -f __temp.h; exit 1; }; \
+	    [ -s __temp.h ] \
+	      || { echo "$$f: empty output, not changed"; rm -f __temp.h; exit 1; }; \
+	    [ "`$(TOKENS) $$f | tr -d ' \t\n\\\\'`" = "`$(TOKENS) __temp.h | tr -d ' \t\n\\\\'`" ] \
+	      || { echo "$$f: formatting would change the code, not changed"; rm -f __temp.h; exit 1; }; \
+	    cmp -s $$f __temp.h || { mv __temp.h $$f; echo "formatted $$f"; }; \
+	    rm -f __temp.h; \
+	  done; \
+	done
 
-pqueue: pqueue.h
-	indent $(DEFAULT) -T PNODE -T PQUEUE -T PQKV -T data_t pqueue.h -o pqueue_indent.h
+check-format:
+	@clang-format --style=file:$(STYLE) --dry-run -Werror $(HEADERS) \
+	  && echo "all headers are formatted"
 
 clean:
-	rm -f *_indent.h
-	rm -f *~
+	rm -f __temp.h *~

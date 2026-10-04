@@ -5,15 +5,17 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* Comparators for the arithmetic types, in the form the containers use (pointers to the elements).
-   The _Generic in DEFAULT_COMP below is written over the standard types: int64_t and friends are
-   typedefs of them, and which one depends on the platform (int64_t is long on Linux, long long on
-   macOS), so listing the typedef names would leave some spellings of the same type without a
-   default.  The fixed width names are kept as functions for callers which use them directly. */
-#define COMP_DEFINE(name, T) \
-    static inline int comp_##name(T *a, T *b) { \
-        return (*a > *b) - (*a < *b); \
-    }
+/* Comparators for the arithmetic types, in the form the containers use
+   (pointers to the elements). The _Generic in DEFAULT_COMP below is written
+   over the standard types: int64_t and friends are typedefs of them, and which
+   one depends on the platform (int64_t is long on Linux, long long on macOS),
+   so listing the typedef names would leave some spellings of the same type
+   without a default.  The fixed width names are kept as functions for callers
+   which use them directly. */
+#define COMP_DEFINE(name, T)                                                   \
+  static inline int comp_##name(T *a, T *b) {                                  \
+    return (*a > *b) - (*a < *b);                                              \
+  }
 
 COMP_DEFINE(schar, signed char)
 COMP_DEFINE(short, short)
@@ -42,14 +44,15 @@ COMP_DEFINE(uint8, uint8_t)
 #undef COMP_DEFINE
 
 static inline int comp_str(char **a, char **b) {
-    return strcmp(*a, *b);
+  return strcmp(*a, *b);
 }
 
 static inline int comp_cstr(const char **a, const char **b) {
-    return strcmp(*a, *b);
+  return strcmp(*a, *b);
 }
 
-#define DEFAULT_COMP(x) _Generic((x), \
+#define DEFAULT_COMP(x)                                                        \
+  _Generic((x), \
     signed char: &comp_schar, \
     short: &comp_short, \
     int: &comp_int, \
@@ -68,19 +71,18 @@ static inline int comp_cstr(const char **a, const char **b) {
     const char*: &comp_cstr, \
     default: NULL)
 
-
 static inline int comp_str_data(char *a, char *b) {
-    return strcmp(a, b);
+  return strcmp(a, b);
 }
 
 static inline int comp_cstr_data(const char *a, const char *b) {
-    return strcmp(a, b);
+  return strcmp(a, b);
 }
 
-
-#define DEFAULT_COMP_TYPE(x) _Generic((x),	\
+#define DEFAULT_COMP_TYPE(x)                                                   \
+  _Generic((x),	\
     char*: &comp_str_data, \
     const char*: &comp_cstr_data, \
     default: NULL)
-    
+
 #endif

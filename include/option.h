@@ -12,8 +12,8 @@
 #endif
 
 #define GLUE_HELPER(x, y) x##y
-#define GLUE(x, y) GLUE_HELPER(x,y)
-#define GLUE3(x, y, z) GLUE(GLUE(x,y), z)
+#define GLUE(x, y) GLUE_HELPER(x, y)
+#define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
 
 #define TYPE GLUE3(option_, prefix, _t)
 
@@ -24,12 +24,12 @@ typedef struct {
 
 /* Initializers */
 
-static inline TYPE GLUE3(option_, prefix, _init) (data_t value) {
+static inline TYPE GLUE3(option_, prefix, _init)(data_t value) {
   TYPE rv = {.set = true, .value = value};
   return rv;
 }
 
-static inline TYPE GLUE3(option_, prefix, _init_empty) (void) {
+static inline TYPE GLUE3(option_, prefix, _init_empty)(void) {
 #ifdef sentinel_value
   TYPE rv = {.set = false, .value = sentinel_value};
 #else
@@ -38,7 +38,8 @@ static inline TYPE GLUE3(option_, prefix, _init_empty) (void) {
   return rv;
 }
 
-static inline TYPE GLUE3(option_, prefix, _deep_clone) (TYPE x, data_t (*f) (const data_t)) {
+static inline TYPE GLUE3(option_, prefix,
+                         _deep_clone)(TYPE x, data_t (*f)(const data_t)) {
   if (x.set && f != NULL) {
     TYPE rv = {.set = true, .value = f(x.value)};
     return rv;
@@ -47,8 +48,8 @@ static inline TYPE GLUE3(option_, prefix, _deep_clone) (TYPE x, data_t (*f) (con
   }
 }
 
-static inline TYPE GLUE3(option_, prefix, _clone) (TYPE x) {
-  return GLUE3(option_, prefix, _deep_clone) (x, NULL);
+static inline TYPE GLUE3(option_, prefix, _clone)(TYPE x) {
+  return GLUE3(option_, prefix, _deep_clone)(x, NULL);
 }
 
 /* setters */
@@ -59,9 +60,8 @@ static inline void GLUE3(option_, prefix, _set)(TYPE *x, data_t value) {
   x->set = true;
 }
 
-
 // Note: option_prefix_is_set(x) == option_prefix_get(x, NULL)
-static inline bool GLUE3(option_, prefix, _is_set) (TYPE x) {
+static inline bool GLUE3(option_, prefix, _is_set)(TYPE x) {
   return x.set;
 }
 
@@ -77,7 +77,7 @@ static inline bool GLUE3(option_, prefix, _get)(TYPE x, data_t *value) {
   return false;
 }
 
-static inline data_t GLUE3(option_, prefix, _force_get) (TYPE x) {
+static inline data_t GLUE3(option_, prefix, _force_get)(TYPE x) {
 #ifdef sentinel_value
   if (!x.set) {
     return sentinel_value;
@@ -88,7 +88,8 @@ static inline data_t GLUE3(option_, prefix, _force_get) (TYPE x) {
   return x.value;
 }
 
-static inline data_t GLUE3(option_, prefix, _get_or_else)(TYPE x, data_t other) {
+static inline data_t GLUE3(option_, prefix, _get_or_else)(TYPE x,
+                                                          data_t other) {
   if (x.set) {
     return x.value;
   } else {
@@ -110,7 +111,8 @@ static inline bool GLUE3(option_, prefix, _get_clear)(TYPE *x, data_t *value) {
 
 /* modifiers */
 
-static inline int32_t GLUE3(option_, prefix, _map)(TYPE *x, data_t (*f) (data_t)) {
+static inline int32_t GLUE3(option_, prefix, _map)(TYPE *x,
+                                                   data_t (*f)(data_t)) {
   if (x == NULL || f == NULL) {
     return -1;
   }

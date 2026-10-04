@@ -20,8 +20,8 @@ static inline void serialize_size(size_t x, FILE *fp) {
   } while (x != 0);
 }
 
-/* Returns false on a truncated value or one which does not fit in a size_t; *out is set
-   only on success. */
+/* Returns false on a truncated value or one which does not fit in a size_t;
+ *out is set only on success. */
 static inline bool deserialize_size(FILE *fp, size_t *out) {
   uint64_t rv = 0;
   for (int shift = 0; shift < 64; shift += 7) {
@@ -31,7 +31,8 @@ static inline bool deserialize_size(FILE *fp, size_t *out) {
     }
     uint64_t group = (uint64_t) (c & 0x7f);
     if (shift == 63 && group > 1) {
-      return false;   /* the tenth byte holds only bit 63: more would not fit in 64 bits */
+      return false; /* the tenth byte holds only bit 63: more would not fit in
+                       64 bits */
     }
     rv |= group << shift;
     if ((c & 0x80) == 0) {
@@ -51,7 +52,7 @@ static inline void serialize_string(const char *s, FILE *fp) {
   fwrite(s, sizeof(char), s_len, fp);
 }
 
-static inline char* deserialize_string(FILE *fp) {
+static inline char *deserialize_string(FILE *fp) {
   size_t s_len;
   if (!deserialize_size(fp, &s_len) || s_len >= SIZE_MAX) {
     return NULL;
