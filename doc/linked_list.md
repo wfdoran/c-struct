@@ -77,8 +77,8 @@ for (int32_t rc = llist_int_first(a, &n, &x); rc == 0; rc = llist_int_next(&n, &
 }
 ```
 
-### `int32_t llist_prefix_first(const llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
-### `int32_t llist_prefix_last(const llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
+### `int32_t llist_prefix_first(llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
+### `int32_t llist_prefix_last(llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
 
 Put `*n_ptr` at the first or last node.
 

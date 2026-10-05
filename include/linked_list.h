@@ -216,9 +216,12 @@ static inline data_t GLUE3(llist_, prefix, _remove_end)(LLIST *a) {
      }
 
    and llist_prefix_last / llist_prefix_prev walk from the end backwards.
+
+   The list is not const: the node pointer handed out can be used to change
+   the list (llist_prefix_insert_before and so on).
 */
-static inline int32_t
-GLUE3(llist_, prefix, _first)(const LLIST *a, LNODE **n_ptr, data_t *value) {
+static inline int32_t GLUE3(llist_, prefix, _first)(LLIST *a, LNODE **n_ptr,
+                                                    data_t *value) {
   LNODE *n = a->head;
   *n_ptr = n;
   if (n == NULL) {
@@ -230,8 +233,8 @@ GLUE3(llist_, prefix, _first)(const LLIST *a, LNODE **n_ptr, data_t *value) {
   return 0;
 }
 
-static inline int32_t
-GLUE3(llist_, prefix, _last)(const LLIST *a, LNODE **n_ptr, data_t *value) {
+static inline int32_t GLUE3(llist_, prefix, _last)(LLIST *a, LNODE **n_ptr,
+                                                   data_t *value) {
   LNODE *n = a->tail;
   *n_ptr = n;
   if (n == NULL) {

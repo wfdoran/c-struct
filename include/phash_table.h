@@ -198,27 +198,31 @@ static inline void GLUE3(phash_, prefix,
   pthread_rwlock_unlock(&(h->rwlock));
 }
 
-/* size_t phash_prefix_size(phtable_prefix_t *h);
+/* size_t phash_prefix_size(const phtable_prefix_t *h);
 
    Returns the number of unique hkey_ts inserted into the hash table.
 */
-static inline size_t GLUE3(phash_, prefix, _size)(PHTABLE *h) {
-  pthread_rwlock_rdlock(&(h->rwlock));
+static inline size_t GLUE3(phash_, prefix, _size)(const PHTABLE *h) {
+  /* locking changes the lock, not the table */
+  pthread_rwlock_t *lock = (pthread_rwlock_t *) &(h->rwlock);
+  pthread_rwlock_rdlock(lock);
   size_t rv = (size_t) h->size;
-  pthread_rwlock_unlock(&(h->rwlock));
+  pthread_rwlock_unlock(lock);
   return rv;
 }
 
-/* size_t phash_prefix_capacity(phtable_prefix_t *h);
+/* size_t phash_prefix_capacity(const phtable_prefix_t *h);
 
    Returns the allocated size of the hash table.
 
    Once this is 75% filled, it is automatically doubled.
 */
-static inline size_t GLUE3(phash_, prefix, _capacity)(PHTABLE *h) {
-  pthread_rwlock_rdlock(&(h->rwlock));
+static inline size_t GLUE3(phash_, prefix, _capacity)(const PHTABLE *h) {
+  /* locking changes the lock, not the table */
+  pthread_rwlock_t *lock = (pthread_rwlock_t *) &(h->rwlock);
+  pthread_rwlock_rdlock(lock);
   size_t rv = (size_t) h->capacity;
-  pthread_rwlock_unlock(&(h->rwlock));
+  pthread_rwlock_unlock(lock);
   return rv;
 }
 
