@@ -73,6 +73,11 @@ pointers refer to, unless you give them a free function.
 * `serialize.h`: variable length integer and string encoding used by
   `array_prefix_serialize()`.
 * `any.h`: a small tagged union holding one of the basic C types.
+* `cs_private.h`: defines `CS_PRIVATE`, which expands to nothing and marks the
+  internal helper functions of the containers (for example the tree rotations
+  or `phash_prefix_put_locked`).  Do not call a function marked `CS_PRIVATE`
+  directly: it is not part of the interface, may change, and may be unsafe to
+  call, for example without the lock held.
 ## Inlining the comparison
 
 By default the ordering of an array, tree, priority queue or linked list is

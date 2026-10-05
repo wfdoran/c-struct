@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "cs_assert.h"
+#include "cs_private.h"
 
 #include "comp.h"
 #include "cmp_hook.h"
@@ -407,8 +408,8 @@ static inline int32_t GLUE3(llist_, prefix,
 /*                        sort nodes                                       */
 /* ----------------------------------------------------------------------- */
 
-static inline LNODE *GLUE3(llist_, prefix, _merge_nodes)(LLIST *a, LNODE *x,
-                                                         LNODE *y) {
+CS_PRIVATE static inline LNODE *
+GLUE3(llist_, prefix, _merge_nodes)(LLIST *a, LNODE *x, LNODE *y) {
   LNODE head;
   LNODE *tail = &head;
 
@@ -428,8 +429,8 @@ static inline LNODE *GLUE3(llist_, prefix, _merge_nodes)(LLIST *a, LNODE *x,
 
 /* Sorts the singly linked chain of len nodes starting at n and returns the new
  * first node. */
-static inline LNODE *GLUE3(llist_, prefix, _msort_nodes)(LLIST *a, LNODE *n,
-                                                         size_t len) {
+CS_PRIVATE static inline LNODE *
+GLUE3(llist_, prefix, _msort_nodes)(LLIST *a, LNODE *n, size_t len) {
   if (len < 2) {
     return n;
   }

@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
+#include "cs_private.h"
 #include <string.h>
 #include "hash.h"
 #include "comp.h"
@@ -64,7 +65,8 @@ typedef struct HITER {
    https://en.wikipedia.org/wiki/Hash_table
 */
 
-static inline int64_t GLUE3(hash_, prefix, _roundup_pow2)(int64_t x) {
+CS_PRIVATE static inline int64_t GLUE3(hash_, prefix,
+                                       _roundup_pow2)(int64_t x) {
   /* smallest power of two >= x, for x >= 1; unsigned so that the shifts and the
      final increment cannot overflow a signed value */
   uint64_t v = (uint64_t) x - 1;
@@ -254,7 +256,7 @@ static inline void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
    This routine doubles the capacity of a hash table and reinserts all
    of the entries in the new table.
 */
-static inline int32_t GLUE3(hash_, prefix, _rehash)(HTABLE *h) {
+CS_PRIVATE static inline int32_t GLUE3(hash_, prefix, _rehash)(HTABLE *h) {
   if (h == NULL) {
     return -1;
   }

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "cs_assert.h"
+#include "cs_private.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -274,9 +275,9 @@ static inline int32_t GLUE3(array_, prefix, _destroy)(TYPE **a_ptr) {
 /* Stable merge sort of the n entries at v, using comp directly (qsort would
    need the comparison function cast to an incompatible type).  tmp must have
    room for n / 2 entries. */
-static inline void GLUE3(array_, prefix,
-                         _sort_range)(int (*comp)(data_t *, data_t *),
-                                      data_t *v, data_t *tmp, size_t n) {
+CS_PRIVATE static inline void
+GLUE3(array_, prefix, _sort_range)(int (*comp)(data_t *, data_t *), data_t *v,
+                                   data_t *tmp, size_t n) {
   if (n <= 16) {
     for (size_t i = 1; i < n; i++) {
       data_t x = v[i];
@@ -616,7 +617,8 @@ static inline size_t GLUE3(array_, prefix, _capacity)(const TYPE *a) {
 /* Restores the heap order below pos, assuming both subtrees of pos are
    already heaps.  The entry at pos is moved down, toward the larger child,
    until it fits. */
-static inline void GLUE3(array_, prefix, _sift_down)(TYPE *a, size_t pos) {
+CS_PRIVATE static inline void GLUE3(array_, prefix, _sift_down)(TYPE *a,
+                                                                size_t pos) {
   data_t last = a->data[pos];
 
   while (true) {

@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include "cs_assert.h"
+#include "cs_private.h"
 #include "hash.h"
 #include "comp.h"
 #include "key_hook.h"
@@ -68,7 +69,8 @@ htable_prefix_t *h)
 https://en.wikipedia.org/wiki/Hash_table
 */
 
-static inline int64_t GLUE3(phash_, prefix, _roundup_pow2)(int64_t x) {
+CS_PRIVATE static inline int64_t GLUE3(phash_, prefix,
+                                       _roundup_pow2)(int64_t x) {
   /* smallest power of two >= x, for x >= 1; unsigned so that the shifts and the
      final increment cannot overflow a signed value */
   uint64_t v = (uint64_t) x - 1;
@@ -271,9 +273,10 @@ static inline void GLUE3(phash_, prefix, _destroy)(PHTABLE **h_ptr) {
 /* int32_t hash_prefix_rehash(htable_prefix_t *h);
 
    This routine doubles the capacity of a hash table and reinserts all
-   of the entries in the new table.
+   of the entries in the new table.  Internal: the caller must hold the write
+   lock.
 */
-static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
+CS_PRIVATE static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
   if (h == NULL) {
     return -1;
   }
@@ -336,10 +339,10 @@ static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
    already present.  The caller holds the write lock and has computed
    hash = hash_mix64(hash_func(key)) before taking it.  An existing value
    becomes update(old, value), or just value if update is NULL. */
-static inline int32_t GLUE3(phash_, prefix,
-                            _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
-                                         value_t value,
-                                         value_t (*update)(value_t, value_t)) {
+CS_PRIVATE static inline int32_t
+GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
+                                   value_t value,
+                                   value_t (*update)(value_t, value_t)) {
   const uint64_t mask = h->capacity - UINT64_C(1);
   const uint64_t base = hash & mask;
   const uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);

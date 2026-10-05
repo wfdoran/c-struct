@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include "cs_assert.h"
+#include "cs_private.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -160,8 +161,8 @@ static inline void GLUE3(tree_, prefix,
    If the user has provided a function for cleaning up the value
    void*, that is applied as well.
 */
-static inline void GLUE3(tree_, prefix,
-                         _node_destroy)(NODE *n, void (*value_free)(void *)) {
+CS_PRIVATE static inline void
+GLUE3(tree_, prefix, _node_destroy)(NODE *n, void (*value_free)(void *)) {
   if (n == NULL) {
     return;
   }
@@ -208,7 +209,7 @@ static inline void GLUE3(tree_, prefix, _destroy)(TREE **a_ptr) {
    Allocates and fills in initial values for a node.
 */
 
-static inline NODE *GLUE3(tree_, prefix, _init_node)(data_t key) {
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _init_node)(data_t key) {
   NODE *n = malloc(sizeof(NODE));
   if (n == NULL) {
     return NULL;
@@ -231,7 +232,7 @@ static inline NODE *GLUE3(tree_, prefix, _init_node)(data_t key) {
    the path.
 */
 
-static inline void GLUE3(tree_, prefix, _fillin)(NODE *n) {
+CS_PRIVATE static inline void GLUE3(tree_, prefix, _fillin)(NODE *n) {
   if (n == NULL) {
     return;
   }
@@ -244,7 +245,8 @@ static inline void GLUE3(tree_, prefix, _fillin)(NODE *n) {
   n->height = 1 + (left_height > right_height ? left_height : right_height);
 }
 
-static inline NODE *GLUE3(tree_, prefix, _rotate_left)(NODE *n, bool more);
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _rotate_left)(NODE *n,
+                                                                  bool more);
 
 /* NODE* tree_prefix_rotate_right(NODE *n, bool more);
 
@@ -261,7 +263,8 @@ static inline NODE *GLUE3(tree_, prefix, _rotate_left)(NODE *n, bool more);
    way done.  The more parameter controls whether we check this
    before applying the rotation.
 */
-static inline NODE *GLUE3(tree_, prefix, _rotate_right)(NODE *n, bool more) {
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _rotate_right)(NODE *n,
+                                                                   bool more) {
   NODE *m = n->left;
   if (m == NULL) {
     return n;
@@ -331,7 +334,7 @@ static inline NODE *GLUE3(tree_, prefix, _rotate_left)(NODE *n, bool more) {
    If the heights of the two children of a node differ by more than 1,
    use either rotate_right or rotate_left to fix this.
 */
-static inline NODE *GLUE3(tree_, prefix, _balance)(NODE *n) {
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _balance)(NODE *n) {
   int left_height = n->left == NULL ? 0 : n->left->height;
   int right_height = n->right == NULL ? 0 : n->right->height;
 
@@ -353,9 +356,9 @@ static inline NODE *GLUE3(tree_, prefix, _balance)(NODE *n) {
  * unchanged.  *added is set to true if a new node was created; if the key
  * already existed no size or height changed, so the ancestors are not
  * re-balanced. */
-static inline NODE *GLUE3(tree_, prefix,
-                          _insert_node)(TREE *a, NODE *n, data_t key,
-                                        void *value, int32_t *rc, bool *added) {
+CS_PRIVATE static inline NODE *
+GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value,
+                                   int32_t *rc, bool *added) {
   if (n == NULL) {
     NODE *rv = GLUE3(tree_, prefix, _init_node)(key);
     if (rv == NULL) {
@@ -455,8 +458,8 @@ static inline int32_t GLUE3(tree_, prefix, _insert)(TREE *a, data_t key,
    removed node is returned in min, and the return value is the new root
    of the subtree (rebalanced).
 */
-static inline NODE *GLUE3(tree_, prefix, _delete_min_node)(NODE *n,
-                                                           NODE **min) {
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix,
+                                     _delete_min_node)(NODE *n, NODE **min) {
   if (n->left == NULL) {
     *min = n;
     return n->right;
@@ -476,8 +479,8 @@ static inline NODE *GLUE3(tree_, prefix, _delete_min_node)(NODE *n,
    removed node is returned in max, and the return value is the new root
    of the subtree (rebalanced).
 */
-static inline NODE *GLUE3(tree_, prefix, _delete_max_node)(NODE *n,
-                                                           NODE **max) {
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix,
+                                     _delete_max_node)(NODE *n, NODE **max) {
   if (n->right == NULL) {
     *max = n;
     return n->left;
@@ -500,9 +503,9 @@ static inline NODE *GLUE3(tree_, prefix, _delete_max_node)(NODE *n,
    to balancing.
 */
 
-static inline NODE *GLUE3(tree_, prefix,
-                          _delete_node)(int (*comp)(data_t *, data_t *),
-                                        NODE *n, data_t key, NODE **rv) {
+CS_PRIVATE static inline NODE *
+GLUE3(tree_, prefix, _delete_node)(int (*comp)(data_t *, data_t *), NODE *n,
+                                   data_t key, NODE **rv) {
   if (n == NULL) {
     *rv = NULL;
     return NULL;
@@ -910,7 +913,7 @@ static inline int32_t GLUE3(tree_, prefix,
   return GLUE3(tree_, prefix, _next)(it, key, value);
 }
 
-static inline NODE *GLUE3(tree_, prefix, _post_descent)(NODE *n) {
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _post_descent)(NODE *n) {
   while (true) {
     if (n->left != NULL) {
       n = n->left;
@@ -989,9 +992,9 @@ static inline KEYVAL GLUE3(tree_, prefix, _get_rank)(const TREE *a,
   }
 }
 
-static inline void GLUE3(tree_, prefix,
-                         _print_node)(void (*node_print)(data_t, void *),
-                                      NODE *n, int depth, uint64_t mask) {
+CS_PRIVATE static inline void
+GLUE3(tree_, prefix, _print_node)(void (*node_print)(data_t, void *), NODE *n,
+                                  int depth, uint64_t mask) {
   if (n == NULL) {
     return;
   }
