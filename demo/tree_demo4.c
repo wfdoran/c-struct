@@ -10,6 +10,7 @@
 #undef data_t
 
 void *update(void *prev, void *curr) {
+  (void) curr;
   if (prev == NULL) {
     int *rv = malloc(sizeof(int));
     *rv = 1;

@@ -19,7 +19,7 @@ int main(void) {
 
   array_double_heapify(a);
 
-  for (int i = 0; i < array_double_size(a); i++) {
+  for (size_t i = 0; i < array_double_size(a); i++) {
     printf("%6.4f \n", array_double_get(a, i));
   }
 

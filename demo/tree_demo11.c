@@ -9,6 +9,7 @@
 #undef data_t
 
 void node_print(int32_t x, void *unused) {
+  (void) unused;
   printf("%d", x);
 }
 

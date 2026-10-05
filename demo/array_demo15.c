@@ -25,7 +25,7 @@ int main(void) {
 
   array_str_t *b = array_str_deep_slice(a, 2, 4, strdup);
 
-  for (int i = 0; i < array_str_size(b); i++) {
+  for (size_t i = 0; i < array_str_size(b); i++) {
     printf("%s\n", array_str_get(b, i));
   }
 

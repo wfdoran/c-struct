@@ -37,6 +37,8 @@
 #undef value_t
 #undef hkey_t
 
+#define _unused(x) ((void) (x))
+
 static int add(int previous, int current) {
   return previous + current;
 }
@@ -52,10 +54,12 @@ static int key_at_slot0(void) {
 }
 
 static int times_two(int key, int value) {
+  _unused(key);
   return 2 * value;
 }
 
 static int add_arg(int key, int value, void *arg) {
+  _unused(key);
   return value + *(int *) arg;
 }
 

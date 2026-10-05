@@ -42,7 +42,7 @@ int main(void) {
 
   array_pair_sort(a);
 
-  for (int i = 0; i < array_pair_size(a); i++) {
+  for (size_t i = 0; i < array_pair_size(a); i++) {
     pair_t p = array_pair_get(a, i);
     printf("%2d %4.2f\n", p.x, p.y);
   }

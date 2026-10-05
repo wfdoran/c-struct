@@ -11,10 +11,12 @@
 #undef hkey_t
 
 int64_t sqr(int key, int64_t value) {
+  (void) key;
   return value * value;
 }
 
 int64_t sum(int key, int64_t value, void *arg) {
+  (void) key;
   int64_t *a = (int64_t *) arg;
   *a += value;
   return value;

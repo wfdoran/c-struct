@@ -45,11 +45,11 @@ int main(void) {
 
   array_int64_sort(a);
 
-  for (int i = 0; i < array_int64_size(d); i++) {
+  for (size_t i = 0; i < array_int64_size(d); i++) {
     printf("%ld ", array_int64_get(d, i));
   }
   printf("\n");
-  for (int i = 0; i < array_int64_size(a); i++) {
+  for (size_t i = 0; i < array_int64_size(a); i++) {
     printf("%ld ", array_int64_get(a, i));
   }
   printf("\n");

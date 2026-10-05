@@ -410,6 +410,7 @@ static inline int32_t GLUE3(llist_, prefix,
 
 CS_PRIVATE static inline LNODE *
 GLUE3(llist_, prefix, _merge_nodes)(LLIST *a, LNODE *x, LNODE *y) {
+  _unused(a);
   LNODE head;
   LNODE *tail = &head;
 

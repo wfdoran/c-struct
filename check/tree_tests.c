@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+
 #define data_t int
 #define prefix int
 #include <tree.h>
@@ -38,7 +39,11 @@ static int comp_pair(pair_t *a, pair_t *b) {
   return 0;
 }
 
+#define _unused(x) ((void) (x))
+
+
 static void* add_one(void *current, void *new) {
+  _unused(new);
   int *a = (int*) current;
 
   if (a == NULL) {
@@ -70,6 +75,7 @@ typedef struct {
 #include <tree.h>
 #undef prefix
 #undef data_t
+
 
 // An instantiation whose allocations can be made to fail, to test the out of memory paths.
 static long oom_budget = -1;   // allocations which may still succeed; -1 for no limit
@@ -108,8 +114,8 @@ START_TEST(tree_test2)
 tree_int_t *a = tree_int_init();
 CHECK(a != NULL);
 
-int n = 10;
-for (int i = 0; i < n; i++) {
+size_t n = 10;
+for (size_t i = 0; i < n; i++) {
   tree_int_insert(a, i, NULL);
 }
 
@@ -147,7 +153,7 @@ for (int i = 0; i < n; i++) {
   CHECK(x.found);
 }
 
-CHECK(tree_int_size(a) == n);
+CHECK(((int) tree_int_size(a)) == n);
 
 for (int i = 0; i < n; i++) {
   key_int_value_t x = tree_int_delete(a, i);
@@ -282,7 +288,7 @@ for (int i = 0; i < n; i++) {
   }
 }
 
-CHECK(tree_int_num_less(a, pivot_value) == num_less);
+CHECK(((int) tree_int_num_less(a, pivot_value)) == num_less);
 
 tree_int_destroy(&a);
 CHECK(a == NULL);
@@ -305,7 +311,7 @@ for (int i = 0; i < n; i++) {
   tree_int_insert(a, key, NULL);
 }
 
-CHECK(tree_int_size(a) == n);
+CHECK(((int) tree_int_size(a)) == n);
 
 
 {

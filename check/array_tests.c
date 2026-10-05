@@ -134,7 +134,7 @@ size_t size = 8;
 array_int_t *a = array_int_init2(size, default_value);
 CHECK(a != NULL);
 CHECK(array_int_size(a) == size);
-for (int i = 0; i < size; i++) {
+for (size_t i = 0; i < size; i++) {
   CHECK(array_int_get(a, i) == default_value);
 }
 array_int_destroy(&a);
@@ -151,7 +151,7 @@ array_int_append(a, 2);
 array_int_t *b = array_int_clone(a);
 CHECK(b != NULL);
 CHECK(array_int_size(a) == array_int_size(b));
-for (int i = 0; i < array_int_size(a); i++) {
+for (size_t i = 0; i < array_int_size(a); i++) {
   CHECK(array_int_get(a, i) == array_int_get(b, i));
 }
 array_int_set(a, 5, 0);

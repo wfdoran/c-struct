@@ -162,7 +162,7 @@ int n = 100000;
 for (int i = 0; i < n; i++) {
   CHECK(pqueue_pqi_push(q, 42, NULL) == 0);
 }
-CHECK(pqueue_pqi_size(q) == n);
+CHECK(((int) pqueue_pqi_size(q)) == n);
 for (int i = 0; i < n; i++) {
   pqkv_pqi_t r = pqueue_pqi_pop(q);
   CHECK(r.found);

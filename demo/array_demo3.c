@@ -27,7 +27,7 @@ int main(void) {
 
   array_str_sort(a);
 
-  for (int i = 0; i < array_str_size(a); i++) {
+  for (size_t i = 0; i < array_str_size(a); i++) {
     printf("%s\n", array_str_get(a, i));
   }
 

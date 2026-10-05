@@ -47,7 +47,7 @@ int main(void) {
        rc = tree_intarr_next(&it, &key, &value)) {
     printf("%3d :", key);
     array_int32_t *arr = value;
-    for (int i = 0; i < array_int32_size(arr); i++) {
+    for (size_t i = 0; i < array_int32_size(arr); i++) {
       printf(" %d", array_int32_get(arr, i));
     }
     printf("\n");

@@ -17,7 +17,7 @@
 #undef hkey_t
 
 array_int_t *update(array_int_t *curr, array_int_t *new) {
-  for (int i = 0; i < array_int_size(new); i++) {
+  for (size_t i = 0; i < array_int_size(new); i++) {
     int v = array_int_get(new, i);
     array_int_append(curr, v);
   }
@@ -57,7 +57,7 @@ int main(void) {
   for (int32_t rc = hash_intp_first(h, &iter, &key, &value); rc == 0;
        rc = hash_intp_next(&iter, &key, &value)) {
     printf("%4d %4ld :", key, array_int_size(value));
-    for (int i = 0; i < array_int_size(value); i++) {
+    for (size_t i = 0; i < array_int_size(value); i++) {
       int v = array_int_get(value, i);
       v_sum -= v;
       v_xor ^= v;
