@@ -31,6 +31,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "cs_private.h"
+
 /* Math functions not provided yet:
 
      cbrt fmod log10 modf tan acos asin atan cosh sinh
@@ -452,12 +454,12 @@ static inline interval_t interval_fabs(interval_t a) {
 #undef prefix
 #undef data_t
 
-static inline double interval_get_key(interval_t a) {
+CS_PRIVATE static inline double interval_get_key(interval_t a) {
   return fmax(fabs(a.lo), fabs(a.hi));
 }
 
 /* pqueue pops the largest key first; this reverses the order. */
-static inline int interval_key_min_first(double *a, double *b) {
+CS_PRIVATE static inline int interval_key_min_first(double *a, double *b) {
   return comp_double(b, a);
 }
 

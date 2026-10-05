@@ -1,12 +1,13 @@
-#include <stdint.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#include <sched.h>
 #include <stdalign.h>
 #include <stdatomic.h>
-#include <sched.h>
-#include "cs_assert.h"
-#include <time.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <sys/random.h>
+#include <time.h>
+
+#include "cs_assert.h"
 
 #ifndef data_t
 #error "data_t not defined"

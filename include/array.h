@@ -1,15 +1,14 @@
-#include <stdlib.h>
-#include "cs_assert.h"
-#include "cs_private.h"
-#include <string.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 
-#include "comp.h"
 #include "cmp_hook.h"
-
+#include "comp.h"
+#include "cs_assert.h"
+#include "cs_private.h"
 #include "serialize.h"
 
 #ifndef data_t
@@ -653,7 +652,6 @@ static inline int32_t GLUE3(array_, prefix, _heappush)(TYPE *a, data_t value) {
   if (!CS_HAVE_CMP(a->comp)) {
     return -1;
   }
-  CS_ASSERT_CMP(a->comp);
   if (GLUE3(array_, prefix, _append)(a, value) != 0) {
     return -1;
   }

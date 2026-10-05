@@ -1,15 +1,15 @@
 // https://algs4.cs.princeton.edu/32bst/
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "cmp_hook.h"
+#include "comp.h"
 #include "cs_assert.h"
 #include "cs_private.h"
-#include <string.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdint.h>
-
-#include "comp.h"
-#include "cmp_hook.h"
 
 #ifndef data_t
 #error "data_t not defined"
@@ -27,10 +27,6 @@
 #define NODE GLUE3(tnode_, prefix, _t)
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 #define TITER GLUE3(titer_, prefix, _t)
-
-// rank
-// move routines which the caller should not see to <tree_private.h>
-// initialize iterator with rank or bound or something
 
 // search and replace
 
