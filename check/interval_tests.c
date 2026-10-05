@@ -106,3 +106,158 @@ CHECK(!interval_add(bad, a).valid && !interval_sin(bad).valid && !interval_exp(b
 CHECK(!interval_from_double(NAN).valid);
 
 END_TEST
+
+// random interval with lo <= hi inside [-mag, mag] (or [tiny, mag] when positive)
+static interval_t random_interval(double mag, bool positive) {
+  double u = (double) (get_rand() >> 8) / 16777216.0;
+  double v = (double) (get_rand() >> 8) / 16777216.0;
+  double x = positive ? mag * (u * u + 1e-3) : (u * 2 - 1) * mag;
+  double w = (get_rand() % 4 == 0) ? 0.0 : v * v * mag;
+  interval_t r = {.lo = x, .hi = x + w, .valid = true};
+  return r;
+}
+
+// the k-th of n + 1 points of an interval, in long double
+static long double sample_point(interval_t a, int k, int n) {
+  return (long double) a.lo + ((long double) a.hi - (long double) a.lo) * k / n;
+}
+
+// sub, fma, fmax, fmin, neg, fabs, floor, ceil enclose the exact result at sample points
+START_TEST(interval_test4)
+
+seed_rand(4);
+for (int i = 0; i < 3000; i++) {
+  interval_t a = random_interval(100, false);
+  interval_t b = random_interval(100, false);
+  interval_t c = random_interval(100, false);
+  interval_t d = interval_sub(a, b);
+  interval_t f = interval_fma(a, b, c);
+  interval_t mx = interval_fmax(a, b);
+  interval_t mn = interval_fmin(a, b);
+  interval_t ng = interval_neg(a);
+  interval_t ab = interval_fabs(a);
+  interval_t fl = interval_floor(a);
+  interval_t ce = interval_ceil(a);
+  CHECK(d.valid && f.valid && mx.valid && mn.valid && ng.valid && ab.valid && fl.valid && ce.valid);
+  CHECK(d.lo <= d.hi && f.lo <= f.hi && mx.lo <= mx.hi && mn.lo <= mn.hi);
+  for (int j = 0; j <= 4; j++) {
+    long double x = sample_point(a, j, 4);
+    long double y = sample_point(b, (j * 3) % 5, 4);
+    long double z = sample_point(c, (j * 2) % 5, 4);
+    CHECK(d.lo <= x - y && x - y <= d.hi);
+    CHECK(f.lo <= x * y + z && x * y + z <= f.hi);
+    CHECK(mx.lo <= (x > y ? x : y) && (x > y ? x : y) <= mx.hi);
+    CHECK(mn.lo <= (x < y ? x : y) && (x < y ? x : y) <= mn.hi);
+    CHECK(ng.lo <= -x && -x <= ng.hi);
+    CHECK(ab.lo <= fabsl(x) && fabsl(x) <= ab.hi);
+    CHECK(fl.lo <= floorl(x) && floorl(x) <= fl.hi);
+    CHECK(ce.lo <= ceill(x) && ceill(x) <= ce.hi);
+  }
+}
+
+// neg and fabs are exact, and fabs is never negative
+interval_t m = {.lo = -3.0, .hi = 2.0, .valid = true};
+CHECK(interval_neg(m).lo == -2.0 && interval_neg(m).hi == 3.0);
+CHECK(interval_fabs(m).lo == 0.0 && interval_fabs(m).hi == 3.0);
+interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+CHECK(!interval_sub(bad, m).valid && !interval_fma(m, m, bad).valid);
+CHECK(!interval_fmax(bad, m).valid && !interval_fmin(m, bad).valid);
+CHECK(!interval_neg(bad).valid && !interval_fabs(bad).valid);
+CHECK(!interval_floor(bad).valid && !interval_ceil(bad).valid);
+
+END_TEST
+
+// exp, erf, sqrt, log and the powers enclose the exact result at sample points
+START_TEST(interval_test5)
+
+seed_rand(5);
+for (int i = 0; i < 3000; i++) {
+  interval_t a = random_interval(20, false);
+  interval_t p = random_interval(50, true);
+  interval_t e = interval_exp(a);
+  interval_t er = interval_erf(a);
+  interval_t sq = interval_sqrt(p);
+  interval_t lg = interval_log(p);
+  CHECK(e.valid && er.valid && sq.valid && lg.valid);
+  for (int j = 0; j <= 4; j++) {
+    long double x = sample_point(a, j, 4);
+    long double y = sample_point(p, j, 4);
+    CHECK(e.lo <= expl(x) && expl(x) <= e.hi);
+    CHECK(er.lo <= erfl(x) && erfl(x) <= er.hi);
+    CHECK(sq.lo <= sqrtl(y) && sqrtl(y) <= sq.hi);
+    CHECK(lg.lo <= logl(y) && logl(y) <= lg.hi);
+  }
+
+  // integer powers, also negative ones (away from zero) and a power of an interval
+  interval_t base = random_interval(3, true);
+  for (int ex = 0; ex <= 7; ex++) {
+    interval_t pu = interval_pow_uint(base, (uint32_t) ex);
+    interval_t pi = interval_pow_int(base, -ex);
+    CHECK(pu.valid && pi.valid);
+    for (int j = 0; j <= 2; j++) {
+      long double x = sample_point(base, j, 2);
+      CHECK(pu.lo <= powl(x, ex) && powl(x, ex) <= pu.hi);
+      CHECK(pi.lo <= powl(x, -ex) && powl(x, -ex) <= pi.hi);
+    }
+  }
+
+  // a ^ b for a positive a
+  interval_t pb = random_interval(2, false);
+  interval_t pw = interval_pow_dbl(base, pb);
+  CHECK(pw.valid);
+  for (int j = 0; j <= 2; j++) {
+    long double x = sample_point(base, j, 2);
+    long double y = sample_point(pb, (j * 2) % 3, 2);
+    CHECK(pw.lo <= powl(x, y) && powl(x, y) <= pw.hi);
+  }
+}
+
+// a negative exponent of an interval which contains zero is invalid
+interval_t z = {.lo = -1.0, .hi = 1.0, .valid = true};
+CHECK(!interval_pow_int(z, -1).valid);
+CHECK(interval_pow_uint(z, 0).valid);
+
+END_TEST
+
+// from_int64 encloses large integers exactly, add_many encloses the sum, and the endpoints
+START_TEST(interval_test6)
+
+int64_t big[] = {0, 1, -1, 1000, (INT64_C(1) << 53), (INT64_C(1) << 53) + 1, INT64_MAX, INT64_MIN,
+                 INT64_MAX - 1, INT64_MIN + 1, 123456789012345678};
+for (size_t i = 0; i < sizeof(big) / sizeof(big[0]); i++) {
+  interval_t r = interval_from_int64(big[i]);
+  CHECK(r.valid && r.lo <= r.hi);
+  CHECK((long double) r.lo <= (long double) big[i] && (long double) big[i] <= (long double) r.hi);
+  if (big[i] > -(INT64_C(1) << 53) && big[i] < (INT64_C(1) << 53)) {
+    CHECK(r.lo == r.hi); // exactly representable
+  }
+}
+
+seed_rand(6);
+for (int n = 1; n <= 40; n++) {
+  interval_t v[40];
+  long double lo = 0, hi = 0, mid = 0;
+  for (int k = 0; k < n; k++) {
+    v[k] = random_interval(1e3, false);
+    lo += v[k].lo;
+    hi += v[k].hi;
+    mid += sample_point(v[k], 1, 2);
+  }
+  interval_t s = interval_add_many(n, v);
+  CHECK(s.valid && s.lo <= s.hi);
+  CHECK(s.lo <= lo + 1e-9L * fabsl(lo) + 1e-9L && s.lo <= mid && mid <= s.hi);
+  CHECK(s.hi >= hi - 1e-9L * fabsl(hi) - 1e-9L);
+}
+CHECK(!interval_add_many(0, NULL).valid);
+interval_t one[1] = {{.lo = 1.0, .hi = 2.0, .valid = true}};
+CHECK(interval_add_many(1, one).lo == 1.0 && interval_add_many(1, one).hi == 2.0);
+interval_t with_bad[2] = {{.lo = 1.0, .hi = 2.0, .valid = true}, {.lo = 0, .hi = 0, .valid = false}};
+CHECK(!interval_add_many(2, with_bad).valid);
+
+// the helpers which order the queue
+interval_t k1 = {.lo = -5.0, .hi = 2.0, .valid = true};
+CHECK(interval_get_key(k1) == 5.0);
+double small = 1.0, large = 2.0;
+CHECK(interval_key_min_first(&small, &large) > 0 && interval_key_min_first(&large, &small) < 0);
+
+END_TEST
