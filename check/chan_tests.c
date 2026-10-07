@@ -223,9 +223,16 @@ static void *chan_test6_receiver(void *p) {
   return NULL;
 }
 
-static double process_cpu_seconds(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+// CPU time used so far by one thread.  The CPU time of the whole process would
+// include threads which are not under test, for example the OpenMP workers of
+// earlier tests, which keep spinning for a while after a parallel region.
+static double thread_cpu_seconds(pthread_t t) {
+  clockid_t clock;
+  struct timespec ts = {0, 0};
+  if (pthread_getcpuclockid(t, &clock) != 0 ||
+      clock_gettime(clock, &ts) != 0) {
+    return -1.0;
+  }
   return (double) ts.tv_sec + 1e-9 * (double) ts.tv_nsec;
 }
 
@@ -234,13 +241,12 @@ START_TEST(chan_test6)
 
 chan_int_t *c = chan_int_init(4);
 pthread_t t;
-double cpu0 = process_cpu_seconds();
 CHECK(pthread_create(&t, NULL, chan_test6_receiver, c) == 0);
 
 struct timespec wait = {0, 500 * 1000 * 1000};
 nanosleep(&wait, NULL);
-double used = process_cpu_seconds() - cpu0;
-CHECK(used < 0.25);   // about 0.5 s with a bare yield loop, about 0.03 s with the backoff
+double used = thread_cpu_seconds(t);
+CHECK(used >= 0.0 && used < 0.25);   // about 0.5 s with a bare yield loop, about 0.03 s with the backoff
 
 CHECK(chan_int_send(c, 7) == CHAN_SUCCESS);
 CHECK(pthread_join(t, NULL) == 0);
