@@ -91,6 +91,12 @@ document in `doc/` and `demo/array_demo17.c`.
 
 ```
 cd check && make && ./unit_tests     # unit tests for every container
+```
+
+`.github/workflows/ci.yml` does the same build and test run, with gcc and with
+clang, on every push and pull request.
+
+```
 cd demo && make array_demo1          # small example programs, one per feature
 ```
 
