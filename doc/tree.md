@@ -64,6 +64,25 @@ the value of an existing key (if no update function is set), and by
 `tree_prefix_destroy` for every remaining value.  The most common use is to pass
 the system `free()` when the values were allocated with `malloc()`.
 
+### Ownership of values
+
+When a value free function is set, the tree owns the values stored in it:
+
+* `tree_prefix_insert` hands `value` to the tree.  After the call, do not free
+  it.
+* The `retrieve` functions, `get_rank` and the walks lend the value: the pointer
+  stays valid until that key's value is replaced, the key is deleted, or the
+  tree is destroyed.  Do not free it, and do not pass it to
+  `tree_prefix_insert` again.
+* The `delete` functions hand the value back: it is returned without being
+  freed, and the caller owns it again.
+
+In particular, inserting the pointer already stored for a key, without an
+update function, frees that value and leaves the tree holding a dangling
+pointer.  To change a value in place, modify it through the pointer from
+`tree_prefix_retrieve` instead.  If an update function is set, it can be called
+with the same pointer as both arguments, and it must handle that case.
+
 ## Insert, Delete, Retrieve
 
 ### `int32_t tree_prefix_insert(tree_prefix_t *t, data_t key, void *value);`
@@ -88,7 +107,8 @@ function.
 
 ### `key_prefix_value_t tree_prefix_retrieve(const tree_prefix_t *t, data_t key)`
 
-Retrieves but does not delete the key-value pair for a given key.
+Retrieves but does not delete the key-value pair for a given key.  The value is
+lent, not handed over (see "Ownership of values" above).
 
 ### `key_prefix_value_t tree_prefix_retrieve_min(const tree_prefix_t *t)`
 ### `key_prefix_value_t tree_prefix_retrieve_max(const tree_prefix_t *t)`

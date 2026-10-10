@@ -140,6 +140,11 @@ GLUE3(tree_, prefix, _set_update)(TREE *a, void *(*update)(void *, void *) ) {
 
     The most common usage to pass the system free() for the value_free
     assuming the values where allocated by the system malloc().
+
+    With a value_free set, the tree owns its values: insert hands a value to
+    the tree, retrieve lends it, and delete hands it back unfreed.  Inserting
+    the pointer already stored for a key (with no update) frees it and leaves
+    a dangling pointer in the tree; see "Ownership of values" in doc/tree.md.
 */
 
 static inline void GLUE3(tree_, prefix,
@@ -423,7 +428,7 @@ GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value,
 
             value_free(old_value)
 
-       is done.
+       is done.  So value must not be the pointer already stored for key.
 
    return value:
      -1 => error (a is NULL, no comp function has been set, or out of

@@ -164,10 +164,16 @@ value which should be freed when replaced:
 
 ```c
 char* update(char* previous, char* current) {
-   free(previous);
+   if (previous != current) {
+     free(previous);
+   }
    return current;
 }
 ```
+
+The check matters: putting the pointer already stored for a key calls
+`update(p, p)`, and an unconditional `free` would leave the table holding a
+dangling pointer.
 
 ## Accessors
 

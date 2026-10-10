@@ -184,9 +184,14 @@ static inline void GLUE3(hash_, prefix,
    before overwriting.
 
      char* update(char* previous, char* current) {
-        free(previous);
+        if (previous != current) {
+          free(previous);
+        }
         return current;
      }
+
+   (Putting the pointer already stored for a key calls update(p, p), so the
+   check is needed.)
 */
 static inline void GLUE3(hash_, prefix,
                          _set_update)(HTABLE *h,
