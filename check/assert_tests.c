@@ -148,11 +148,11 @@ START_TEST(assert_test3)
 char msg[512];
 
 CHECK(run_child(child_bisect, msg, sizeof(msg)) == SIGABRT);
-CHECK(strstr(msg, "a->comp != NULL") != NULL);
+CHECK(strstr(msg, "(a->comp) != NULL") != NULL);
 CHECK(run_child(child_bisect_upper, msg, sizeof(msg)) == SIGABRT);
-CHECK(strstr(msg, "a->comp != NULL") != NULL);
+CHECK(strstr(msg, "(a->comp) != NULL") != NULL);
 CHECK(run_child(child_bisect_lower, msg, sizeof(msg)) == SIGABRT);
-CHECK(strstr(msg, "a->comp != NULL") != NULL);
+CHECK(strstr(msg, "(a->comp) != NULL") != NULL);
 CHECK(run_child(child_bisect_null, msg, sizeof(msg)) == SIGABRT);
 CHECK(strstr(msg, "a != NULL") != NULL);
 

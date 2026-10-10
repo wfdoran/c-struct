@@ -296,7 +296,8 @@ CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _rotate_right)(NODE *n,
   return m;
 }
 
-static inline NODE *GLUE3(tree_, prefix, _rotate_left)(NODE *n, bool more) {
+CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _rotate_left)(NODE *n,
+                                                                  bool more) {
   NODE *m = n->right;
   if (m == NULL) {
     return n;

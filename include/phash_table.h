@@ -159,6 +159,10 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
    int32_t, int, float, double, char*.  For more complicated types, the user
    must write their own and use this routine to tell the hash table to
    use it.
+
+   It is safe to call while other threads use the table, but set it before
+   the first put: entries already stored cannot be found with a different
+   hash function.
 */
 static inline void GLUE3(phash_, prefix,
                          _set_hash)(PHTABLE *h, uint64_t (*hash_func)(hkey_t)) {
@@ -531,7 +535,6 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
       }
     }
   }
-  CS_ASSERT(0);
 }
 
 #undef PHNODE

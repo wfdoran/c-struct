@@ -34,9 +34,11 @@ Programs which use it need `-pthread`.  Every function is `static inline`.  Read
   well.
 * **Hash outside the lock.**  The hash function runs before the lock is taken,
   so a slow hash function does not hold up other threads.
-  `phash_prefix_set_hash()` can therefore be called while other threads use the
-  table.  The compare and update functions run while the lock is held, so they
-  must not call back into the table.
+  `phash_prefix_set_hash()` is therefore safe to call while other threads use
+  the table, but it is only meaningful before the first `put`: the entries
+  already stored were placed with the old hash function, and the new one cannot
+  find them.  The compare and update functions run while the lock is held, so
+  they must not call back into the table.
 * **Missing.**  There is no iteration, `clone` or `apply`; they would have to
   hold the lock for the whole walk.
 

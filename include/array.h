@@ -499,11 +499,11 @@ static inline data_t GLUE3(array_, prefix, _get)(const TYPE *a, size_t idx) {
 */
 static inline data_t GLUE3(array_, prefix, _pop)(TYPE *a) {
   CS_ASSERT(a != NULL);
-  if (a->size <= 0) {
+  if (a->size == 0) {
     if (a->have_null_value) {
       return a->null_value;
     } else {
-      CS_ASSERT(a->size > 0);
+      CS_ASSERT(a->size != 0);
     }
   }
   a->size--;
@@ -516,11 +516,11 @@ static inline data_t GLUE3(array_, prefix, _pop)(TYPE *a) {
 */
 static inline data_t GLUE3(array_, prefix, _pop_first)(TYPE *a) {
   CS_ASSERT(a != NULL);
-  if (a->size <= 0) {
+  if (a->size == 0) {
     if (a->have_null_value) {
       return a->null_value;
     } else {
-      CS_ASSERT(a->size > 0);
+      CS_ASSERT(a->size != 0);
     }
   }
 
@@ -670,11 +670,11 @@ static inline int32_t GLUE3(array_, prefix, _heappush)(TYPE *a, data_t value) {
 static inline data_t GLUE3(array_, prefix, _heappop)(TYPE *a) {
   CS_ASSERT(a != NULL);
   CS_ASSERT_CMP(a->comp);
-  if (a->size <= 0) {
+  if (a->size == 0) {
     if (a->have_null_value) {
       return a->null_value;
     } else {
-      CS_ASSERT(a->size > 0);
+      CS_ASSERT(a->size != 0);
     }
   }
   data_t rv = a->data[0];
