@@ -107,11 +107,11 @@ static inline interval_t interval_add(interval_t a, interval_t b) {
   interval_t rv;
   int save = fegetround();
 
+  /* rounding down x + y is the same as -(rounding up (-x) + (-y)), so both
+     bounds are computed under FE_UPWARD with a single mode switch */
   fesetround(FE_UPWARD);
   rv.hi = iv_fence(iv_fence(a.hi) + iv_fence(b.hi));
-
-  fesetround(FE_DOWNWARD);
-  rv.lo = iv_fence(iv_fence(a.lo) + iv_fence(b.lo));
+  rv.lo = -iv_fence(iv_fence(-a.lo) + iv_fence(-b.lo));
 
   fesetround(save);
 
@@ -129,11 +129,11 @@ static inline interval_t interval_sub(interval_t a, interval_t b) {
 
   int save = fegetround();
 
+  /* rounding down x - y is the same as -(rounding up y - x), see
+   * interval_add */
   fesetround(FE_UPWARD);
   rv.hi = iv_fence(iv_fence(a.hi) - iv_fence(b.lo));
-
-  fesetround(FE_DOWNWARD);
-  rv.lo = iv_fence(iv_fence(a.lo) - iv_fence(b.hi));
+  rv.lo = -iv_fence(iv_fence(b.hi) - iv_fence(a.lo));
 
   fesetround(save);
 

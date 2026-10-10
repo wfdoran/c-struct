@@ -271,3 +271,66 @@ double small = 1.0, large = 2.0;
 CHECK(interval_key_min_first(&small, &large) > 0 && interval_key_min_first(&large, &small) < 0);
 
 END_TEST
+
+// x + y and x - y rounded in the given mode, as a reference for add and sub
+static double add_rounded(double x, double y, int mode) {
+  volatile double vx = x, vy = y;
+  int save = fegetround();
+  fesetround(mode);
+  volatile double r = vx + vy;
+  fesetround(save);
+  return r;
+}
+
+static double sub_rounded(double x, double y, int mode) {
+  volatile double vx = x, vy = y;
+  int save = fegetround();
+  fesetround(mode);
+  volatile double r = vx - vy;
+  fesetround(save);
+  return r;
+}
+
+// same value, and the same sign for zeros
+static bool same_double(double x, double y) {
+  return x == y && signbit(x) == signbit(y);
+}
+
+// add and sub compute the lower bound with one mode switch; it must be exactly
+// the bound rounded down, also for signed zeros, infinities and inexact sums
+START_TEST(interval_test7)
+
+const double special[] = {0.0, -0.0, 1.0, -1.0, 0.1, -0.1, 1e308, -1e308, DBL_MIN, -DBL_MIN,
+                          DBL_TRUE_MIN, -DBL_TRUE_MIN, INFINITY, -INFINITY};
+const int ns = sizeof(special) / sizeof(special[0]);
+for (int i = 0; i < ns; i++) {
+  for (int j = 0; j < ns; j++) {
+    double x = special[i], y = special[j];
+    interval_t a = {.lo = x, .hi = x, .valid = true};
+    interval_t b = {.lo = y, .hi = y, .valid = true};
+    interval_t s = interval_add(a, b);
+    interval_t d = interval_sub(a, b);
+    if (!isnan(add_rounded(x, y, FE_DOWNWARD))) {
+      CHECK(same_double(s.lo, add_rounded(x, y, FE_DOWNWARD)));
+      CHECK(same_double(s.hi, add_rounded(x, y, FE_UPWARD)));
+    }
+    if (!isnan(sub_rounded(x, y, FE_DOWNWARD))) {
+      CHECK(same_double(d.lo, sub_rounded(x, y, FE_DOWNWARD)));
+      CHECK(same_double(d.hi, sub_rounded(x, y, FE_UPWARD)));
+    }
+  }
+}
+
+seed_rand(7);
+for (int i = 0; i < 100000; i++) {
+  interval_t a = random_interval(100, false);
+  interval_t b = random_interval(1e-3, false);
+  interval_t s = interval_add(a, b);
+  interval_t d = interval_sub(a, b);
+  CHECK(same_double(s.lo, add_rounded(a.lo, b.lo, FE_DOWNWARD)));
+  CHECK(same_double(s.hi, add_rounded(a.hi, b.hi, FE_UPWARD)));
+  CHECK(same_double(d.lo, sub_rounded(a.lo, b.hi, FE_DOWNWARD)));
+  CHECK(same_double(d.hi, sub_rounded(a.hi, b.lo, FE_UPWARD)));
+}
+
+END_TEST
