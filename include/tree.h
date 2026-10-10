@@ -514,16 +514,26 @@ GLUE3(tree_, prefix, _delete_node)(int (*comp)(data_t *, data_t *), NODE *n,
 
   int c = CS_CMP(comp, &key, &(n->key));
   if (c != 0) {
+    /* if the key is not found nothing below n changed, so n is returned as
+       it is, without rebalancing or rewriting the path */
     if (c < 0) {
-      n->left = GLUE3(tree_, prefix, _delete_node)(comp, n->left, key, rv);
-      if (n->left != NULL) {
-        n->left->parent = n;
+      NODE *child = GLUE3(tree_, prefix, _delete_node)(comp, n->left, key, rv);
+      if (*rv == NULL) {
+        return n;
+      }
+      n->left = child;
+      if (child != NULL) {
+        child->parent = n;
       }
     }
     if (c > 0) {
-      n->right = GLUE3(tree_, prefix, _delete_node)(comp, n->right, key, rv);
-      if (n->right != NULL) {
-        n->right->parent = n;
+      NODE *child = GLUE3(tree_, prefix, _delete_node)(comp, n->right, key, rv);
+      if (*rv == NULL) {
+        return n;
+      }
+      n->right = child;
+      if (child != NULL) {
+        child->parent = n;
       }
     }
     n = GLUE3(tree_, prefix, _balance)(n);
