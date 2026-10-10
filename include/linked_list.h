@@ -283,6 +283,26 @@ static inline int32_t GLUE3(llist_, prefix, _prev)(LNODE **n_ptr,
 /*                     insert/delete nodes                                 */
 /* ----------------------------------------------------------------------- */
 
+/* Unlinks n from the list, frees it, and returns its value. */
+CS_PRIVATE static inline data_t GLUE3(llist_, prefix, _unlink)(LLIST *a,
+                                                               LNODE *n) {
+  if (n->prev == NULL) {
+    a->head = n->next;
+  } else {
+    n->prev->next = n->next;
+  }
+  if (n->next == NULL) {
+    a->tail = n->prev;
+  } else {
+    n->next->prev = n->prev;
+  }
+  a->size -= 1;
+
+  data_t rv = n->data;
+  free(n);
+  return rv;
+}
+
 /* Removes the current LNODE and moves the n_ptr to the next LNODE */
 static inline data_t GLUE3(llist_, prefix, _remove_forward)(LLIST *a,
                                                             LNODE **n_ptr) {
@@ -290,66 +310,19 @@ static inline data_t GLUE3(llist_, prefix, _remove_forward)(LLIST *a,
   if (n == NULL) {
     return null_value;
   }
-
-  /* Update the LLIST */
-  if (n->prev == NULL) {
-    a->head = n->next;
-  }
-  if (n->next == NULL) {
-    a->tail = n->prev;
-  }
-  a->size -= 1;
-
-  /* Update the neighbors */
-  if (n->prev != NULL) {
-    n->prev->next = n->next;
-  }
-  if (n->next != NULL) {
-    n->next->prev = n->prev;
-  }
-
-  /* step and free this n */
   *n_ptr = n->next;
-  data_t rv = n->data;
-  n->data = null_value;
-  n->prev = NULL;
-  n->next = NULL;
-  free(n);
-  return rv;
+  return GLUE3(llist_, prefix, _unlink)(a, n);
 }
 
+/* Removes the current LNODE and moves the n_ptr to the previous LNODE */
 static inline data_t GLUE3(llist_, prefix, _remove_backwards)(LLIST *a,
                                                               LNODE **n_ptr) {
   LNODE *n = *n_ptr;
   if (n == NULL) {
     return null_value;
   }
-
-  /* Update the LLIST */
-  if (n->prev == NULL) {
-    a->head = n->next;
-  }
-  if (n->next == NULL) {
-    a->tail = n->prev;
-  }
-  a->size -= 1;
-
-  /* Update the neighbors */
-  if (n->prev != NULL) {
-    n->prev->next = n->next;
-  }
-  if (n->next != NULL) {
-    n->next->prev = n->prev;
-  }
-
-  /* step and free this n */
   *n_ptr = n->prev;
-  data_t rv = n->data;
-  n->data = null_value;
-  n->prev = NULL;
-  n->next = NULL;
-  free(n);
-  return rv;
+  return GLUE3(llist_, prefix, _unlink)(a, n);
 }
 
 static inline int32_t GLUE3(llist_, prefix,

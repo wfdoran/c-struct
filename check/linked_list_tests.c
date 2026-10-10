@@ -279,3 +279,77 @@ CHECK(llist_int_size(a) == 2);
 llist_int_destroy(&a);
 
 END_TEST
+
+// The list holds exactly the n values in want, in order, and is linked
+// correctly in both directions with the right head, tail and size.
+static int llist_matches(llist_int_t *a, const int *want, int n) {
+  if (llist_int_size(a) != (size_t) n) {
+    return 0;
+  }
+  lnode_int_t *prev = NULL;
+  lnode_int_t *x = a->head;
+  for (int i = 0; i < n; i++) {
+    if (x == NULL || x->data != want[i] || x->prev != prev) {
+      return 0;
+    }
+    prev = x;
+    x = x->next;
+  }
+  return x == NULL && a->tail == prev && (n > 0 || a->head == NULL);
+}
+
+static llist_int_t *llist_of(int n) {
+  llist_int_t *a = llist_int_init();
+  for (int i = 1; i <= n; i++) {
+    llist_int_add_end(a, i);
+  }
+  return a;
+}
+
+// remove_forward and remove_backwards at the head, in the middle, at the tail
+// and on a single node, and the node each one moves to
+START_TEST(linked_list_test12)
+
+lnode_int_t *n;
+llist_int_t *a;
+
+// forward from the head, the middle and the tail
+a = llist_of(4);
+llist_int_first(a, &n, NULL);
+CHECK(llist_int_remove_forward(a, &n) == 1 && n != NULL && n->data == 2);
+CHECK(llist_matches(a, (int[]){2, 3, 4}, 3));
+CHECK(llist_int_remove_forward(a, &n) == 2 && n->data == 3);  // new head
+llist_int_next(&n, NULL);
+CHECK(llist_int_remove_forward(a, &n) == 4 && n == NULL);      // tail
+CHECK(llist_matches(a, (int[]){3}, 1));
+llist_int_destroy(&a);
+
+// backwards from the tail, the middle and the head
+a = llist_of(4);
+llist_int_last(a, &n, NULL);
+CHECK(llist_int_remove_backwards(a, &n) == 4 && n != NULL && n->data == 3);
+CHECK(llist_matches(a, (int[]){1, 2, 3}, 3));
+llist_int_prev(&n, NULL);
+CHECK(llist_int_remove_backwards(a, &n) == 2 && n->data == 1);  // middle
+CHECK(llist_matches(a, (int[]){1, 3}, 2));
+CHECK(llist_int_remove_backwards(a, &n) == 1 && n == NULL);     // head
+CHECK(llist_matches(a, (int[]){3}, 1));
+llist_int_destroy(&a);
+
+// a single node empties the list, in either direction
+a = llist_of(1);
+llist_int_first(a, &n, NULL);
+CHECK(llist_int_remove_forward(a, &n) == 1 && n == NULL);
+CHECK(llist_matches(a, NULL, 0));
+CHECK(llist_int_add_end(a, 7) == 0 && llist_matches(a, (int[]){7}, 1));
+llist_int_first(a, &n, NULL);
+CHECK(llist_int_remove_backwards(a, &n) == 7 && n == NULL);
+CHECK(llist_matches(a, NULL, 0));
+
+// a NULL iterator gives null_value and changes nothing
+n = NULL;
+CHECK(llist_int_remove_forward(a, &n) == -1 && llist_int_remove_backwards(a, &n) == -1);
+CHECK(llist_matches(a, NULL, 0));
+llist_int_destroy(&a);
+
+END_TEST
