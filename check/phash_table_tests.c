@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <omp.h>
 
 #define hkey_t int
 #define value_t int
@@ -322,5 +323,59 @@ t = phash_dn_init(-5);
 CHECK(t != NULL);
 CHECK(phash_dn_put(t, 1, 2) == 0);
 phash_dn_destroy(&t);
+
+END_TEST
+
+// size and capacity do not take the lock.  While threads insert distinct keys,
+// a reader sees a size which never decreases and never exceeds the capacity,
+// and a capacity which is a power of two and never decreases.
+START_TEST(phash_table_test12)
+
+int n = 200000;
+phtable_pi_t *h = phash_pi_init(0);
+int ok = 1;
+int writers = 0;   // threads which insert: all but the reader
+int finished = 0;  // writers which are done
+
+#pragma omp parallel num_threads(4)
+{
+  #pragma omp single
+  writers = omp_get_num_threads() - 1;  // implicit barrier: every thread sees it
+
+  int tid = omp_get_thread_num();
+  if (writers == 0) {
+    // only one thread: insert, then read once
+    for (int i = 0; i < n; i++) {
+      phash_pi_put(h, i, i);
+    }
+  } else if (tid == 0) {
+    size_t last_size = 0, last_cap = 0;
+    for (;;) {
+      int f;
+      #pragma omp atomic read
+      f = finished;
+      size_t s = phash_pi_size(h);
+      size_t c = phash_pi_capacity(h);
+      if (s < last_size || c < last_cap || c < 16 || (c & (c - 1)) != 0 || s > c) {
+        ok = 0;
+      }
+      last_size = s;
+      last_cap = c;
+      if (f == writers) {
+        break;
+      }
+    }
+  } else {
+    for (int i = tid - 1; i < n; i += writers) {
+      phash_pi_put(h, i, i);
+    }
+    #pragma omp atomic update
+    finished++;
+  }
+}
+
+CHECK(ok);
+CHECK(phash_pi_size(h) == (size_t) n);
+phash_pi_destroy(&h);
 
 END_TEST

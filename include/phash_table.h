@@ -39,10 +39,17 @@ typedef struct PHNODE {
   value_t value;
 } PHNODE;
 
+/* capacity and size are atomic so that phash_prefix_size() and
+   phash_prefix_capacity() can read them without the lock.  They are changed
+   only while the write lock is held, so inside the lock relaxed loads and
+   stores (CS_LOAD / CS_STORE) are enough. */
+#define CS_LOAD(x) atomic_load_explicit(&(x), memory_order_relaxed)
+#define CS_STORE(x, v) atomic_store_explicit(&(x), (v), memory_order_relaxed)
+
 typedef struct PHTABLE {
-  int64_t capacity;
+  _Atomic int64_t capacity;
   int32_t shift; // log2(capacity): the capacity is always a power of two
-  int64_t size;
+  _Atomic int64_t size;
   int64_t used; // live entries plus deleted markers
   PHNODE **A;
   /* atomic so that it can be read without holding the lock: the hash of a key
@@ -114,18 +121,19 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
 
   expected_size = expected_size / 3 * 4 +
                   expected_size % 3 * 4 / 3; // expected_size / LOAD_FACTOR
-  h->capacity = expected_size <= 16
-                    ? 16
-                    : GLUE3(phash_, prefix, _roundup_pow2)(expected_size);
+  const int64_t capacity =
+      expected_size <= 16 ? 16
+                          : GLUE3(phash_, prefix, _roundup_pow2)(expected_size);
+  atomic_init(&h->capacity, capacity);
   h->shift = 0;
-  while (((int64_t) 1 << h->shift) < h->capacity) {
+  while (((int64_t) 1 << h->shift) < capacity) {
     h->shift++;
   }
-  h->size = 0;
+  atomic_init(&h->size, 0);
   h->used = 0;
   memset(&(h->deleted), 0, sizeof(h->deleted));
-  h->A = calloc(h->capacity,
-                sizeof(PHNODE *)); /* all-bits-zero is a NULL pointer */
+  h->A =
+      calloc(capacity, sizeof(PHNODE *)); /* all-bits-zero is a NULL pointer */
   if (h->A == NULL) {
     free(h);
     return NULL;
@@ -202,30 +210,23 @@ static inline void GLUE3(phash_, prefix,
 
 /* size_t phash_prefix_size(const phtable_prefix_t *h);
 
-   Returns the number of unique hkey_ts inserted into the hash table.
+   Returns the number of unique hkey_ts inserted into the hash table.  It does
+   not take the lock: while other threads change the table, the value is the
+   size at some moment during the call.
 */
 static inline size_t GLUE3(phash_, prefix, _size)(const PHTABLE *h) {
-  /* locking changes the lock, not the table */
-  pthread_rwlock_t *lock = (pthread_rwlock_t *) &(h->rwlock);
-  pthread_rwlock_rdlock(lock);
-  size_t rv = (size_t) h->size;
-  pthread_rwlock_unlock(lock);
-  return rv;
+  return (size_t) CS_LOAD(((PHTABLE *) h)->size);
 }
 
 /* size_t phash_prefix_capacity(const phtable_prefix_t *h);
 
    Returns the allocated size of the hash table.
 
-   Once this is 75% filled, it is automatically doubled.
+   Once this is 75% filled, it is automatically doubled.  Like
+   phash_prefix_size(), it does not take the lock.
 */
 static inline size_t GLUE3(phash_, prefix, _capacity)(const PHTABLE *h) {
-  /* locking changes the lock, not the table */
-  pthread_rwlock_t *lock = (pthread_rwlock_t *) &(h->rwlock);
-  pthread_rwlock_rdlock(lock);
-  size_t rv = (size_t) h->capacity;
-  pthread_rwlock_unlock(lock);
-  return rv;
+  return (size_t) CS_LOAD(((PHTABLE *) h)->capacity);
 }
 
 /* void hash_prefix_destroy(htable_prefix_t **h_ptr);
@@ -249,15 +250,16 @@ static inline void GLUE3(phash_, prefix, _destroy)(PHTABLE **h_ptr) {
     return;
   }
   pthread_rwlock_wrlock(&(h->rwlock));
-  for (int64_t i = 0; i < h->capacity; i++) {
+  const int64_t capacity = CS_LOAD(h->capacity);
+  for (int64_t i = 0; i < capacity; i++) {
     if (h->A[i] != &(h->deleted)) {
       free(h->A[i]);
     }
   }
   free(h->A);
 
-  h->capacity = 0;
-  h->size = 0;
+  CS_STORE(h->capacity, 0);
+  CS_STORE(h->size, 0);
   h->A = NULL;
   h->hash_func = NULL;
   h->comp = NULL;
@@ -281,17 +283,19 @@ CS_PRIVATE static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
     return -1;
   }
 
+  const int64_t size = CS_LOAD(h->size);
+  const int64_t capacity = CS_LOAD(h->capacity);
   int64_t new_capacity =
-      (h->size > LOAD_FACTOR * h->capacity / 2) ? 2 * h->capacity : h->capacity;
+      (size > LOAD_FACTOR * capacity / 2) ? 2 * capacity : capacity;
   PHNODE **new_A = calloc(new_capacity, sizeof(PHNODE *));
   if (new_A == NULL) {
     return -1;
   }
-  const int32_t new_shift = h->shift + (new_capacity != h->capacity);
+  const int32_t new_shift = h->shift + (new_capacity != capacity);
 
   const uint64_t mask = new_capacity - UINT64_C(1);
 
-  for (int64_t i = 0; i < h->capacity; i++) {
+  for (int64_t i = 0; i < capacity; i++) {
     PHNODE *n = h->A[i];
     if (n == NULL || n == &(h->deleted)) {
       continue;
@@ -309,9 +313,9 @@ CS_PRIVATE static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
 
   free(h->A);
   h->A = new_A;
-  h->capacity = new_capacity;
+  CS_STORE(h->capacity, new_capacity);
   h->shift = new_shift;
-  h->used = h->size;
+  h->used = size;
   return 0;
 }
 
@@ -343,7 +347,8 @@ CS_PRIVATE static inline int32_t
 GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
                                    value_t value,
                                    value_t (*update)(value_t, value_t)) {
-  const uint64_t mask = h->capacity - UINT64_C(1);
+  const int64_t capacity = CS_LOAD(h->capacity);
+  const uint64_t mask = capacity - UINT64_C(1);
   const uint64_t base = hash & mask;
   const uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
 
@@ -363,7 +368,7 @@ GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
       }
       /* probes stop at an empty slot, so the last one must never be used up */
       if (h->A[first_empty] == NULL &&
-          (uint64_t) h->used + 1 >= (uint64_t) h->capacity) {
+          (uint64_t) h->used + 1 >= (uint64_t) capacity) {
         return -1;
       }
       PHNODE *n = malloc(sizeof(PHNODE));
@@ -376,7 +381,7 @@ GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
       if (h->A[first_empty] == NULL) {
         h->used++;
       }
-      h->size++;
+      CS_STORE(h->size, CS_LOAD(h->size) + 1);
       h->A[first_empty] = n;
       break;
     }
@@ -390,7 +395,7 @@ GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
     }
   }
 
-  if (h->used > LOAD_FACTOR * h->capacity) {
+  if (h->used > LOAD_FACTOR * capacity) {
     /* best effort: the entry is already stored, and the next put tries again */
     (void) GLUE3(phash_, prefix, _rehash)(h);
   }
@@ -459,7 +464,7 @@ static inline int32_t GLUE3(phash_, prefix, _get)(PHTABLE *h, hkey_t key,
   uint64_t hash = hash_mix64(CS_HASH(hash_func, key));
 
   pthread_rwlock_rdlock(&(h->rwlock));
-  uint64_t mask = h->capacity - UINT64_C(1);
+  uint64_t mask = CS_LOAD(h->capacity) - UINT64_C(1);
   uint64_t base = hash & mask;
   uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
 
@@ -499,7 +504,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
   uint64_t hash = hash_mix64(CS_HASH(hash_func, key));
 
   pthread_rwlock_wrlock(&(h->rwlock));
-  uint64_t mask = h->capacity - UINT64_C(1);
+  uint64_t mask = CS_LOAD(h->capacity) - UINT64_C(1);
   uint64_t base = hash & mask;
   uint64_t step = ((hash >> h->shift) & mask) | UINT64_C(1);
 
@@ -515,7 +520,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
           }
           free(h->A[pos]);
           h->A[pos] = &(h->deleted);
-          h->size--;
+          CS_STORE(h->size, CS_LOAD(h->size) - 1);
           pthread_rwlock_unlock(&(h->rwlock));
           return 1;
         }
@@ -538,5 +543,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
 #undef CS_KEYEQ
 #undef CS_HASH
 #undef CS_HAVE_HASH
+#undef CS_LOAD
+#undef CS_STORE
 #undef hkey_hash
 #undef hkey_equal

@@ -23,9 +23,12 @@ Programs which use it need `-pthread`.  Every function is `static inline`.  Read
 
 ## Differences from the plain table
 
-* **One lock.**  The table has a single read-write lock.  `get`, `size` and
-  `capacity` take it for reading, so any number of them can run together.
-  `put`, `remove` and `atomic_update` take it for writing, one at a time.
+* **One lock.**  The table has a single read-write lock.  `get` takes it for
+  reading, so any number of `get` calls can run together.  `put`, `remove` and
+  `atomic_update` take it for writing, one at a time.  `size` and `capacity` do
+  not take the lock: they read atomic counters, so they never wait, and while
+  other threads change the table they return the value at some moment during
+  the call.
 * **Same results.**  `put`, `get` and `remove` have the same arguments and
   return values as in `hash_table.md`.  `destroy` and `init` are the same as
   well.
