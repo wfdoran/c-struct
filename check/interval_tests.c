@@ -334,3 +334,15 @@ for (int i = 0; i < 100000; i++) {
 }
 
 END_TEST
+
+// interval_invalid is invalid, and is what the functions return when there is no result
+START_TEST(interval_test8)
+
+interval_t v = interval_invalid();
+CHECK(!v.valid);
+interval_t one = {.lo = 1.0, .hi = 1.0, .valid = true};
+CHECK(!interval_add(v, one).valid);
+CHECK(!interval_sqrt(interval_neg(one)).valid);
+CHECK(!interval_from_double(NAN).valid);
+
+END_TEST

@@ -79,6 +79,11 @@ An interval which contains the integer `x`.  The bounds are `x` rounded down
 and up, so the interval is a single point when `x` is exactly representable
 (below 2^53 in magnitude) and two adjacent doubles otherwise.
 
+### `interval_t interval_invalid(void)`
+
+An invalid interval, the value every function returns when it has no result.
+Useful for functions of your own built on these.
+
 ### `void interval_print(interval_t a)`
 
 Prints `[lo, hi]` with 20 digits after the decimal point and a newline, or

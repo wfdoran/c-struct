@@ -69,10 +69,16 @@ typedef struct {
   bool valid;
 } interval_t;
 
+/* The result of an operation which has no result, or is given an invalid
+   interval. */
+static inline interval_t interval_invalid(void) {
+  interval_t rv = {.lo = 0, .hi = 0, .valid = false};
+  return rv;
+}
+
 static inline interval_t interval_from_double(double x) {
   if (isnan(x)) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
   interval_t rv = {.lo = nextafter(x, -INFINITY),
                    .hi = nextafter(x, INFINITY),
@@ -100,8 +106,7 @@ static inline interval_t interval_from_int64(int64_t x) {
 
 static inline interval_t interval_add(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
@@ -121,8 +126,7 @@ static inline interval_t interval_add(interval_t a, interval_t b) {
 
 static inline interval_t interval_sub(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
@@ -143,8 +147,7 @@ static inline interval_t interval_sub(interval_t a, interval_t b) {
 
 static inline interval_t interval_mul(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   double temp[4];
@@ -170,8 +173,7 @@ static inline interval_t interval_mul(interval_t a, interval_t b) {
 
   /* fmin and fmax ignore NaN, which would silently drop a 0 * infinity term */
   if (isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3])) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   rv.valid = true;
@@ -181,8 +183,7 @@ static inline interval_t interval_mul(interval_t a, interval_t b) {
 static inline interval_t interval_fma(interval_t a, interval_t b,
                                       interval_t c) {
   if (!a.valid || !b.valid || !c.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   double temp[4];
@@ -208,8 +209,7 @@ static inline interval_t interval_fma(interval_t a, interval_t b,
 
   /* fmin and fmax ignore NaN, which would silently drop a 0 * infinity term */
   if (isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3])) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   rv.valid = true;
@@ -218,12 +218,10 @@ static inline interval_t interval_fma(interval_t a, interval_t b,
 
 static inline interval_t interval_div(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
   if (b.lo <= 0.0 && b.hi >= 0.0) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   double temp[4];
@@ -249,8 +247,7 @@ static inline interval_t interval_div(interval_t a, interval_t b) {
 
   /* fmin and fmax ignore NaN, which would silently drop a 0 * infinity term */
   if (isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3])) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   rv.valid = true;
@@ -259,8 +256,7 @@ static inline interval_t interval_div(interval_t a, interval_t b) {
 
 static inline interval_t interval_fmax(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   /* max is exact: no rounding mode needed */
@@ -271,8 +267,7 @@ static inline interval_t interval_fmax(interval_t a, interval_t b) {
 
 static inline interval_t interval_fmin(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   if (a.hi < b.lo) {
@@ -291,8 +286,7 @@ static inline interval_t interval_fmin(interval_t a, interval_t b) {
 
 static inline interval_t interval_exp(interval_t a) {
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
@@ -313,8 +307,7 @@ static inline interval_t interval_exp(interval_t a) {
 
 static inline interval_t interval_erf(interval_t a) {
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
@@ -336,8 +329,7 @@ static inline interval_t interval_sqrt(interval_t a) {
   /* the domain is [0, inf): use the part of the interval inside it, and fail
    * only if none of it is */
   if (!a.valid || !(a.hi >= 0.0)) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
@@ -358,8 +350,7 @@ static inline interval_t interval_sqrt(interval_t a) {
 
 static inline interval_t interval_floor(interval_t a) {
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
   interval_t rv = {.hi = floor(a.hi), .lo = floor(a.lo), .valid = true};
   return rv;
@@ -367,8 +358,7 @@ static inline interval_t interval_floor(interval_t a) {
 
 static inline interval_t interval_ceil(interval_t a) {
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
   interval_t rv = {.hi = ceil(a.hi), .lo = ceil(a.lo), .valid = true};
   return rv;
@@ -378,8 +368,7 @@ static inline interval_t interval_log(interval_t a) {
   /* the domain is (0, inf): use the part of the interval inside it, and fail
    * only if none of it is */
   if (!a.valid || !(a.hi > 0.0)) {
-    interval_t bad = {.lo = 0.0, .hi = 0.0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
@@ -401,8 +390,7 @@ static inline interval_t interval_log(interval_t a) {
 
 static inline interval_t interval_neg(interval_t a) {
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv = {.lo = -a.hi, .hi = -a.lo, .valid = true};
@@ -411,8 +399,7 @@ static inline interval_t interval_neg(interval_t a) {
 
 static inline interval_t interval_fabs(interval_t a) {
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   if (a.lo >= 0.0) {
@@ -453,14 +440,12 @@ static inline void interval_print(interval_t a) {
 
 static inline interval_t interval_add_many(int n, interval_t *a) {
   if (n <= 0 || a == NULL) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   for (int i = 0; i < n; i++) {
     if (!a[i].valid) {
-      interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-      return bad;
+      return interval_invalid();
     }
   }
 
@@ -471,8 +456,7 @@ static inline interval_t interval_add_many(int n, interval_t *a) {
   /* Repeatedly add the two intervals of smallest magnitude.  A priority queue
      is used rather than a tree because several intervals can have the same key.
    */
-  interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-  interval_t rv = bad;
+  interval_t rv = interval_invalid();
 
   pqueue_ival_t *q = pqueue_ival_init();
   interval_t *temp = malloc((n - 1) * sizeof(interval_t));
@@ -509,8 +493,7 @@ done:
 
 static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
   interval_t rv = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
 
@@ -556,8 +539,7 @@ static inline interval_t interval_sin(interval_t a) {
   // sin(k * 2pi + 3 * pi/2) = -1
 
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
@@ -609,8 +591,7 @@ static inline interval_t interval_cos(interval_t a) {
   // cos(k * 2pi + 3 * pi/2) = 0
 
   if (!a.valid) {
-    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
-    return bad;
+    return interval_invalid();
   }
 
   interval_t rv;
