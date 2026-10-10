@@ -360,7 +360,11 @@ static inline int32_t GLUE3(select_, prefix, _one)(int32_t num_select,
     return SELECT_DONE;
   }
   for (int32_t i = 0; i < num_select; i++) {
-    if (s[i].select_type == SELECT_SEND && s[i].value == NULL) {
+    if (s[i].select_type == SELECT_OMIT) {
+      continue;
+    }
+    if (s[i].c == NULL ||
+        (s[i].select_type == SELECT_SEND && s[i].value == NULL)) {
       return CHAN_ERROR;
     }
   }

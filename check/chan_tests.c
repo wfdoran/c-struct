@@ -822,3 +822,38 @@ for (int i = 0; i < FAN_IN; i++) {
 #undef FAN_IN
 
 END_TEST
+
+// select_int_one checks every case before trying any: a NULL channel gives
+// CHAN_ERROR whatever the random order, and leaves the cases unchanged.  A
+// finished (SELECT_OMIT) case may have a NULL channel.
+START_TEST(chan_test15)
+
+chan_int_t *ready = chan_int_init(4);
+chan_int_t *closed = chan_int_init(4);
+CHECK(ready != NULL && closed != NULL);
+CHECK(chan_int_close(closed) == CHAN_SUCCESS);
+int v = 0;
+
+for (int k = 0; k < 100; k++) {
+  CHECK(chan_int_trysend(ready, 7) == CHAN_SUCCESS);
+  select_int_t s[3] = {{ready, SELECT_RECV, &v},
+                       {closed, SELECT_RECV, &v},
+                       {NULL, SELECT_RECV, &v}};
+  CHECK(select_int_one(3, s) == CHAN_ERROR);
+  CHECK(s[0].select_type == SELECT_RECV);
+  CHECK(s[1].select_type == SELECT_RECV);
+  CHECK(chan_int_tryrecv(ready, NULL) == CHAN_SUCCESS);  // nothing was received
+}
+
+select_int_t s2[2] = {{NULL, SELECT_SEND, &v}, {ready, SELECT_RECV, &v}};
+CHECK(select_int_one(2, s2) == CHAN_ERROR);
+
+CHECK(chan_int_trysend(ready, 9) == CHAN_SUCCESS);
+select_int_t s3[2] = {{NULL, SELECT_OMIT, NULL}, {ready, SELECT_RECV, &v}};
+CHECK(select_int_one(2, s3) == 1);
+CHECK(v == 9);
+
+chan_int_destroy(&ready);
+chan_int_destroy(&closed);
+
+END_TEST
