@@ -528,7 +528,11 @@ done:
 }
 
 static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
-  interval_t rv = interval_from_double(1.0);
+  if (!a.valid) {
+    interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+    return bad;
+  }
+  interval_t rv = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
 
   while (e > 0) {
     if ((e & 1) == 1) {

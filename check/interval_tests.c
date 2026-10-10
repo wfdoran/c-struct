@@ -217,6 +217,16 @@ interval_t z = {.lo = -1.0, .hi = 1.0, .valid = true};
 CHECK(!interval_pow_int(z, -1).valid);
 CHECK(interval_pow_uint(z, 0).valid);
 
+// x^0 is exactly [1, 1], an exact base gives an exact power, and an invalid
+// base gives an invalid result even for the exponent 0
+CHECK(interval_pow_uint(z, 0).lo == 1.0 && interval_pow_uint(z, 0).hi == 1.0);
+interval_t two = {.lo = 2.0, .hi = 2.0, .valid = true};
+CHECK(interval_pow_uint(two, 3).lo == 8.0 && interval_pow_uint(two, 3).hi == 8.0);
+interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+CHECK(!interval_pow_uint(bad, 0).valid);
+CHECK(!interval_pow_int(bad, 0).valid);
+CHECK(!interval_pow_int(bad, -2).valid);
+
 END_TEST
 
 // from_int64 encloses large integers exactly, add_many encloses the sum, and the endpoints
