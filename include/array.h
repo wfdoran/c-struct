@@ -27,13 +27,6 @@
 
 #define _unused(x) ((void) (x))
 
-// create new array
-// array_prefix_filter
-
-// update current array
-// array_prefix_concat
-// array_prefix_resize
-
 typedef struct {
   data_t *data;
   data_t *alloc;
@@ -227,7 +220,7 @@ GLUE3(array_, prefix, _set_comp)(TYPE *a, int (*comp)(data_t *, data_t *)) {
   return 0;
 }
 
-/*
+/* int32_t array_prefix_set_null_value(array_prefix_t *a, data_t null_value);
 
    Sets the null value.  This is returned from various getters if the
    array is empty or the request is out of range.
@@ -242,7 +235,7 @@ static inline int32_t GLUE3(array_, prefix,
   return 0;
 }
 
-/*
+/* int32_t array_prefix_destroy(array_prefix_t **a);
 
    Destroys an array.  If the array entries contains pointers, the user
    needs to destroy these first manually.  array_prefix_map() could be
@@ -266,10 +259,6 @@ static inline int32_t GLUE3(array_, prefix, _destroy)(TYPE **a_ptr) {
   *a_ptr = NULL;
   return 0;
 }
-
-/*
-    Sorts the array.
-*/
 
 /* Stable merge sort of the n entries at v, using comp directly (qsort would
    need the comparison function cast to an incompatible type).  tmp must have
@@ -315,7 +304,9 @@ GLUE3(array_, prefix, _sort_range)(int (*comp)(data_t *, data_t *), data_t *v,
   }
 }
 
-/* Sorts the array (a stable sort, O(n log n) comparisons) using the comparison
+/* int32_t array_prefix_sort(array_prefix_t *a);
+
+   Sorts the array (a stable sort, O(n log n) comparisons) using the comparison
    function.  Returns -1 if a is NULL, there is no comparison function, or
    memory for the temporary buffer could not be allocated, and 0 otherwise. */
 static inline int32_t GLUE3(array_, prefix, _sort)(TYPE *a) {
@@ -338,7 +329,7 @@ static inline int32_t GLUE3(array_, prefix, _sort)(TYPE *a) {
   return 0;
 }
 
-/*
+/* ssize_t array_prefix_bisect(const array_prefix_t *a, data_t v);
 
   Assumes the array is sorted.  Finds the index rv such that
      a->data[rv] == v
@@ -366,7 +357,7 @@ static inline ssize_t GLUE3(array_, prefix, _bisect)(const TYPE *a, data_t v) {
   return -1;
 }
 
-/* array_prefix_bisect_upper
+/* ssize_t array_prefix_bisect_upper(const array_prefix_t *a, data_t v);
 
    Assumes the array is sorted.  Finds the index rv such that
      a->data[rv] <= v
@@ -405,7 +396,8 @@ static inline ssize_t GLUE3(array_, prefix, _bisect_upper)(const TYPE *a,
   return lo;
 }
 
-/*
+/* ssize_t array_prefix_bisect_lower(const array_prefix_t *a, data_t v);
+
    Assumes the array is sorted.  Finds the index rv such that
      a->data[rv] >= v
      a->data[rv-1] < v

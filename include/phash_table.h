@@ -61,19 +61,17 @@ typedef struct PHTABLE {
   pthread_rwlock_t rwlock;
 } PHTABLE;
 
-/*
-   void hash_prefix_filter(htable_prefix_t *h, bool (*filter)(hkey_t, value_t));
-   void hash_prefix_apply_r(htable_prefix_t *h, value_t (*apply_r) (hkey_t,
-value_t, void*), void *arg); htable_prefix_t* hash_prefix_duplicate(const
-htable_prefix_t *h)
+/* Ideas for later, not implemented (hash_table.h has some of them, but here
+   they would have to hold the lock for the whole walk):
 
+   iteration, apply, clone
+   filter (keep the entries for which a predicate is true)
    put_many
    merge
-
-   shrink?
+   shrink
    smoother expansion instead of stop-the-world
 
-https://en.wikipedia.org/wiki/Hash_table
+   https://en.wikipedia.org/wiki/Hash_table
 */
 
 CS_PRIVATE static inline int64_t GLUE3(phash_, prefix,
@@ -91,11 +89,11 @@ CS_PRIVATE static inline int64_t GLUE3(phash_, prefix,
   return (int64_t) v;
 }
 
-/* htable_prefix_t* hash_prefix_init(int64_t expected_size);
+/* phtable_prefix_t* phash_prefix_init(int64_t expected_size);
 
    allocates and initializes a hash table.  This includes
 
-   - allocating the htable_prefix_t.
+   - allocating the phtable_prefix_t.
    - the initial allocation of the hash table itself.
    - setting the hash function if hash.h recognizes the hkey_t type.
    - setting the comp function if comp.h recognizes the hkey_t type.
@@ -153,7 +151,7 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
   return h;
 }
 
-/* void hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func)
+/* void phash_prefix_set_hash(phtable_prefix_t *h, uint64_t (*hash_func)
    (hkey_t));
 
    The hash table needs a hash function which maps hkey_t to uint64_t.  hash.h
@@ -167,7 +165,7 @@ static inline void GLUE3(phash_, prefix,
   atomic_store_explicit(&h->hash_func, hash_func, memory_order_release);
 }
 
-/* void hash_prefix_set_comp(htable_prefix_t *h, int (*comp)(hkey_t, hkey_t));
+/* void phash_prefix_set_comp(phtable_prefix_t *h, int (*comp)(hkey_t, hkey_t));
 
    If no comp function is given, it is assumed the hash value means
    the same hkey_t.  If hash collisions with different hkey_ts are
@@ -184,7 +182,7 @@ static inline void GLUE3(phash_, prefix,
   pthread_rwlock_unlock(&(h->rwlock));
 }
 
-/* void hash_prefix_set_update(htable_prefix_t *h, value_t (*update)(value_t,
+/* void phash_prefix_set_update(phtable_prefix_t *h, value_t (*update)(value_t,
    value_t));
 
    When putting a hkey_t/value_t pair into a hash table where the hkey_t already
@@ -229,10 +227,10 @@ static inline size_t GLUE3(phash_, prefix, _capacity)(const PHTABLE *h) {
   return (size_t) CS_LOAD(((PHTABLE *) h)->capacity);
 }
 
-/* void hash_prefix_destroy(htable_prefix_t **h_ptr);
+/* void phash_prefix_destroy(phtable_prefix_t **h_ptr);
 
    Deallocates the hash table and resets all of the internal values of
-   the htable_prefix_t.  Then the htable_prefix_t itself is
+   the phtable_prefix_t.  Then the phtable_prefix_t itself is
    deallocated and the callers pointer is set to NULL.  This avoids
    double frees.
 
@@ -272,7 +270,7 @@ static inline void GLUE3(phash_, prefix, _destroy)(PHTABLE **h_ptr) {
   *h_ptr = NULL;
 }
 
-/* int32_t hash_prefix_rehash(htable_prefix_t *h);
+/* int32_t phash_prefix_rehash(phtable_prefix_t *h);
 
    This routine doubles the capacity of a hash table and reinserts all
    of the entries in the new table.  Internal: the caller must hold the write
@@ -319,18 +317,18 @@ CS_PRIVATE static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
   return 0;
 }
 
-/* int32_t hash_prefix_put(htable_prefix_t *h, hkey_t key, value_t value)
+/* int32_t phash_prefix_put(phtable_prefix_t *h, hkey_t key, value_t value)
 
    Insert a key/value pair into the hash table.
 
    What if the key is already in the table?
 
    1) If the user has provided a comp function (via
-      hash_prefix_set_comp) then that is used to double check on hash
+      phash_prefix_set_comp) then that is used to double check on hash
       value collisions.
 
    2) If the user has provided an update function (via
-      hash_prefix_set_update), then the current value is combined with
+      phash_prefix_set_update), then the current value is combined with
       the new value.  If no update function is available, the new
       value replaces the current value.
 
@@ -440,7 +438,7 @@ GLUE3(phash_, prefix, _atomic_update)(PHTABLE *h, hkey_t key, value_t value,
   return rc;
 }
 
-/* int32_T hash_prefix_get(htable_prefix_t *h, hkey_t key, value_t *value)
+/* int32_t phash_prefix_get(phtable_prefix_t *h, hkey_t key, value_t *value)
 
    Recovers a value from a hash table.  *value can be NULL if the user
    only wants to know if the key is in the table.
@@ -486,9 +484,15 @@ static inline int32_t GLUE3(phash_, prefix, _get)(PHTABLE *h, hkey_t key,
   }
 }
 
-/* hash_prefix_remove(htable_prefix_t *h, hkey_t key, value_t *value)
+/* int32_t phash_prefix_remove(phtable_prefix_t *h, hkey_t key, value_t *value)
 
+   Removes key and its value from the table.  *value can be NULL if the user
+   does not need the value.
 
+   Return Value:
+     -1 => an error
+     0 => key not found
+     1 => key removed, *value set to the value it had.
 */
 
 static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,

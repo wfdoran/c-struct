@@ -28,8 +28,6 @@
 #define KEYVAL GLUE3(key_, prefix, _value_t)
 #define TITER GLUE3(titer_, prefix, _t)
 
-// search and replace
-
 /* ----------------------------------------------------------------------- */
 /*                         data structures                                 */
 /* ----------------------------------------------------------------------- */

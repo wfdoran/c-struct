@@ -381,7 +381,7 @@ static inline int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, hkey_t key,
   return 0;
 }
 
-/* int32_T hash_prefix_get(htable_prefix_t *h, hkey_t key, value_t *value)
+/* int32_t hash_prefix_get(htable_prefix_t *h, hkey_t key, value_t *value)
 
    Recovers a value from a hash table.  *value can be NULL if the user
    only wants to know if the key is in the table.
@@ -418,9 +418,15 @@ static inline int32_t GLUE3(hash_, prefix, _get)(const HTABLE *h, hkey_t key,
   }
 }
 
-/* hash_prefix_remove(htable_prefix_t *h, hkey_t key, value_t *value)
+/* int32_t hash_prefix_remove(htable_prefix_t *h, hkey_t key, value_t *value)
 
+   Removes key and its value from the table.  *value can be NULL if the user
+   does not need the value.
 
+   Return Value:
+     -1 => an error
+     0 => key not found
+     1 => key removed, *value set to the value it had.
 */
 
 static inline int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, hkey_t key,
