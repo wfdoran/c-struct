@@ -263,17 +263,9 @@ static inline interval_t interval_fmax(interval_t a, interval_t b) {
     return bad;
   }
 
-  interval_t rv;
-  int save = fegetround();
-
-  fesetround(FE_UPWARD);
-  rv.hi = fmax(a.hi, b.hi);
-
-  fesetround(FE_DOWNWARD);
-  rv.lo = fmax(a.lo, b.lo);
-  fesetround(save);
-
-  rv.valid = true;
+  /* max is exact: no rounding mode needed */
+  interval_t rv = {
+      .lo = fmax(a.lo, b.lo), .hi = fmax(a.hi, b.hi), .valid = true};
   return rv;
 }
 
@@ -291,17 +283,9 @@ static inline interval_t interval_fmin(interval_t a, interval_t b) {
     return b;
   }
 
-  interval_t rv;
-  int save = fegetround();
-
-  fesetround(FE_UPWARD);
-  rv.hi = fmin(a.hi, b.hi);
-
-  fesetround(FE_DOWNWARD);
-  rv.lo = fmin(a.lo, b.lo);
-  fesetround(save);
-
-  rv.valid = true;
+  /* min is exact: no rounding mode needed */
+  interval_t rv = {
+      .lo = fmin(a.lo, b.lo), .hi = fmin(a.hi, b.hi), .valid = true};
   return rv;
 }
 
@@ -439,12 +423,8 @@ static inline interval_t interval_fabs(interval_t a) {
     return interval_neg(a);
   }
 
-  int save = fegetround();
-
-  fesetround(FE_UPWARD);
-  interval_t rv = {.lo = 0.0, .hi = fmax(fabs(a.lo), a.hi), .valid = true};
-
-  fesetround(save);
+  /* negation and max are exact: no rounding mode needed */
+  interval_t rv = {.lo = 0.0, .hi = fmax(-a.lo, a.hi), .valid = true};
   return rv;
 }
 
