@@ -149,11 +149,20 @@ A macro which chooses on the type of `e`:
 * `interval_pow_int(interval_t a, int32_t e)`: for an `int` exponent.  A
   negative exponent is the reciprocal of the positive power, so it is invalid
   when that power contains 0.
-* `interval_pow_uint(interval_t a, uint32_t e)`: for a `uint32_t` exponent,
-  by repeated squaring.
+* `interval_pow_uint(interval_t a, uint32_t e)`: for a `uint32_t` exponent.
+  The power of each end is taken by repeated squaring and the bounds are chosen
+  from the shape of `x^e`, so the range is tight: an even power is never
+  negative (`[-1, 2]^2` is `[0, 4]`, not `[-2, 4]`).
 * `interval_pow_dbl(interval_t a, interval_t b)`: for an `interval_t`
   exponent, as `exp(b * log(a))`, so the domain of `log` applies: `a` must
   have a positive part.
+
+For the integer exponents, `x^0` is `[1, 1]` for every `x`, including an `x`
+which contains 0: `0^0` is taken to be 1, as `pow()` in C does.  The
+`interval_t` exponent does not follow this: it is computed as
+`exp(b * log(a))`, and when `a` contains 0 (so `log(a)` reaches minus infinity)
+and `b` contains 0, the product `-inf * 0` has no value, so the result is
+invalid.
 
 ## Exponential functions
 

@@ -491,22 +491,49 @@ done:
   return rv;
 }
 
+/* x^e for the single double x, rounded outwards. */
+CS_PRIVATE static inline interval_t interval_pow_point(double x, uint32_t e) {
+  interval_t p = {.lo = x, .hi = x, .valid = true};
+  interval_t rv = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
+  while (e > 0) {
+    if ((e & 1) == 1) {
+      rv = interval_mul(rv, p);
+    }
+    e >>= 1;
+    if (e > 0) {
+      p = interval_mul(p, p);
+    }
+  }
+  return rv;
+}
+
+/* Multiplying a by itself would treat the two copies as independent and give
+   too wide a range (for example [-1,2]^2 as [-2,4]), so the power of each end
+   is taken and the bounds are chosen from the shape of x^e: increasing for odd
+   e and for any e on x >= 0, decreasing for even e on x <= 0. */
 static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
   if (!a.valid) {
     return interval_invalid();
   }
-  interval_t rv = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
-
-  while (e > 0) {
-    if ((e & 1) == 1) {
-      rv = interval_mul(rv, a);
-    }
-    e >>= 1;
-    if (e > 0) {
-      a = interval_mul(a, a);
-    }
+  if (e == 0) {
+    /* x^0 is 1 for every x, including 0: 0^0 is taken to be 1 */
+    interval_t one = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
+    return one;
   }
-
+  interval_t l = interval_pow_point(a.lo, e);
+  interval_t h = interval_pow_point(a.hi, e);
+  interval_t rv;
+  if ((e & 1) == 1 || a.lo >= 0.0) {
+    rv.lo = l.lo;
+    rv.hi = h.hi;
+  } else if (a.hi <= 0.0) {
+    rv.lo = h.lo;
+    rv.hi = l.hi;
+  } else { /* even power of an interval which contains 0 */
+    rv.lo = 0.0;
+    rv.hi = fmax(l.hi, h.hi);
+  }
+  rv.valid = !(isnan(rv.lo) || isnan(rv.hi));
   return rv;
 }
 

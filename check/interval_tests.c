@@ -346,3 +346,49 @@ CHECK(!interval_sqrt(interval_neg(one)).valid);
 CHECK(!interval_from_double(NAN).valid);
 
 END_TEST
+
+// integer powers of intervals of either sign enclose x^e, and are as tight as the shape of x^e
+// allows: an even power is never negative, and an odd power of [lo, hi] starts near lo^e
+START_TEST(interval_test9)
+
+seed_rand(7);
+for (int i = 0; i < 4000; i++) {
+  interval_t a = random_interval(i % 3 == 0 ? 0.9 : 5, false);
+  for (uint32_t e = 0; e <= 11; e++) {
+    interval_t p = interval_pow_uint(a, e);
+    CHECK(p.valid && p.lo <= p.hi);
+    for (int j = 0; j <= 6; j++) {
+      long double x = sample_point(a, j, 6);
+      CHECK(p.lo <= powl(x, e) && powl(x, e) <= p.hi);
+    }
+    if (e % 2 == 0) {
+      CHECK(p.lo >= 0.0);
+    }
+    if (e % 2 == 1) {
+      // monotone: the bounds come from the ends, so they are within a few ulps of lo^e and hi^e
+      long double lo = powl((long double) a.lo, e), hi = powl((long double) a.hi, e);
+      CHECK(fabsl((long double) p.lo - lo) <= 1e-12L * fabsl(lo) + 1e-300L);
+      CHECK(fabsl((long double) p.hi - hi) <= 1e-12L * fabsl(hi) + 1e-300L);
+    }
+  }
+}
+
+interval_t s = {.lo = -1.0, .hi = 2.0, .valid = true};
+interval_t sq = interval_pow_uint(s, 2);
+CHECK(sq.lo == 0.0 && sq.hi >= 4.0 && sq.hi < 4.0001);
+interval_t c = {.lo = -1.0, .hi = 4.0, .valid = true};
+interval_t cu = interval_pow_uint(c, 3);
+CHECK(cu.lo <= -1.0 && cu.lo > -1.0001 && cu.hi >= 64.0 && cu.hi < 64.001);
+interval_t neg = {.lo = -3.0, .hi = -2.0, .valid = true};
+interval_t ne = interval_pow_uint(neg, 2);   // even power on the negative side decreases
+CHECK(ne.lo <= 4.0 && ne.lo > 3.999 && ne.hi >= 9.0 && ne.hi < 9.001);
+CHECK(interval_pow_uint(s, 0).lo == 1.0 && interval_pow_uint(s, 0).hi == 1.0);
+interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+CHECK(!interval_pow_uint(bad, 3).valid && !interval_pow_uint(bad, 0).valid);
+// negative exponents: the reciprocal of the tight power
+interval_t pos = {.lo = 2.0, .hi = 3.0, .valid = true};
+interval_t inv = interval_pow_int(pos, -2);
+CHECK(inv.lo <= 1.0 / 9.0 && inv.hi >= 1.0 / 4.0 && inv.hi < 0.2501);
+CHECK(!interval_pow_int(s, -2).valid);   // the power contains 0
+
+END_TEST
