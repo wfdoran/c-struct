@@ -91,6 +91,7 @@ document in `doc/` and `demo/array_demo17.c`.
 
 ```
 cd check && make && ./unit_tests     # unit tests for every container
+cd check && make doc-check            # the code examples of these docs compile
 ```
 
 `.github/workflows/ci.yml` does the same build and test run, with gcc and with

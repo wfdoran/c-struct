@@ -21,6 +21,11 @@ unit_tests: $(OBJS) make_header.awk make_test.awk
 # the interval code depends on the rounding mode being honored
 interval_tests.o: CFLAGS += -frounding-math
 
+# compiles the code examples of doc/*.md and README.md
+.PHONY: doc-check
+doc-check:
+	CC=$(CC) sh doc_examples.sh
+
 .PHONY: clean
 clean:
 	rm -rf unit_tests.c

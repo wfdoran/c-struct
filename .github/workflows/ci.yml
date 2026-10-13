@@ -28,3 +28,8 @@ jobs:
       - name: Run unit_tests
         working-directory: check
         run: ./unit_tests
+
+      # the examples in doc/*.md and README.md must compile
+      - name: Check the documentation examples
+        working-directory: check
+        run: make doc-check CC=${{ matrix.cc }}
