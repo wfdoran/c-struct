@@ -38,24 +38,40 @@ typedef struct {
   data_t null_value;
 } TYPE;
 
-/* array_prefix_t* array_prefix_init(void);
+/* array_prefix_t* array_prefix_alloc(size_t capacity, size_t size);
 
-   Initializes an empty array.
+   Allocates an array with room for capacity entries and size entries in use
+   (not set), no comparison function and no null value.  Returns NULL if memory
+   could not be allocated or the room does not fit in a size_t.  The caller sets
+   the comparison function and the null value.
 */
-static inline TYPE *GLUE3(array_, prefix, _init)(void) {
+CS_PRIVATE static inline TYPE *GLUE3(array_, prefix, _alloc)(size_t capacity,
+                                                             size_t size) {
+  if (capacity > SIZE_MAX / sizeof(data_t)) {
+    return NULL;
+  }
   TYPE *a = malloc(sizeof(TYPE));
   if (a == NULL) {
     return NULL;
   }
   memset(&a->null_value, 0, sizeof(a->null_value)); /* always initialized */
-  a->capacity = CS_MIN_CAPACITY(data_t);
-  a->alloc = malloc(a->capacity * sizeof(data_t));
+  /* never malloc(0): NULL would be indistinguishable from failure */
+  a->alloc = malloc((capacity > 0 ? capacity : 1) * sizeof(data_t));
   if (a->alloc == NULL) {
     free(a);
     return NULL;
   }
   a->data = a->alloc;
-  a->size = 0;
+  a->size = size;
+  a->capacity = capacity;
+  a->comp = NULL;
+  a->have_null_value = false;
+  return a;
+}
+
+/* The comparison function and null value of a new array which is not a copy:
+   the defaults for data_t, and default_null_value if it was defined. */
+CS_PRIVATE static inline void GLUE3(array_, prefix, _set_defaults)(TYPE *a) {
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
   _unused(temp);
@@ -64,9 +80,18 @@ static inline TYPE *GLUE3(array_, prefix, _init)(void) {
 #ifdef default_null_value
   a->null_value = default_null_value;
   a->have_null_value = true;
-#else
-  a->have_null_value = false;
 #endif
+}
+
+/* array_prefix_t* array_prefix_init(void);
+
+   Initializes an empty array.
+*/
+static inline TYPE *GLUE3(array_, prefix, _init)(void) {
+  TYPE *a = GLUE3(array_, prefix, _alloc)(CS_MIN_CAPACITY(data_t), 0);
+  if (a != NULL) {
+    GLUE3(array_, prefix, _set_defaults)(a);
+  }
   return a;
 }
 
@@ -77,82 +102,15 @@ static inline TYPE *GLUE3(array_, prefix, _init)(void) {
 
 static inline TYPE *GLUE3(array_, prefix, _init2)(size_t size,
                                                   data_t default_value) {
-  if (size > SIZE_MAX / sizeof(data_t)) {
-    return NULL;
-  }
-  TYPE *a = malloc(sizeof(TYPE));
+  TYPE *a = GLUE3(array_, prefix, _alloc)(size, size);
   if (a == NULL) {
     return NULL;
   }
-  memset(&a->null_value, 0, sizeof(a->null_value)); /* always initialized */
-  /* never malloc(0): NULL would be indistinguishable from failure */
-  a->alloc = malloc((size > 0 ? size : 1) * sizeof(data_t));
-  if (a->alloc == NULL) {
-    free(a);
-    return NULL;
-  }
-  a->data = a->alloc;
-  a->size = size;
-  a->capacity = size;
-  data_t temp;
-  a->comp = DEFAULT_COMP(temp);
-  _unused(temp);
-#ifdef default_null_value
-  a->null_value = default_null_value;
-  a->have_null_value = true;
-#else
-  a->have_null_value = false;
-#endif
+  GLUE3(array_, prefix, _set_defaults)(a);
   for (size_t i = 0; i < size; i++) {
     a->data[i] = default_value;
   }
   return a;
-}
-
-/* array_prefix_deep_clone(const array_prefix_t*, data_t(*f)(const data_t));
-
-   Makes a deep copy of an array.  The user provided f is used to
-   create/initialize each entry in the clone.
-*/
-static inline TYPE *
-GLUE3(array_, prefix, _deep_clone)(const TYPE *in, data_t (*f)(const data_t)) {
-  if (in == NULL) {
-    return NULL;
-  }
-  TYPE *out = malloc(sizeof(TYPE));
-  if (out == NULL) {
-    return NULL;
-  }
-  memset(&out->null_value, 0, sizeof(out->null_value)); /* always initialized */
-  out->alloc = malloc((in->size > 0 ? in->size : 1) * sizeof(data_t));
-  if (out->alloc == NULL) {
-    free(out);
-    return NULL;
-  }
-  out->data = out->alloc;
-  out->size = in->size;
-  out->capacity = in->size;
-  out->comp = in->comp;
-  out->have_null_value = in->have_null_value;
-  if (out->have_null_value) {
-    out->null_value = in->null_value;
-  }
-  if (f != NULL) {
-    for (size_t i = 0; i < in->size; i++) {
-      out->data[i] = f(in->data[i]);
-    }
-  } else {
-    memcpy(out->data, in->data, in->size * sizeof(data_t));
-  }
-  return out;
-}
-
-/* array_prefix_clone(const array_prefix_t *a);
-
-   Makes a copy of an array.
-*/
-static inline TYPE *GLUE3(array_, prefix, _clone)(const TYPE *in) {
-  return GLUE3(array_, prefix, _deep_clone)(in, NULL);
 }
 
 /* array_prefix_deep_slice(const array_prefix_t *in, size_t left, size_t right,
@@ -173,19 +131,10 @@ GLUE3(array_, prefix, _deep_slice)(const TYPE *in, size_t left, size_t right,
     return NULL;
   }
   const size_t size = right - left;
-  TYPE *out = malloc(sizeof(TYPE));
+  TYPE *out = GLUE3(array_, prefix, _alloc)(size, size);
   if (out == NULL) {
     return NULL;
   }
-  memset(&out->null_value, 0, sizeof(out->null_value)); /* always initialized */
-  out->alloc = malloc((size > 0 ? size : 1) * sizeof(data_t));
-  if (out->alloc == NULL) {
-    free(out);
-    return NULL;
-  }
-  out->data = out->alloc;
-  out->size = size;
-  out->capacity = size;
   out->comp = in->comp;
   out->have_null_value = in->have_null_value;
   if (out->have_null_value) {
@@ -204,6 +153,25 @@ GLUE3(array_, prefix, _deep_slice)(const TYPE *in, size_t left, size_t right,
 static inline TYPE *GLUE3(array_, prefix, _slice)(const TYPE *in, size_t left,
                                                   size_t right) {
   return GLUE3(array_, prefix, _deep_slice)(in, left, right, NULL);
+}
+
+/* array_prefix_deep_clone(const array_prefix_t*, data_t(*f)(const data_t));
+
+   Makes a deep copy of an array.  The user provided f is used to
+   create/initialize each entry in the clone.
+*/
+static inline TYPE *
+GLUE3(array_, prefix, _deep_clone)(const TYPE *in, data_t (*f)(const data_t)) {
+  return GLUE3(array_, prefix, _deep_slice)(in, 0, in == NULL ? 0 : in->size,
+                                            f);
+}
+
+/* array_prefix_clone(const array_prefix_t *a);
+
+   Makes a copy of an array.
+*/
+static inline TYPE *GLUE3(array_, prefix, _clone)(const TYPE *in) {
+  return GLUE3(array_, prefix, _deep_clone)(in, NULL);
 }
 
 /* array_prefix_set_comp(array_prefix_t *a, int (*comp) (data_t*, data_t*)
