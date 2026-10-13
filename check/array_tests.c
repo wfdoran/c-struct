@@ -992,3 +992,130 @@ CHECK(array_huge_append(h, (huge_t){{0}}) == 0 && array_huge_append(h, (huge_t){
 array_huge_destroy(&h);
 
 END_TEST
+
+// reserve makes room for a number of entries without changing what is in the array
+START_TEST(array_test22)
+
+CHECK(array_int_reserve(NULL, 10) == -1);
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+size_t start = array_int_capacity(a);
+
+// room already: nothing happens, not even a reallocation
+int *block = a->alloc;
+CHECK(array_int_reserve(a, 0) == 0);
+CHECK(array_int_reserve(a, start) == 0);
+CHECK(array_int_capacity(a) == start && a->alloc == block);
+
+// the entries and the size survive growing, and the capacity is what was asked for
+for (int i = 0; i < 5; i++) {
+  CHECK(array_int_append(a, i * 10) == 0);
+}
+CHECK(array_int_reserve(a, 1000) == 0);
+CHECK(array_int_capacity(a) == 1000 && array_int_size(a) == 5);
+for (int i = 0; i < 5; i++) {
+  CHECK(array_int_get(a, (size_t) i) == i * 10);
+}
+
+// appends up to the reserved capacity do not move the storage
+block = a->alloc;
+while (array_int_size(a) < 1000) {
+  CHECK(array_int_append(a, 1) == 0);
+}
+CHECK(a->alloc == block && array_int_capacity(a) == 1000);
+CHECK(array_int_append(a, 2) == 0);      // one more does grow it
+CHECK(array_int_capacity(a) > 1000);
+array_int_destroy(&a);
+
+// a request which cannot be met leaves the array as it was
+a = array_int_init();
+for (int i = 0; i < 3; i++) {
+  array_int_append(a, i);
+}
+size_t cap = array_int_capacity(a);
+block = a->alloc;
+CHECK(array_int_reserve(a, SIZE_MAX) == -1);
+CHECK(array_int_reserve(a, SIZE_MAX / sizeof(int) + 1) == -1);
+CHECK(array_int_size(a) == 3 && array_int_capacity(a) == cap && a->alloc == block);
+CHECK(array_int_get(a, 2) == 2);
+array_int_destroy(&a);
+
+// room freed by pop_first is used before anything is allocated
+a = array_int_init();
+CHECK(array_int_reserve(a, 16) == 0);                // enough to work with, whatever the start
+size_t c0 = array_int_capacity(a);
+while (array_int_size(a) < c0) {
+  array_int_append(a, (int) array_int_size(a));
+}
+for (size_t i = 0; i < c0 / 2; i++) {
+  array_int_pop_first(a);
+}
+size_t popped = c0 - array_int_size(a);
+size_t left = array_int_size(a);
+CHECK(popped > 0 && array_int_capacity(a) == c0 - popped);
+block = a->alloc;
+CHECK(array_int_reserve(a, c0) == 0);                // fits once the front is reclaimed
+CHECK(a->alloc == block && a->data == a->alloc);     // no allocation: the entries slid down
+CHECK(array_int_capacity(a) == c0 && array_int_size(a) == left);
+for (size_t i = 0; i < left; i++) {
+  CHECK(array_int_get(a, i) == (int) (popped + i));
+}
+
+// more than that is allocated, and the block no longer has dead room in front
+for (size_t i = 0; i < 3; i++) {
+  array_int_pop_first(a);
+}
+CHECK(array_int_reserve(a, c0 + 500) == 0);
+CHECK(a->data == a->alloc && array_int_capacity(a) == c0 + 500);
+CHECK(array_int_size(a) == left - 3);
+for (size_t i = 0; i < array_int_size(a); i++) {
+  CHECK(array_int_get(a, i) == (int) (popped + 3 + i));
+}
+array_int_destroy(&a);
+
+// the null value, the comparison function and an empty array are not touched
+a = array_int_init();
+CHECK(array_int_set_null_value(a, -5) == 0);
+CHECK(array_int_reserve(a, 100) == 0);
+CHECK(array_int_size(a) == 0 && array_int_pop(a) == -5);
+array_int_destroy(&a);
+
+END_TEST
+
+// reserve when memory runs out: the array keeps its size and entries
+START_TEST(array_test23)
+
+array_oom_t *a = array_oom_init();
+CHECK(a != NULL);
+for (int i = 0; i < 4; i++) {
+  CHECK(array_oom_append(a, i) == 0);
+}
+size_t cap = array_oom_capacity(a);
+
+aoom_budget = 0;
+CHECK(array_oom_reserve(a, cap + 100) == -1);
+aoom_budget = -1;
+CHECK(array_oom_size(a) == 4 && array_oom_capacity(a) == cap);
+for (int i = 0; i < 4; i++) {
+  CHECK(array_oom_get(a, (size_t) i) == i);
+}
+CHECK(array_oom_append(a, 4) == 0);      // and the array still works
+
+// after a failure the same request succeeds when memory is there
+CHECK(array_oom_reserve(a, cap + 100) == 0);
+CHECK(array_oom_capacity(a) == cap + 100 && array_oom_size(a) == 5);
+
+// with room freed at the front, a failure to allocate still leaves a valid array
+for (int i = 0; i < 3; i++) {
+  CHECK(array_oom_pop_first(a) == i);
+}
+aoom_budget = 0;
+CHECK(array_oom_reserve(a, cap + 1000) == -1);
+aoom_budget = -1;
+CHECK(array_oom_size(a) == 2 && array_oom_get(a, 0) == 3 && array_oom_get(a, 1) == 4);
+CHECK(array_oom_reserve(a, cap + 1000) == 0);
+CHECK(array_oom_capacity(a) == cap + 1000 && array_oom_get(a, 1) == 4);
+array_oom_destroy(&a);
+
+END_TEST

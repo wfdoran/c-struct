@@ -62,6 +62,34 @@ Appends `value` to the end of the array.  The array will be expanded as needed.
 Returns 0 on success, or -1 if `a` is `NULL` or memory could not be allocated
 (the array is unchanged).
 
+### `int32_t array_prefix_reserve(array_prefix_t *a, size_t capacity)`
+
+Makes sure the array has room for at least `capacity` entries in all, so that
+appends up to that many do not reallocate.  Use it before filling an array whose
+final size is known: one allocation instead of one at each doubling, and an
+out-of-memory failure shows up at the start instead of part way through.  The
+size and the entries do not change, and nothing happens if there is room
+already.
+
+An allocation is for exactly `capacity` entries, not more.  Room left at the
+front by `array_prefix_pop_first()` is used first: the entries slide down over
+it, which may be enough.  The entries may move, so pointers into the array are
+not valid after the call.
+
+Returns 0 on success, or -1 if `a` is `NULL`, `capacity` is too large to
+allocate, or memory could not be allocated (the size and the entries are
+unchanged).
+
+```c
+array_int_t *a = array_int_init();
+if (array_int_reserve(a, 100000) != 0) {
+  /* out of memory: nothing was changed */
+}
+for (int i = 0; i < 100000; i++) {
+  array_int_append(a, i);       /* does not allocate */
+}
+```
+
 ### `data_t array_prefix_pop(array_prefix_t *a)`
 
 Pops the last value off the array.  With `array_prefix_append()` this gives a
@@ -100,7 +128,8 @@ Gives the size of the array.
 
 ### `size_t array_prefix_capacity(const array_prefix_t *a)`
 
-Gives the number of entries the array can hold before it has to grow.
+Gives the number of entries the array can hold before it has to grow.  See
+`array_prefix_reserve()` to set it.
 
 ## Collective Operations
 

@@ -517,6 +517,13 @@ static int run_array_model(uint32_t seed) {
       array_ma_destroy(&c);
     }
 
+    if (it % 250 == 0) {
+      // room for more: whatever is in the array, in front or behind, stays
+      size_t want = n + get_rand() % 200;
+      CHECK(array_ma_reserve(a, want) == 0);
+      CHECK(array_ma_capacity(a) >= want);
+    }
+
     CHECK(array_ma_size(a) == n);
     if (n > 0) {
       CHECK(array_ma_get(a, 0) == m[0] && array_ma_get(a, n - 1) == m[n - 1]);

@@ -568,6 +568,54 @@ static inline int32_t GLUE3(array_, prefix, _append)(TYPE *a, data_t value) {
   return 0;
 }
 
+/* int32_t array_prefix_reserve(array_prefix_t *a, size_t capacity);
+
+   Makes sure the array has room for at least capacity entries in all, so that
+   appends up to that many do not reallocate.  The size and the entries do not
+   change.  The entries may move, so pointers into the array are not valid
+   after the call.  Room freed at the front by array_prefix_pop_first() is used
+   before memory is allocated, and an allocation is for exactly capacity
+   entries.
+
+   return value:
+     -1 => error (a is NULL, capacity is too large, or out of memory; the size
+           and the entries are unchanged)
+      0 => ok (also if there was room already)
+*/
+static inline int32_t GLUE3(array_, prefix, _reserve)(TYPE *a,
+                                                      size_t capacity) {
+  if (a == NULL) {
+    return -1;
+  }
+  if (capacity <= a->capacity) {
+    return 0;
+  }
+  if (capacity > SIZE_MAX / sizeof(data_t)) {
+    return -1;
+  }
+
+  /* slide the entries down over the room at the front: enough room may be
+     there, and a block with room in front would be wasted otherwise */
+  size_t front = a->data - a->alloc;
+  if (front > 0) {
+    memmove(a->alloc, a->data, a->size * sizeof(data_t));
+    a->data = a->alloc;
+    a->capacity += front;
+    if (capacity <= a->capacity) {
+      return 0;
+    }
+  }
+
+  data_t *tmp = realloc(a->alloc, capacity * sizeof(data_t));
+  if (tmp == NULL) {
+    return -1;
+  }
+  a->alloc = tmp;
+  a->data = tmp;
+  a->capacity = capacity;
+  return 0;
+}
+
 /*
    Returns the number of entries in the array.
 */
