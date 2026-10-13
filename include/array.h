@@ -40,10 +40,11 @@ typedef struct {
 
 /* array_prefix_t* array_prefix_alloc(size_t capacity, size_t size);
 
-   Allocates an array with room for capacity entries and size entries in use
-   (not set), no comparison function and no null value.  Returns NULL if memory
-   could not be allocated or the room does not fit in a size_t.  The caller sets
-   the comparison function and the null value.
+   Allocates an array with room for capacity entries and size entries
+   in use (not set), no comparison function and no null value.
+   Returns NULL if memory could not be allocated or the room does not
+   fit in a size_t.  The caller sets the comparison function and the
+   null value.
 */
 CS_PRIVATE static inline TYPE *GLUE3(array_, prefix, _alloc)(size_t capacity,
                                                              size_t size) {
@@ -55,7 +56,6 @@ CS_PRIVATE static inline TYPE *GLUE3(array_, prefix, _alloc)(size_t capacity,
     return NULL;
   }
   memset(&a->null_value, 0, sizeof(a->null_value)); /* always initialized */
-  /* never malloc(0): NULL would be indistinguishable from failure */
   a->alloc = malloc((capacity > 0 ? capacity : 1) * sizeof(data_t));
   if (a->alloc == NULL) {
     free(a);
@@ -69,8 +69,12 @@ CS_PRIVATE static inline TYPE *GLUE3(array_, prefix, _alloc)(size_t capacity,
   return a;
 }
 
-/* The comparison function and null value of a new array which is not a copy:
-   the defaults for data_t, and default_null_value if it was defined. */
+/* void array_prefix_set_defaults(array_prefix_t *a);
+
+   The comparison function and null value of a new array which is not
+   a copy: the defaults for data_t, and default_null_value if it was
+   defined.
+*/
 CS_PRIVATE static inline void GLUE3(array_, prefix, _set_defaults)(TYPE *a) {
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
@@ -89,9 +93,11 @@ CS_PRIVATE static inline void GLUE3(array_, prefix, _set_defaults)(TYPE *a) {
 */
 static inline TYPE *GLUE3(array_, prefix, _init)(void) {
   TYPE *a = GLUE3(array_, prefix, _alloc)(CS_MIN_CAPACITY(data_t), 0);
-  if (a != NULL) {
-    GLUE3(array_, prefix, _set_defaults)(a);
+  if (a == NULL) {
+    return NULL;
   }
+
+  GLUE3(array_, prefix, _set_defaults)(a);
   return a;
 }
 
@@ -150,6 +156,10 @@ GLUE3(array_, prefix, _deep_slice)(const TYPE *in, size_t left, size_t right,
   return out;
 }
 
+/* array_prefix_slice(in, left, right) is a special case of
+   array_prefix_deep_slice where there is no translation
+   function.
+*/
 static inline TYPE *GLUE3(array_, prefix, _slice)(const TYPE *in, size_t left,
                                                   size_t right) {
   return GLUE3(array_, prefix, _deep_slice)(in, left, right, NULL);
@@ -162,8 +172,10 @@ static inline TYPE *GLUE3(array_, prefix, _slice)(const TYPE *in, size_t left,
 */
 static inline TYPE *
 GLUE3(array_, prefix, _deep_clone)(const TYPE *in, data_t (*f)(const data_t)) {
-  return GLUE3(array_, prefix, _deep_slice)(in, 0, in == NULL ? 0 : in->size,
-                                            f);
+  if (in == NULL) {
+    return NULL;
+  }
+  return GLUE3(array_, prefix, _deep_slice)(in, 0, in->size, f);
 }
 
 /* array_prefix_clone(const array_prefix_t *a);
@@ -229,9 +241,9 @@ static inline int32_t GLUE3(array_, prefix, _destroy)(TYPE **a_ptr) {
   return 0;
 }
 
-/* Stable merge sort of the n entries at v, using comp directly (qsort would
-   need the comparison function cast to an incompatible type).  tmp must have
-   room for n / 2 entries. */
+/* Stable merge sort of the n entries at v, using comp directly (qsort
+   would need the comparison function cast to an incompatible type).
+   tmp must have room for n / 2 entries. */
 CS_PRIVATE static inline void
 GLUE3(array_, prefix, _sort_range)(int (*comp)(data_t *, data_t *), data_t *v,
                                    data_t *tmp, size_t n) {
@@ -275,9 +287,10 @@ GLUE3(array_, prefix, _sort_range)(int (*comp)(data_t *, data_t *), data_t *v,
 
 /* int32_t array_prefix_sort(array_prefix_t *a);
 
-   Sorts the array (a stable sort, O(n log n) comparisons) using the comparison
-   function.  Returns -1 if a is NULL, there is no comparison function, or
-   memory for the temporary buffer could not be allocated, and 0 otherwise. */
+   Sorts the array (a stable sort, O(n log n) comparisons) using the
+   comparison function.  Returns -1 if a is NULL, there is no
+   comparison function, or memory for the temporary buffer could not
+   be allocated, and 0 otherwise. */
 static inline int32_t GLUE3(array_, prefix, _sort)(TYPE *a) {
   if (a == NULL) {
     return -1;
@@ -446,9 +459,9 @@ static inline int32_t GLUE3(array_, prefix,
 
 /*
 
-   Gets the value at a particular index.  If a null value has been provided
-   and the index is out of range, the null value is returned.  Otherwise,
-   index out of range results in an ASSERT failure.
+   Gets the value at a particular index.  If a null value has been
+   provided and the index is out of range, the null value is returned.
+   Otherwise, index out of range results in an ASSERT failure.
 */
 static inline data_t GLUE3(array_, prefix, _get)(const TYPE *a, size_t idx) {
   CS_ASSERT(a != NULL);
@@ -463,8 +476,8 @@ static inline data_t GLUE3(array_, prefix, _get)(const TYPE *a, size_t idx) {
 }
 
 /*
-   Pops the last value off of the array.  Using this and array_prefix_append()
-   you get a stack.
+   Pops the last value off of the array.  Using this and
+   array_prefix_append() you get a stack.
 */
 static inline data_t GLUE3(array_, prefix, _pop)(TYPE *a) {
   CS_ASSERT(a != NULL);
@@ -480,8 +493,8 @@ static inline data_t GLUE3(array_, prefix, _pop)(TYPE *a) {
 }
 
 /*
-   Pops the first value off of the array.  Using this and array_prefix_append()
-   you get a queue.
+   Pops the first value off of the array.  Using this and
+   array_prefix_append() you get a queue.
 */
 static inline data_t GLUE3(array_, prefix, _pop_first)(TYPE *a) {
   CS_ASSERT(a != NULL);
@@ -567,6 +580,7 @@ static inline size_t GLUE3(array_, prefix, _size)(const TYPE *a) {
    Returns the capacity in the array until a resize is needed.
 */
 static inline size_t GLUE3(array_, prefix, _capacity)(const TYPE *a) {
+  CS_ASSERT(a != NULL);
   return a->capacity;
 }
 
@@ -574,9 +588,9 @@ static inline size_t GLUE3(array_, prefix, _capacity)(const TYPE *a) {
 #define HEAP_LEFT_CHILD(x) (2 * (x) + 1)
 #define HEAP_RIGHT_CHILD(x) (2 * (x) + 2)
 
-/* Restores the heap order below pos, assuming both subtrees of pos are
-   already heaps.  The entry at pos is moved down, toward the larger child,
-   until it fits. */
+/* Restores the heap order below pos, assuming both subtrees of pos
+   are already heaps.  The entry at pos is moved down, toward the
+   larger child, until it fits. */
 CS_PRIVATE static inline void GLUE3(array_, prefix, _sift_down)(TYPE *a,
                                                                 size_t pos) {
   data_t last = a->data[pos];
