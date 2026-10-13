@@ -1090,3 +1090,50 @@ tree_int_destroy(&empty);
 #undef PRINT_FILE
 
 END_TEST
+
+// a NULL tree is an empty answer, not a crash, in every function which takes a tree
+START_TEST(tree_test23)
+
+tree_int_t *t = NULL;
+void *value = (void *) 1;
+int key = 7;
+titer_int_t it;
+
+CHECK(tree_int_insert(t, 1, NULL) == -1);
+tree_int_set_comp(t, NULL);
+tree_int_set_update(t, NULL);
+tree_int_set_value_free(t, NULL);
+
+CHECK(!tree_int_delete(t, 5).found);
+CHECK(tree_int_delete(t, 5).value == NULL);
+CHECK(!tree_int_retrieve(t, 5).found);
+CHECK(!tree_int_delete_min(t).found);
+CHECK(!tree_int_delete_max(t).found);
+CHECK(!tree_int_retrieve_min(t).found);
+CHECK(!tree_int_retrieve_max(t).found);
+CHECK(!tree_int_get_rank(t, 0).found);
+
+CHECK(tree_int_size(t) == 0);
+CHECK(tree_int_height(t) == 0);
+CHECK(tree_int_num_less(t, 5) == 0);
+CHECK(tree_int_num_less_equal(t, 5) == 0);
+CHECK(tree_int_num_greater(t, 5) == 0);
+CHECK(tree_int_num_greater_equal(t, 5) == 0);
+
+CHECK(tree_int_first(t, &it, &key, &value) == 1);
+CHECK(tree_int_next(&it, &key, &value) == 1);       // the iterator is at the end
+CHECK(tree_int_first_from(t, 3, &it, &key, &value) == 1);
+CHECK(tree_int_post_first(t, &it, &key, &value) == 1);
+CHECK(key == 7 && value == (void *) 1);              // nothing was written
+
+tree_int_print(t, NULL);
+tree_int_destroy(&t);                                // already NULL
+CHECK(t == NULL);
+
+// the same functions on a real, empty tree give the same answers
+t = tree_int_init();
+CHECK(!tree_int_delete(t, 5).found && !tree_int_retrieve(t, 5).found);
+CHECK(tree_int_size(t) == 0 && tree_int_first(t, &it, &key, &value) == 1);
+tree_int_destroy(&t);
+
+END_TEST
