@@ -64,9 +64,9 @@ hash function, or memory could not be allocated.  Unlike `put`, it uses the
 
 ## Compiled in hash and equality
 
-Instead of `hash_prefix_set_hash()` and `hash_prefix_set_comp()` (calls through
-function pointers), the hash and the equality of keys can be compiled in by
-defining `hkey_hash` and/or `hkey_equal` before including the header:
+Instead of `phash_prefix_set_hash()` and `phash_prefix_set_comp()` (calls
+through function pointers), the hash and the equality of keys can be compiled
+in by defining `hkey_hash` and/or `hkey_equal` before including the header:
 
 ```c
 #define hkey_t cell_t
