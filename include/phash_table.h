@@ -217,7 +217,7 @@ static inline void GLUE3(phash_, prefix,
    size at some moment during the call.
 */
 static inline size_t GLUE3(phash_, prefix, _size)(const PHTABLE *h) {
-  return (size_t) CS_LOAD(((PHTABLE *) h)->size);
+  return (size_t) CS_LOAD(h->size);
 }
 
 /* size_t phash_prefix_capacity(const phtable_prefix_t *h);
@@ -228,7 +228,7 @@ static inline size_t GLUE3(phash_, prefix, _size)(const PHTABLE *h) {
    phash_prefix_size(), it does not take the lock.
 */
 static inline size_t GLUE3(phash_, prefix, _capacity)(const PHTABLE *h) {
-  return (size_t) CS_LOAD(((PHTABLE *) h)->capacity);
+  return (size_t) CS_LOAD(h->capacity);
 }
 
 /* void phash_prefix_destroy(phtable_prefix_t **h_ptr);
