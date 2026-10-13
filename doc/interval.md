@@ -62,7 +62,8 @@ argument is in the domain.  So `interval_sqrt` of `[-1, 4]` is the interval for
 
 `interval_div` is the exception: it is invalid whenever the divisor contains
 0 (see question 7 in `QUESTIONS.md`).  Operations which would produce a NaN
-(for example `0 * infinity` in `interval_mul`) are also invalid.
+(for example `0 * infinity` in `interval_mul`, or `infinity - infinity` in
+`interval_add` and `interval_sub`) are also invalid.
 
 ## Creating and printing
 

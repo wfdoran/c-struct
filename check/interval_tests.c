@@ -392,3 +392,30 @@ CHECK(inv.lo <= 1.0 / 9.0 && inv.hi >= 1.0 / 4.0 && inv.hi < 0.2501);
 CHECK(!interval_pow_int(s, -2).valid);   // the power contains 0
 
 END_TEST
+
+// a NaN bound (infinity minus infinity) makes add and sub invalid, like mul and div
+START_TEST(interval_test10)
+
+interval_t ninf = {.lo = -INFINITY, .hi = -INFINITY, .valid = true};
+interval_t pinf = {.lo = INFINITY, .hi = INFINITY, .valid = true};
+CHECK(!interval_add(ninf, pinf).valid);
+CHECK(!interval_add(pinf, ninf).valid);
+CHECK(!interval_sub(pinf, pinf).valid);
+CHECK(!interval_sub(ninf, ninf).valid);
+
+// the half-infinite intervals which the library itself makes still work
+interval_t up = {.lo = 0.0, .hi = INFINITY, .valid = true};
+interval_t down = {.lo = -INFINITY, .hi = 0.0, .valid = true};
+interval_t all = {.lo = -INFINITY, .hi = INFINITY, .valid = true};
+interval_t r = interval_add(up, down);
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+r = interval_sub(up, up);
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+r = interval_add(all, all);
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+r = interval_sub(all, interval_from_double(1.0));
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+r = interval_add(interval_from_double(INFINITY), interval_from_double(-INFINITY));
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+
+END_TEST

@@ -120,6 +120,12 @@ static inline interval_t interval_add(interval_t a, interval_t b) {
 
   fesetround(save);
 
+  /* infinity - infinity: as in interval_mul, a NaN bound is not a valid
+     interval */
+  if (isnan(rv.lo) || isnan(rv.hi)) {
+    return interval_invalid();
+  }
+
   rv.valid = true;
   return rv;
 }
@@ -140,6 +146,12 @@ static inline interval_t interval_sub(interval_t a, interval_t b) {
   rv.lo = -iv_fence(iv_fence(b.hi) - iv_fence(a.lo));
 
   fesetround(save);
+
+  /* infinity - infinity: as in interval_mul, a NaN bound is not a valid
+     interval */
+  if (isnan(rv.lo) || isnan(rv.hi)) {
+    return interval_invalid();
+  }
 
   rv.valid = true;
   return rv;
