@@ -32,6 +32,37 @@ typedef struct {
 #undef prefix
 #undef data_t
 
+// types of other sizes, for the starting capacity
+typedef struct {
+  char c[CS_CACHE_LINE_SIZE];
+} line_t;   // one whole cache line
+
+typedef struct {
+  char c[24];
+} mid_t;
+
+typedef struct {
+  char c[1000];
+} huge_t;
+
+#define data_t line_t
+#define prefix line
+#include <array.h>
+#undef prefix
+#undef data_t
+
+#define data_t mid_t
+#define prefix mid
+#include <array.h>
+#undef prefix
+#undef data_t
+
+#define data_t huge_t
+#define prefix huge
+#include <array.h>
+#undef prefix
+#undef data_t
+
 // records with a key and a tag, compared by key only, to see whether a sort is stable
 typedef struct {
   int k;
@@ -510,11 +541,17 @@ for (size_t i = 0; i < array_int_size(a); i++) {
 
 // a full array with room at the front slides down instead of growing
 array_int_t *b = array_int_init();
-for (int i = 0; i < 16; i++) {
-  array_int_append(b, i);
+int filled = 0;
+while (array_int_size(b) < array_int_capacity(b)) {   // fill the starting capacity
+  array_int_append(b, filled++);
 }
 size_t cap = array_int_capacity(b);
-for (int i = 0; i < 12; i++) {
+while (array_int_size(b) < 8) {                       // room to work with, whatever the start
+  array_int_append(b, filled++);
+  cap = array_int_capacity(b);
+}
+int popped = (int) (array_int_size(b) - array_int_size(b) / 4);   // leave a quarter, so the front is larger
+for (int i = 0; i < popped; i++) {
   array_int_pop_first(b);
 }
 while (array_int_size(b) < array_int_capacity(b)) {
@@ -524,7 +561,7 @@ int *alloc_before = b->alloc;
 CHECK(array_int_append(b, 101) == 0);          // full now: slides down
 CHECK(b->alloc == alloc_before && b->data == b->alloc);
 CHECK(array_int_capacity(b) >= cap);
-CHECK(array_int_get(b, 0) == 12 && array_int_get(b, array_int_size(b) - 1) == 101);
+CHECK(array_int_get(b, 0) == popped && array_int_get(b, array_int_size(b) - 1) == 101);
 array_int_destroy(&b);
 
 // the null value is what an empty array and an index out of range give
@@ -917,5 +954,41 @@ array_int_destroy(&e2);
 array_int_destroy(&e);
 array_int_destroy(&a);
 #undef ARRAY_FILE
+
+END_TEST
+
+// the capacity a new array of T should start with, written out again here
+#define EXPECT_CAPACITY(T) (sizeof(T) >= CS_CACHE_LINE_SIZE ? (size_t) 1 : CS_CACHE_LINE_SIZE / sizeof(T))
+
+// a new array has room for what fits in a cache line (at least one entry), so the first few
+// appends do not each reallocate
+START_TEST(array_test21)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL && array_int_capacity(a) == EXPECT_CAPACITY(int));
+size_t cap = array_int_capacity(a);
+for (size_t i = 0; i < cap; i++) {
+  CHECK(array_int_append(a, (int) i) == 0);
+}
+CHECK(array_int_capacity(a) == cap);   // no reallocation until it is full
+CHECK(array_int_append(a, 1) == 0 && array_int_capacity(a) == 2 * cap);
+array_int_destroy(&a);
+
+array_pair_t *p = array_pair_init();
+CHECK(p != NULL && array_pair_capacity(p) == EXPECT_CAPACITY(pair_t));
+array_pair_destroy(&p);
+
+array_mid_t *m = array_mid_init();
+CHECK(m != NULL && array_mid_capacity(m) == EXPECT_CAPACITY(mid_t));
+array_mid_destroy(&m);
+
+array_line_t *l = array_line_init();
+CHECK(l != NULL && array_line_capacity(l) == 1);                   // exactly one line
+array_line_destroy(&l);
+
+array_huge_t *h = array_huge_init();
+CHECK(h != NULL && array_huge_capacity(h) == 1);                   // never less than one
+CHECK(array_huge_append(h, (huge_t){{0}}) == 0 && array_huge_append(h, (huge_t){{1}}) == 0);
+array_huge_destroy(&h);
 
 END_TEST

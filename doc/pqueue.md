@@ -42,7 +42,9 @@ Keys which compare equal may come out in any order.
 Allocates and returns an empty priority queue, or `NULL` if memory could not be
 allocated.  For basic key types (see `comp.h`) a comparison function is set
 automatically; other types need `pqueue_prefix_set_comp()` before the first
-`push`.
+`push`.  The queue starts with room for as
+many entries as fit in a cache line (at least one; see `CS_CACHE_LINE_SIZE` in
+`cs_cache.h`), so the first few pushes do not reallocate.
 
 ### `void pqueue_prefix_destroy(pqueue_prefix_t **q_ptr)`
 

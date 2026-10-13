@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include "cs_assert.h"
+#include "cs_cache.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -75,13 +76,13 @@ static inline PQUEUE *GLUE3(pqueue_, prefix, _init)(void) {
     return q;
   }
 
-  q->data = malloc(sizeof(PNODE));
+  q->capacity = CS_MIN_CAPACITY(PNODE);
+  q->data = malloc(q->capacity * sizeof(PNODE));
   if (q->data == NULL) {
     free(q);
     return NULL;
   }
   q->size = 0;
-  q->capacity = 1;
   data_t temp;
   q->comp = DEFAULT_COMP(temp);
   _unused(temp);

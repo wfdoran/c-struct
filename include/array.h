@@ -8,6 +8,7 @@
 #include "cmp_hook.h"
 #include "comp.h"
 #include "cs_assert.h"
+#include "cs_cache.h"
 #include "cs_private.h"
 #include "serialize.h"
 
@@ -47,14 +48,14 @@ static inline TYPE *GLUE3(array_, prefix, _init)(void) {
     return NULL;
   }
   memset(&a->null_value, 0, sizeof(a->null_value)); /* always initialized */
-  a->alloc = malloc(sizeof(data_t));
+  a->capacity = CS_MIN_CAPACITY(data_t);
+  a->alloc = malloc(a->capacity * sizeof(data_t));
   if (a->alloc == NULL) {
     free(a);
     return NULL;
   }
   a->data = a->alloc;
   a->size = 0;
-  a->capacity = 1;
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
   _unused(temp);

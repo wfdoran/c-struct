@@ -288,3 +288,19 @@ pqueue_dn_destroy(&q);
 CHECK(q == NULL);
 
 END_TEST
+
+// a new queue has room for what fits in a cache line (at least one entry)
+START_TEST(pqueue_test11)
+
+pqueue_pqi_t *q = pqueue_pqi_init();
+CHECK(q != NULL);
+size_t cap = q->capacity;
+CHECK(cap == (sizeof(q->data[0]) >= CS_CACHE_LINE_SIZE ? (size_t) 1 : CS_CACHE_LINE_SIZE / sizeof(q->data[0])));
+for (size_t i = 0; i < cap; i++) {
+  CHECK(pqueue_pqi_push(q, (int) i, NULL) == 0);
+}
+CHECK(q->capacity == cap);   // no reallocation until it is full
+CHECK(pqueue_pqi_push(q, 1, NULL) == 0 && q->capacity == 2 * cap);
+pqueue_pqi_destroy(&q);
+
+END_TEST

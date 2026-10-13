@@ -27,7 +27,10 @@ An optional null value can be given before including the header with
 
 ### `array_prefix_t *array_prefix_init(void)`
 
-Initializes an empty array.  Returns `NULL` if memory could not be allocated.
+Initializes an empty array.  Returns `NULL` if memory could not be allocated.  The
+array starts with room for as many entries as fit in a cache line (at least
+one), so the first few appends do not reallocate; `CS_CACHE_LINE_SIZE` (64
+unless defined before the include, see `cs_cache.h`) sets the size.
 
 ### `array_prefix_t *array_prefix_init2(size_t size, data_t default_value)`
 
