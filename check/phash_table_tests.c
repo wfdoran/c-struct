@@ -379,3 +379,41 @@ CHECK(phash_pi_size(h) == (size_t) n);
 phash_pi_destroy(&h);
 
 END_TEST
+
+static uint64_t hash_other_int(int k) {
+  return ~(uint64_t) k;
+}
+
+// the hash function can be set while the table is empty; with entries it is refused, since the
+// entries are stored where the old function put them (and the lock is not left held)
+START_TEST(phash_table_test13)
+
+phtable_pi_t *h = phash_pi_init(0);
+CHECK(h != NULL);
+
+CHECK(phash_pi_set_hash(NULL, hash_other_int) == -1);
+CHECK(phash_pi_set_hash(h, hash_other_int) == 0);            // empty: allowed
+for (int i = 0; i < 100; i++) {
+  CHECK(phash_pi_put(h, i, i * 3) == 0);
+}
+
+CHECK(phash_pi_set_hash(h, hash_other_int) == -1);
+// the failed call released the lock; checked first, since a get would release a lock left held
+// by this thread (it ignores the failure of its own read lock, then unlocks)
+CHECK(pthread_rwlock_trywrlock(&(h->rwlock)) == 0);
+pthread_rwlock_unlock(&(h->rwlock));
+for (int i = 0; i < 100; i++) {
+  int v = -1;
+  CHECK(phash_pi_get(h, i, &v) == 1 && v == i * 3);
+}
+
+for (int i = 0; i < 100; i++) {
+  CHECK(phash_pi_remove(h, i, NULL) == 1);
+}
+CHECK(phash_pi_set_hash(h, hash_other_int) == 0);
+CHECK(phash_pi_put(h, 7, 70) == 0);
+int v = 0;
+CHECK(phash_pi_get(h, 7, &v) == 1 && v == 70);
+phash_pi_destroy(&h);
+
+END_TEST

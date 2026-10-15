@@ -135,7 +135,7 @@ static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
   return h;
 }
 
-/* void hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func)
+/* int32_t hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func)
    (hkey_t));
 
    The hash table needs a hash function which maps hkey_t to uint64_t.  hash.h
@@ -143,10 +143,22 @@ static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
    int32_t, int, float, double, char*.  For more complicated types, the user
    must write their own and use this routine to tell the hash table to
    use it.
+
+   It must be called while the table is empty: every entry is stored where its
+   hash says, so after a different function is set the entries already stored
+   cannot be found.
+
+   return value:
+     -1 => error (h is NULL, or the table has entries; nothing is changed)
+      0 => ok
 */
-static inline void GLUE3(hash_, prefix,
-                         _set_hash)(HTABLE *h, uint64_t (*hash_func)(hkey_t)) {
+static inline int32_t
+GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func)(hkey_t)) {
+  if (h == NULL || h->size > 0) {
+    return -1;
+  }
   h->hash_func = hash_func;
+  return 0;
 }
 
 /* void hash_prefix_set_comp(htable_prefix_t *h, int (*comp)(hkey_t, hkey_t));

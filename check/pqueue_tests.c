@@ -304,3 +304,34 @@ CHECK(pqueue_pqi_push(q, 1, NULL) == 0 && q->capacity == 2 * cap);
 pqueue_pqi_destroy(&q);
 
 END_TEST
+
+// the comparison function can be set while the queue is empty; with entries it is refused, since
+// the entries are in heap order for the old function
+START_TEST(pqueue_test12)
+
+pqueue_pqi_t *q = pqueue_pqi_init();
+CHECK(q != NULL);
+
+CHECK(pqueue_pqi_set_comp(q, min_first) == 0);               // empty: allowed
+for (int k = 1; k <= 3; k++) {
+  CHECK(pqueue_pqi_push(q, k, NULL) == 0);
+}
+
+// refused with entries, and the queue goes on with the function it has: smallest first
+CHECK(pqueue_pqi_set_comp(q, min_first) == -1);
+CHECK(pqueue_pqi_set_comp(q, NULL) == -1);
+CHECK(pqueue_pqi_pop(q).key == 1);
+CHECK(pqueue_pqi_set_comp(q, min_first) == -1);              // still has entries
+
+// emptied, the function can be changed (back to the default order: largest first)
+CHECK(pqueue_pqi_pop(q).key == 2);
+CHECK(pqueue_pqi_pop(q).key == 3);
+CHECK(pqueue_pqi_is_empty(q));
+CHECK(pqueue_pqi_set_comp(q, comp_int) == 0);
+for (int k = 1; k <= 3; k++) {
+  CHECK(pqueue_pqi_push(q, k, NULL) == 0);
+}
+CHECK(pqueue_pqi_pop(q).key == 3);
+pqueue_pqi_destroy(&q);
+
+END_TEST

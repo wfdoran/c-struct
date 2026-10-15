@@ -598,3 +598,40 @@ hash_hi_destroy(&c);
 hash_hi_destroy(&h);
 
 END_TEST
+
+static uint64_t hash_other(int k) {
+  return ~(uint64_t) k;
+}
+
+// the hash function can be set while the table is empty; with entries it is refused, since the
+// entries are stored where the old function put them
+START_TEST(hash_table_test18)
+
+htable_hi_t *h = hash_hi_init(0);
+CHECK(h != NULL);
+
+CHECK(hash_hi_set_hash(NULL, hash_other) == -1);
+CHECK(hash_hi_set_hash(h, hash_other) == 0);                 // empty: allowed
+for (int k = 0; k < 100; k++) {
+  CHECK(hash_hi_put(h, k, k * 2) == 0);
+}
+
+// refused with entries, and every key can still be found
+CHECK(hash_hi_set_hash(h, hash_other) == -1);
+for (int k = 0; k < 100; k++) {
+  int v = -1;
+  CHECK(hash_hi_get(h, k, &v) == 1 && v == k * 2);
+}
+
+// emptied, it can be changed again
+for (int k = 0; k < 100; k++) {
+  CHECK(hash_hi_remove(h, k, NULL) == 1);
+}
+CHECK(hash_hi_size(h) == 0);
+CHECK(hash_hi_set_hash(h, hash_other) == 0);
+CHECK(hash_hi_put(h, 7, 70) == 0);
+int v = 0;
+CHECK(hash_hi_get(h, 7, &v) == 1 && v == 70);
+hash_hi_destroy(&h);
+
+END_TEST

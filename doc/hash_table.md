@@ -134,12 +134,18 @@ not present, and -1 on error.  The key and value are not freed.
 
 Set these before putting entries into the table.
 
-### `void hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func) (hkey_t))`
+### `int32_t hash_prefix_set_hash(htable_prefix_t *h, uint64_t (*hash_func) (hkey_t))`
 
 Sets the hash function which maps a key to a `uint64_t`.  `hash.h` provides one
 for many basic types.  For more complicated types, write your own.  The table
 mixes the bits of whatever it returns, so a simple function is enough.  Equal
 keys must give equal hashes.
+
+It must be called while the table is empty: every entry is stored where its hash
+says, so after a different function is set the entries already stored cannot be
+found.  With entries in the table it is refused and nothing is changed.
+
+Returns 0, or -1 if `h` is `NULL` or the table has entries.
 
 ### `void hash_prefix_set_comp(htable_prefix_t *h, int (*comp) (hkey_t, hkey_t))`
 

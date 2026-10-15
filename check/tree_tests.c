@@ -943,7 +943,7 @@ tree_int_t *w = tree_int_init();
 for (int i = 0; i < 5; i++) {
   tree_int_insert(w, i, NULL);
 }
-tree_int_set_comp(w, NULL);
+w->comp = NULL;   // set_comp refuses a tree which has entries
 CHECK(!tree_int_delete(w, 2).found);
 CHECK(tree_int_insert(w, 9, NULL) == -1);
 CHECK(tree_int_size(w) == 5);
@@ -1100,7 +1100,7 @@ int key = 7;
 titer_int_t it;
 
 CHECK(tree_int_insert(t, 1, NULL) == -1);
-tree_int_set_comp(t, NULL);
+CHECK(tree_int_set_comp(t, NULL) == -1);
 tree_int_set_update(t, NULL);
 tree_int_set_value_free(t, NULL);
 
@@ -1134,6 +1134,48 @@ CHECK(t == NULL);
 t = tree_int_init();
 CHECK(!tree_int_delete(t, 5).found && !tree_int_retrieve(t, 5).found);
 CHECK(tree_int_size(t) == 0 && tree_int_first(t, &it, &key, &value) == 1);
+tree_int_destroy(&t);
+
+END_TEST
+
+static int comp_int_descending(int *a, int *b) {
+  return (*a < *b) - (*a > *b);
+}
+
+// the comparison function can be set while the tree is empty; with entries it is refused, since
+// the nodes are in the order of the old function
+START_TEST(tree_test24)
+
+tree_int_t *t = tree_int_init();
+CHECK(t != NULL);
+
+CHECK(tree_int_set_comp(NULL, comp_int_descending) == -1);
+CHECK(tree_int_set_comp(t, comp_int_descending) == 0);       // empty: allowed
+for (int k = 1; k <= 5; k++) {
+  CHECK(tree_int_insert(t, k, NULL) == 0);
+}
+
+// refused with entries; the tree still works with the function it has
+CHECK(tree_int_set_comp(t, comp_int) == -1);
+for (int k = 1; k <= 5; k++) {
+  CHECK(tree_int_retrieve(t, k).found);
+}
+CHECK(tree_int_insert(t, 6, NULL) == 0);
+CHECK(tree_int_size(t) == 6);
+titer_int_t it;
+int key = 0;
+CHECK(tree_int_first(t, &it, &key, NULL) == 0 && key == 6);   // descending: 6 comes first
+
+// emptied, the function can be changed
+for (int k = 1; k <= 6; k++) {
+  CHECK(tree_int_delete(t, k).found);
+}
+CHECK(tree_int_size(t) == 0);
+CHECK(tree_int_set_comp(t, comp_int) == 0);
+for (int k = 1; k <= 3; k++) {
+  CHECK(tree_int_insert(t, k, NULL) == 0);
+}
+CHECK(tree_int_first(t, &it, &key, NULL) == 0 && key == 1);   // ascending now
 tree_int_destroy(&t);
 
 END_TEST

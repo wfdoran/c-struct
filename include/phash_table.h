@@ -151,7 +151,7 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
   return h;
 }
 
-/* void phash_prefix_set_hash(phtable_prefix_t *h, uint64_t (*hash_func)
+/* int32_t phash_prefix_set_hash(phtable_prefix_t *h, uint64_t (*hash_func)
    (hkey_t));
 
    The hash table needs a hash function which maps hkey_t to uint64_t.  hash.h
@@ -160,13 +160,29 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
    must write their own and use this routine to tell the hash table to
    use it.
 
-   It is safe to call while other threads use the table, but set it before
-   the first put: entries already stored cannot be found with a different
-   hash function.
+   It must be called while the table is empty: every entry is stored where its
+   hash says, so after a different function is set the entries already stored
+   cannot be found.  Set it before the table is shared with other threads: the
+   hash of a key is computed before the lock is taken, so a put which is
+   already running can still use the old function.
+
+   return value:
+     -1 => error (h is NULL, or the table has entries; nothing is changed)
+      0 => ok
 */
-static inline void GLUE3(phash_, prefix,
-                         _set_hash)(PHTABLE *h, uint64_t (*hash_func)(hkey_t)) {
+static inline int32_t
+GLUE3(phash_, prefix, _set_hash)(PHTABLE *h, uint64_t (*hash_func)(hkey_t)) {
+  if (h == NULL) {
+    return -1;
+  }
+  pthread_rwlock_wrlock(&(h->rwlock));
+  if (CS_LOAD(h->size) > 0) {
+    pthread_rwlock_unlock(&(h->rwlock));
+    return -1;
+  }
   atomic_store_explicit(&h->hash_func, hash_func, memory_order_release);
+  pthread_rwlock_unlock(&(h->rwlock));
+  return 0;
 }
 
 /* void phash_prefix_set_comp(phtable_prefix_t *h, int (*comp)(hkey_t, hkey_t));

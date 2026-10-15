@@ -186,14 +186,49 @@ static inline TYPE *GLUE3(array_, prefix, _clone)(const TYPE *in) {
   return GLUE3(array_, prefix, _deep_clone)(in, NULL);
 }
 
-/* array_prefix_set_comp(array_prefix_t *a, int (*comp) (data_t*, data_t*)
+/* int32_t array_prefix_set_comp(array_prefix_t *a,
+                                 int (*comp) (data_t*, data_t*))
 
    Sets a comparison function.  This is required in order to call
    array_prefix_sort().
+
+   It must be called while the array is empty.  The array may be sorted, or a
+   heap, under the comparison function it has, and it does not keep track of
+   that; a different function would make bisect and heappop give wrong answers
+   without any warning.  To change the function of an array which has entries,
+   see array_prefix_force_set_comp().
+
+   return value:
+     -1 => error (a or comp is NULL, or the array has entries; nothing is
+           changed)
+      0 => ok
 */
 
 static inline int32_t
 GLUE3(array_, prefix, _set_comp)(TYPE *a, int (*comp)(data_t *, data_t *)) {
+  if (a == NULL || comp == NULL || a->size > 0) {
+    return -1;
+  }
+  a->comp = comp;
+  return 0;
+}
+
+/* int32_t array_prefix_force_set_comp(array_prefix_t *a,
+                                       int (*comp) (data_t*, data_t*))
+
+   Sets a comparison function whether or not the array has entries.  The
+   entries are not rearranged: if the array was sorted, or a heap, under the old
+   function, it is not under the new one until the caller calls
+   array_prefix_sort() or array_prefix_heapify() again.
+
+   return value:
+     -1 => error (a or comp is NULL)
+      0 => ok
+*/
+
+static inline int32_t GLUE3(array_, prefix,
+                            _force_set_comp)(TYPE *a,
+                                             int (*comp)(data_t *, data_t *)) {
   if (a == NULL || comp == NULL) {
     return -1;
   }

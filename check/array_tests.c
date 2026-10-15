@@ -335,7 +335,7 @@ for (int i = 0; i < n; i++) {
   };
   array_pair_append(a, q);
 }
-array_pair_set_comp(a, &comp_pair);
+array_pair_force_set_comp(a, &comp_pair);   // the array has entries already
 array_pair_sort(a);
 for (int i = 0; i < n - 1; i++) {
   pair_t s = array_pair_get(a, i);
@@ -1117,5 +1117,58 @@ CHECK(array_oom_size(a) == 2 && array_oom_get(a, 0) == 3 && array_oom_get(a, 1) 
 CHECK(array_oom_reserve(a, cap + 1000) == 0);
 CHECK(array_oom_capacity(a) == cap + 1000 && array_oom_get(a, 1) == 4);
 array_oom_destroy(&a);
+
+END_TEST
+
+static int comp_int_descending(int *a, int *b) {
+  return (*a < *b) - (*a > *b);
+}
+
+// the comparison function can be set while the array is empty; with entries it is refused (the
+// array may be sorted or a heap under the old function), and force_set_comp does it anyway
+START_TEST(array_test24)
+
+array_int_t *a = array_int_init();
+CHECK(a != NULL);
+
+CHECK(array_int_set_comp(NULL, comp_int_descending) == -1);
+CHECK(array_int_force_set_comp(NULL, comp_int_descending) == -1);
+CHECK(array_int_set_comp(a, NULL) == -1);
+CHECK(array_int_force_set_comp(a, NULL) == -1);
+
+CHECK(array_int_set_comp(a, comp_int_descending) == 0);          // empty: allowed
+int values[] = {3, 1, 2};
+for (int i = 0; i < 3; i++) {
+  CHECK(array_int_append(a, values[i]) == 0);
+}
+
+// with entries it is refused, and nothing changes: the array still sorts descending
+CHECK(array_int_set_comp(a, comp_int) == -1);
+CHECK(array_int_sort(a) == 0);
+CHECK(array_int_get(a, 0) == 3 && array_int_get(a, 1) == 2 && array_int_get(a, 2) == 1);
+
+// force_set_comp changes the function and leaves the entries where they are
+CHECK(array_int_force_set_comp(a, comp_int) == 0);
+CHECK(array_int_get(a, 0) == 3 && array_int_get(a, 1) == 2 && array_int_get(a, 2) == 1);
+CHECK(array_int_sort(a) == 0);                                   // the caller sorts again
+CHECK(array_int_get(a, 0) == 1 && array_int_get(a, 1) == 2 && array_int_get(a, 2) == 3);
+CHECK(array_int_bisect(a, 2) == 1);
+
+// emptied again, the plain setter works again
+while (array_int_size(a) > 0) {
+  array_int_pop(a);
+}
+CHECK(array_int_set_comp(a, comp_int_descending) == 0);
+array_int_destroy(&a);
+
+// an array of a type with no default function: the comparison function is set before it is
+// filled, or forced afterwards
+array_pair_t *p = array_pair_init();
+CHECK(array_pair_set_comp(p, comp_pair) == 0);
+pair_t q = {0, 0};
+CHECK(array_pair_append(p, q) == 0);
+CHECK(array_pair_set_comp(p, comp_pair) == -1);
+CHECK(array_pair_force_set_comp(p, comp_pair) == 0);
+array_pair_destroy(&p);
 
 END_TEST

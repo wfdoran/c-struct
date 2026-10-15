@@ -111,7 +111,34 @@ Sets the comparison function for the array data type.  It returns a negative
 number, zero, or a positive number as its first argument is less than, equal to,
 or greater than its second.  This is not needed for basic datatypes (see
 `comp.h`), but is required for sorting, searching and the heap functions with
-other types.  Returns 0, or -1 if `a` or `comp` is `NULL`.
+other types.
+
+It must be called while the array is empty.  The array may be sorted, or a
+heap, under the function it has, and it does not keep track of that, so a
+different function would make `bisect` and `heappop` give wrong answers without
+any warning.  With entries in the array it is refused: nothing is changed.  To
+change the function of an array which has entries, use
+`array_prefix_force_set_comp()`.
+
+Returns 0, or -1 if `a` or `comp` is `NULL`, or the array has entries.
+
+### `int32_t array_prefix_force_set_comp(array_prefix_t *a, int (*comp) (data_t *, data_t *))`
+
+Sets the comparison function whether or not the array has entries.  The entries
+are not rearranged: an array which was sorted, or a heap, under the old function
+is neither under the new one until you call `array_prefix_sort()` or
+`array_prefix_heapify()` again.  Use it when you want to sort the same array in
+more than one order, or to install a function in an array which you filled
+before you had one:
+
+```c
+array_int_t *a = array_int_init();
+...
+array_int_force_set_comp(a, by_descending);   /* the entries stay where they are */
+array_int_sort(a);                            /* now they are in the new order */
+```
+
+Returns 0, or -1 if `a` or `comp` is `NULL`.
 
 ### `int32_t array_prefix_set_null_value(array_prefix_t *a, data_t null_value)`
 

@@ -41,12 +41,18 @@ allocated.
 Destroys a binary tree, frees all of its nodes, applies the value free function
 (if one was set) to every value, and sets the pointer to NULL.
 
-### `void tree_prefix_set_comp(tree_prefix_t *t, int (*comp) (data_t *, data_t *));`
+### `int32_t tree_prefix_set_comp(tree_prefix_t *t, int (*comp) (data_t *, data_t *));`
 
 Sets the comparison function for keys.  It returns a negative number, zero, or a
 positive number as its first argument is less than, equal to, or greater than
-its second.  This is not needed for basic types (see `comp.h`).  Set it before
-inserting; changing it for a tree which has entries breaks the ordering.
+its second.  This is not needed for basic types (see `comp.h`).
+
+It must be called while the tree is empty: the nodes are placed in the order of
+the function the tree has, and a different function would make `retrieve` and
+`delete` miss keys.  With entries in the tree it is refused and nothing is
+changed.  To use another order, build a new tree.
+
+Returns 0, or -1 if `t` is `NULL` or the tree has entries.
 
 ### `void tree_prefix_set_update(tree_prefix_t *t, void *(*update) (void *, void *));`
 

@@ -55,9 +55,14 @@ are never freed.
 ### `int32_t pqueue_prefix_set_comp(pqueue_prefix_t *q, int (*comp) (data_t *, data_t *))`
 
 Sets the comparison function (negative, zero or positive as the first key is
-less than, equal to or greater than the second).  Returns 0, or -1 if `q` or
-`comp` is `NULL`.  Set it while the queue is empty; changing it afterwards
-breaks the heap order.
+less than, equal to or greater than the second).
+
+It must be called while the queue is empty: the entries are in heap order for
+the function the queue has, and a different function would make `pop` return the
+wrong entries.  With entries in the queue it is refused and nothing is changed.
+To use another order, build a new queue.
+
+Returns 0, or -1 if `q` or `comp` is `NULL`, or the queue has entries.
 
 ### `void pqueue_prefix_set_value_free(pqueue_prefix_t *q, void (*value_free) (void *))`
 

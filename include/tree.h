@@ -90,20 +90,30 @@ static inline TREE *GLUE3(tree_, prefix, _init)(void) {
   return a;
 }
 
-/* void tree_prefix_set_comp(tree_prefix_t *a, int (*comp) (data_t *, data_t *);
+/* int32_t tree_prefix_set_comp(tree_prefix_t *a,
+                                int (*comp) (data_t *, data_t *));
 
    Attaches a comparison function to the binary tree.  For basic
    data_t such as int8_t, int16_t, int32_t, int64_t, float, double,
    char*, this is not needed.  For more complicated data_t, the user
    must define the comparison function.  See comp.h for details and
    the C11 generics which deal with the basic data_ts.
+
+   It must be called while the tree is empty: the nodes are placed in the order
+   of the function the tree has, and a different function would make retrieve
+   and delete miss keys, and insert build an inconsistent tree.
+
+   return value:
+     -1 => error (a is NULL, or the tree has entries; nothing is changed)
+      0 => ok
 */
-static inline void GLUE3(tree_, prefix,
-                         _set_comp)(TREE *a, int (*comp)(data_t *, data_t *)) {
-  if (a == NULL) {
-    return;
+static inline int32_t
+GLUE3(tree_, prefix, _set_comp)(TREE *a, int (*comp)(data_t *, data_t *)) {
+  if (a == NULL || a->root != NULL) {
+    return -1;
   }
   a->comp = comp;
+  return 0;
 }
 
 /* void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void

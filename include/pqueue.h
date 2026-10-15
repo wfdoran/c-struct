@@ -102,13 +102,18 @@ static inline PQUEUE *GLUE3(pqueue_, prefix, _init)(void) {
    must define the comparison function.  See comp.h for details and
    the C11 generics which deal with the basic data_ts.
 
+   It must be called while the queue is empty: the entries are in heap order for
+   the function the queue has, and a different function would make pop return
+   the wrong entries without any warning.
+
    return value:
-     -1 => error (q or comp is NULL; the queue is unchanged)
+     -1 => error (q or comp is NULL, or the queue has entries; nothing is
+           changed)
       0 => ok
 */
 static inline int32_t
 GLUE3(pqueue_, prefix, _set_comp)(PQUEUE *q, int (*comp)(data_t *, data_t *)) {
-  if (q == NULL || comp == NULL) {
+  if (q == NULL || comp == NULL || q->size > 0) {
     return -1;
   }
   q->comp = comp;
