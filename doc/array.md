@@ -272,6 +272,24 @@ bytes of `data_t`, so it can only be read back by a program with the same
 `data_t` representation (byte order, size and layout); for pointer types the
 values are meaningless.
 
+**Padding.**  The entries are written exactly as they are in memory.  If
+`data_t` is a struct with padding (unused bytes the compiler puts between
+fields or at the end), the padding bytes are written too, and their contents
+are not defined: assigning a struct does not promise to copy or clear the
+padding, so zeroing the array's memory does not help.  Two consequences:
+
+* Two arrays with equal values can give files which differ, and the same
+  program can write different files on different runs.  The array reads back
+  correctly, and the checksum is computed over the bytes actually written, so
+  it is still consistent.
+* **Slight security issue:** the padding can hold leftovers of memory the
+  program used earlier (parts of freed buffers, old stack contents), and these
+  end up in the file.  The risk is small, since only a few bytes per entry are
+  affected, but do not write such a file to a place that is more public than
+  the data it should hold.  To avoid both problems, use a `data_t` without
+  padding (for example, order the fields largest first, or add the padding as
+  explicit fields that you set to 0), or use a plain type.
+
 The file starts with a header and a format version byte, and holds a CRC-32 of
 the entries (written least significant byte first), so damage to the entries is
 noticed when the file is read.
