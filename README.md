@@ -72,14 +72,21 @@ pointers refer to, unless you give them a free function.
   types.  The floating point comparisons are a total order: a NaN equals a NaN
   and is greater than every number, and `-0.0` equals `0.0`, so a NaN is an
   ordinary key in a tree, array or queue.
-* `serialize.h`: variable length integer and string encoding used by
-  `array_prefix_serialize()`.
+* `serialize.h`: variable length integer and string encoding, and the CRC-32
+  checksum, used by `array_prefix_serialize()`.
+* `cs_cache.h`: defines `CS_CACHE_LINE_SIZE`, the size of a cache line in bytes
+  (64 unless you define it before the include or with
+  `-DCS_CACHE_LINE_SIZE=128`; use a power of two).  It sets the number of
+  entries an array or priority queue starts with (as many as fit in a cache
+  line, at least one) and the alignment of the counters of a channel.  It is
+  only a tuning value: nothing depends on it for correctness.
 * `any.h`: a small tagged union holding one of the basic C types.
 * `cs_private.h`: defines `CS_PRIVATE`, which expands to nothing and marks the
   internal helper functions of the containers (for example the tree rotations
   or `phash_prefix_put_locked`).  Do not call a function marked `CS_PRIVATE`
   directly: it is not part of the interface, may change, and may be unsafe to
   call, for example without the lock held.
+
 ## Inlining the comparison
 
 By default the ordering of an array, tree, priority queue or linked list is

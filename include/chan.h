@@ -8,6 +8,7 @@
 #include <time.h>
 
 #include "cs_assert.h"
+#include "cs_cache.h"
 
 #ifndef data_t
 #error "data_t not defined"
@@ -34,9 +35,6 @@
 
 /* the most cases one call of select_prefix_one can handle */
 #define SELECT_MAX_CASES (256)
-
-/* size of a cache line; producer and consumer counters live on separate ones */
-#define CHAN_CACHE_LINE (64)
 
 /* Called in the loops that wait for an earlier sender or receiver to publish
    its slot.  That wait is normally very short, so spin first, but if the
@@ -144,11 +142,11 @@ typedef struct CHAN {
   atomic_bool closed;
 
   /* written by the producers, on their own cache line */
-  alignas(CHAN_CACHE_LINE) _Atomic int64_t head1;
+  alignas(CS_CACHE_LINE_SIZE) _Atomic int64_t head1;
   _Atomic int64_t head0;
 
   /* written by the consumers, on their own cache line */
-  alignas(CHAN_CACHE_LINE) _Atomic int64_t tail1;
+  alignas(CS_CACHE_LINE_SIZE) _Atomic int64_t tail1;
   _Atomic int64_t tail0;
 } CHAN;
 
@@ -440,6 +438,7 @@ GLUE3(select_, prefix, _option_done)(int32_t num_select, SELECT *s, int32_t i) {
   return 0;
 }
 
+#undef CS_MIN_CAPACITY
 #undef SELECT
 #undef CHAN
 #undef GLUE3

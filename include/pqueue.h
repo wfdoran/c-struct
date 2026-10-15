@@ -303,6 +303,7 @@ static inline bool GLUE3(pqueue_, prefix, _is_empty)(const PQUEUE *q) {
 #undef PQUEUE_LEFT_CHILD
 #undef PQUEUE_PARENT
 
+#undef CS_MIN_CAPACITY
 #undef PQKV
 #undef PNODE
 #undef PQUEUE
