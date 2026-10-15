@@ -787,6 +787,10 @@ static inline ssize_t GLUE3(array_, prefix, _index)(const TYPE *a, data_t v) {
 #define ARRAY_STR_HELPER(x) #x
 #define ARRAY_STR(x) ARRAY_STR_HELPER(x)
 
+/* Format 1: header, this byte, the prefix, sizes, CRC-32 of the entries, then
+   the entries.  Files from before the version byte are refused. */
+#define ARRAY_FORMAT_VERSION 1
+
 static inline int32_t GLUE3(array_, prefix, _serialize)(const TYPE *a,
                                                         const char *filename) {
   if (a == NULL || filename == NULL) {
@@ -800,6 +804,7 @@ static inline int32_t GLUE3(array_, prefix, _serialize)(const TYPE *a,
 
   const char *header = "Array===";
   fwrite(header, sizeof(char), 8, fp);
+  fputc(ARRAY_FORMAT_VERSION, fp);
   serialize_string(ARRAY_STR(prefix), fp);
 
   const size_t data_size = sizeof(data_t);
@@ -807,6 +812,7 @@ static inline int32_t GLUE3(array_, prefix, _serialize)(const TYPE *a,
 
   const size_t arr_size = a->size;
   fwrite(&arr_size, sizeof(size_t), 1, fp);
+  serialize_u32(crc32_update(0, a->data, data_size * arr_size), fp);
   fwrite(a->data, data_size, arr_size, fp);
 
   /* stdio errors are sticky, so one check after all the writes covers them */
@@ -836,6 +842,10 @@ static inline TYPE *GLUE3(array_, prefix, _deserialize)(const char *filename) {
     goto fail;
   }
 
+  if (fgetc(fp) != ARRAY_FORMAT_VERSION) {
+    goto fail; /* includes files from before the version byte existed */
+  }
+
   prefix_str = deserialize_string(fp);
   if (prefix_str == NULL || strcmp(prefix_str, ARRAY_STR(prefix)) != 0) {
     goto fail;
@@ -849,6 +859,11 @@ static inline TYPE *GLUE3(array_, prefix, _deserialize)(const char *filename) {
 
   size_t arr_size;
   if (fread(&arr_size, sizeof(size_t), 1, fp) != 1) {
+    goto fail;
+  }
+
+  uint32_t crc;
+  if (!deserialize_u32(fp, &crc)) {
     goto fail;
   }
 
@@ -875,6 +890,9 @@ static inline TYPE *GLUE3(array_, prefix, _deserialize)(const char *filename) {
     }
     a->size = arr_size;
   }
+  if (crc32_update(0, a->data, data_size * a->size) != crc) {
+    goto fail;
+  }
 
   free(prefix_str);
   fclose(fp);
@@ -891,6 +909,7 @@ fail:
 
 #undef ARRAY_STR
 #undef ARRAY_STR_HELPER
+#undef ARRAY_FORMAT_VERSION
 #undef HEAP_RIGHT_CHILD
 #undef HEAP_LEFT_CHILD
 #undef HEAP_PARENT

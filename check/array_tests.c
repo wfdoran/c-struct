@@ -920,7 +920,7 @@ CHECK(array_int_deserialize(ARRAY_FILE) == NULL);
 CHECK(array_int_serialize(a, ARRAY_FILE) == 0);
 f = fopen(ARRAY_FILE, "r+b");
 size_t huge = SIZE_MAX;
-fseek(f, 8 + 1 + 3 + 8, SEEK_SET);   // header, the length and text of "int", the size of an entry
+fseek(f, 8 + 1 + 1 + 3 + 8, SEEK_SET);   // header, version, the length and text of "int", the size of an entry
 fwrite(&huge, sizeof(huge), 1, f);
 fclose(f);
 CHECK(array_int_deserialize(ARRAY_FILE) == NULL);
@@ -942,6 +942,47 @@ CHECK(array_int_serialize(a, ARRAY_FILE) == 0);
 b = array_int_deserialize(ARRAY_FILE);
 CHECK(b != NULL && array_int_size(b) == 10);
 array_int_destroy(&b);
+
+// every single changed byte of the entries is noticed by the checksum
+CHECK(array_int_serialize(a, ARRAY_FILE) == 0);
+f = fopen(ARRAY_FILE, "rb");
+fseek(f, 0, SEEK_END);
+len = ftell(f);
+fclose(f);
+for (long pos = len - 10 * (long) sizeof(int); pos < len; pos++) {
+  f = fopen(ARRAY_FILE, "r+b");
+  fseek(f, pos, SEEK_SET);
+  int ch = fgetc(f);
+  fseek(f, pos, SEEK_SET);
+  fputc(ch ^ 0x04, f);
+  CHECK(fclose(f) == 0);
+  CHECK(array_int_deserialize(ARRAY_FILE) == NULL);
+  f = fopen(ARRAY_FILE, "r+b");
+  fseek(f, pos, SEEK_SET);
+  fputc(ch, f);
+  fclose(f);
+}
+b = array_int_deserialize(ARRAY_FILE);
+CHECK(b != NULL && array_int_size(b) == 10);
+array_int_destroy(&b);
+
+// a file of an unknown format version, and a file from before there was one
+f = fopen(ARRAY_FILE, "r+b");
+fseek(f, 8, SEEK_SET);
+fputc(99, f);
+fclose(f);
+CHECK(array_int_deserialize(ARRAY_FILE) == NULL);
+f = fopen(ARRAY_FILE, "wb");
+fwrite("Array===", 1, 8, f);
+fputc(3, f);
+fwrite("int", 1, 3, f);
+size_t old_vals[2] = {sizeof(int), 1};
+fwrite(old_vals, sizeof(size_t), 2, f);
+int old_x = 5;
+fwrite(&old_x, sizeof(int), 1, f);
+fclose(f);
+CHECK(array_int_deserialize(ARRAY_FILE) == NULL);
+CHECK(array_int_serialize(a, ARRAY_FILE) == 0);
 
 // an empty array makes a file which reads back as an empty array
 array_int_t *e = array_int_init();

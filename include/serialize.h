@@ -46,6 +46,45 @@ static inline bool deserialize_size(FILE *fp, size_t *out) {
   return false;
 }
 
+/* CRC-32 (IEEE 802.3, the one of zip and PNG).  Start with crc = 0 and pass
+   the result back in to checksum data in several pieces. */
+static inline uint32_t crc32_update(uint32_t crc, const void *data, size_t n) {
+  /* the table for four bits at a time; small, and fast enough here */
+  static const uint32_t table[16] = {
+      0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac, 0x76dc4190, 0x6b6b51f4,
+      0x4db26158, 0x5005713c, 0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c,
+      0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c};
+  const uint8_t *p = data;
+  crc = ~crc;
+  for (size_t i = 0; i < n; i++) {
+    crc ^= p[i];
+    crc = (crc >> 4) ^ table[crc & 0xf];
+    crc = (crc >> 4) ^ table[crc & 0xf];
+  }
+  return ~crc;
+}
+
+/* A checksum is written as four bytes, least significant first, so that files
+   do not depend on the byte order of the machine. */
+static inline void serialize_u32(uint32_t x, FILE *fp) {
+  for (int i = 0; i < 4; i++) {
+    fputc((int) ((x >> (8 * i)) & 0xff), fp);
+  }
+}
+
+static inline bool deserialize_u32(FILE *fp, uint32_t *out) {
+  uint32_t rv = 0;
+  for (int i = 0; i < 4; i++) {
+    int c = fgetc(fp);
+    if (c == EOF) {
+      return false;
+    }
+    rv |= (uint32_t) c << (8 * i);
+  }
+  *out = rv;
+  return true;
+}
+
 static inline void serialize_string(const char *s, FILE *fp) {
   size_t s_len = strlen(s);
   serialize_size(s_len, fp);

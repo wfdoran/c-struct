@@ -128,6 +128,29 @@ remove(TEST_FILE);
 
 END_TEST
 
+// CRC-32: the standard check value, and checksums in several pieces
+START_TEST(serialize_test_crc)
+
+CHECK(crc32_update(0, "123456789", 9) == 0xCBF43926u);
+CHECK(crc32_update(0, "", 0) == 0);
+uint32_t c = crc32_update(0, "1234", 4);
+CHECK(crc32_update(c, "56789", 5) == 0xCBF43926u);
+
+FILE *fp = fopen(TEST_FILE, "wb");
+serialize_u32(0x01020304u, fp);
+fclose(fp);
+char buf[8];
+CHECK(read_bytes(TEST_FILE, buf, sizeof(buf)) == 4);
+CHECK(buf[0] == 4 && buf[1] == 3 && buf[2] == 2 && buf[3] == 1);
+fp = fopen(TEST_FILE, "rb");
+uint32_t r;
+CHECK(deserialize_u32(fp, &r) && r == 0x01020304u);
+CHECK(!deserialize_u32(fp, &r));
+fclose(fp);
+remove(TEST_FILE);
+
+END_TEST
+
 START_TEST(serialize_test4)
 
 int sizes[] = {0, 1, 10, 1000};

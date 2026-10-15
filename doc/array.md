@@ -272,12 +272,18 @@ bytes of `data_t`, so it can only be read back by a program with the same
 `data_t` representation (byte order, size and layout); for pointer types the
 values are meaningless.
 
+The file starts with a header and a format version byte, and holds a CRC-32 of
+the entries (written least significant byte first), so damage to the entries is
+noticed when the file is read.
+
 ### `array_prefix_t *array_prefix_deserialize(const char *filename)`
 
 Reads an array written by `array_prefix_serialize()`.  Returns `NULL` if the
-file cannot be read, is truncated or damaged, or was written for a different
-`prefix` or a `data_t` of a different size.  The comparison function and null
-value are not stored; set them again after reading.
+file cannot be read, is truncated or damaged (the checksum of the entries does
+not match), has an unknown format version, or was written for a different
+`prefix` or a `data_t` of a different size.  Files written before the version
+byte and checksum were added are refused; write them again.  The comparison
+function and null value are not stored; set them again after reading.
 
 ## Compiled in comparison
 
