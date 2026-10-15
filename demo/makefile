@@ -208,6 +208,9 @@ interval_demo7: interval_demo7.c ../include/interval.h
 interval_demo8: interval_demo8.c ../include/interval.h
 	$(CC) $(CFLAGS) -frounding-math $(INCLUDE) interval_demo8.c -o interval_demo8 -lm
 
+pool_demo1: pool_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) pool_demo1.c -o pool_demo1 -lm
+
 clean:
 	rm -rf array_demo1
 	rm -rf array_demo2
@@ -278,5 +281,6 @@ clean:
 	rm -rf interval_demo6
 	rm -rf interval_demo7
 	rm -rf interval_demo8
+	rm -rf pool_demo1
 	rm -rf *~
 
