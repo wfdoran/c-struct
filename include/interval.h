@@ -532,6 +532,11 @@ static inline interval_t interval_add_many(int n, interval_t *a) {
     return a[0];
   }
 
+  /* With two intervals the order cannot matter, so skip the queue. */
+  if (n == 2) {
+    return interval_add(a[0], a[1]);
+  }
+
   /* Repeatedly add the two intervals of smallest magnitude.  A priority queue
      is used rather than a tree because several intervals can have the same key.
    */

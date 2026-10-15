@@ -292,6 +292,16 @@ interval_t one[1] = {{.lo = 1.0, .hi = 2.0, .valid = true}};
 CHECK(interval_add_many(1, one).lo == 1.0 && interval_add_many(1, one).hi == 2.0);
 interval_t with_bad[2] = {{.lo = 1.0, .hi = 2.0, .valid = true}, {.lo = 0, .hi = 0, .valid = false}};
 CHECK(!interval_add_many(2, with_bad).valid);
+// two intervals: the sum of the two, whichever order they are in
+for (int i = 0; i < 100; i++) {
+  interval_t two[2] = {random_interval(1e3, false), random_interval(1e-3, false)};
+  interval_t want = interval_add(two[0], two[1]);
+  interval_t got = interval_add_many(2, two);
+  CHECK(got.valid && got.lo == want.lo && got.hi == want.hi);
+  interval_t swapped[2] = {two[1], two[0]};
+  got = interval_add_many(2, swapped);
+  CHECK(got.valid && got.lo == want.lo && got.hi == want.hi);
+}
 
 // the helpers which order the queue
 interval_t k1 = {.lo = -5.0, .hi = 2.0, .valid = true};
