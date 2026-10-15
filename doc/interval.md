@@ -60,8 +60,8 @@ result is valid if that is not empty, and invalid only if no part of the
 argument is in the domain.  So `interval_sqrt` of `[-1, 4]` is the interval for
 `sqrt` of `[0, 4]`, and `interval_sqrt` of `[-4, -1]` is invalid.
 
-`interval_div` is the exception: it is invalid whenever the divisor contains
-0 (see question 7 in `QUESTIONS.md`).  Operations which would produce a NaN
+`interval_div` follows the same rule: only the part of the divisor which is not
+0 has a quotient, so it is invalid only for the divisor `[0, 0]`.  Operations which would produce a NaN
 (for example `0 * infinity` in `interval_mul`, or `infinity - infinity` in
 `interval_add` and `interval_sub`) are also invalid.
 
@@ -105,7 +105,23 @@ Sum, difference and product.  `interval_mul` is invalid if a product is a NaN
 
 ### `interval_t interval_div(interval_t a, interval_t b)`
 
-Quotient.  Invalid if `b` contains 0.
+Quotient.  If `b` contains 0, the quotient is taken over the part of `b` which
+is not 0, and is unbounded near 0, so the result has an infinite bound:
+
+| `a` | `b` | result |
+|-----|-----|--------|
+| positive | `[0, 4]` | `[a.lo / 4, inf]` |
+| negative | `[0, 4]` | `[-inf, a.hi / 4]` |
+| positive | `[-4, 0]` | `[-inf, a.lo / -4]` |
+| negative | `[-4, 0]` | `[a.hi / -4, inf]` |
+| any | 0 strictly inside `b` | `[-inf, inf]` |
+| contains 0 and has both signs | contains 0 | `[-inf, inf]` |
+| `[0, 0]` | contains 0, not `[0, 0]` | `[0, 0]` |
+| any | `[0, 0]` | invalid |
+
+(An `a` with 0 at one end keeps its half-line: `[0, 2] / [0, 4]` is
+`[0, inf]`.)  Later operations on an infinite bound can produce `0 * infinity`,
+which `interval_mul` reports as invalid.
 
 ### `interval_t interval_fma(interval_t a, interval_t b, interval_t c)`
 
@@ -148,8 +164,8 @@ the result is invalid only if `hi < 0`.
 A macro which chooses on the type of `e`:
 
 * `interval_pow_int(interval_t a, int32_t e)`: for an `int` exponent.  A
-  negative exponent is the reciprocal of the positive power, so it is invalid
-  when that power contains 0.
+  negative exponent is the reciprocal of the positive power, so it is unbounded
+  when that power contains 0, and invalid when it is exactly `[0, 0]`.
 * `interval_pow_uint(interval_t a, uint32_t e)`: for a `uint32_t` exponent.
   The power of each end is taken by repeated squaring and the bounds are chosen
   from the shape of `x^e`, so the range is tight: an even power is never

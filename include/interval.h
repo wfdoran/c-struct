@@ -228,12 +228,73 @@ static inline interval_t interval_fma(interval_t a, interval_t b,
   return rv;
 }
 
+/* The quotient when b contains 0.  Only the part of b which is not 0 has a
+   quotient: (0, b.hi] and [b.lo, 0), and near 0 the quotients are unbounded.
+   The result is the hull of the quotients over the two parts, with an infinite
+   bound where they are unbounded.  Each finite bound is rounded outward. */
+CS_PRIVATE static inline interval_t interval_div_zero(interval_t a,
+                                                      interval_t b) {
+  if (b.lo == 0.0 && b.hi == 0.0) {
+    return interval_invalid(); /* no part of b is in the domain */
+  }
+  if (a.lo == 0.0 && a.hi == 0.0) {
+    interval_t zero = {.lo = 0.0, .hi = 0.0, .valid = true};
+    return zero; /* 0 / y is 0 for every y which is not 0 */
+  }
+
+  double lo = INFINITY;
+  double hi = -INFINITY;
+  int save = fegetround();
+
+  for (int part = 0; part < 2; part++) {
+    /* part 0: y in (0, b.hi], part 1: y in [b.lo, 0) */
+    double y = part == 0 ? b.hi : b.lo;
+    if (part == 0 ? !(b.hi > 0.0) : !(b.lo < 0.0)) {
+      continue;
+    }
+    double l = -INFINITY;
+    double h = INFINITY;
+    if (a.lo >= 0.0) { /* x >= 0 */
+      if (part == 0) {
+        fesetround(FE_DOWNWARD);
+        l = iv_fence(iv_fence(a.lo) / iv_fence(y));
+      } else {
+        fesetround(FE_UPWARD);
+        h = iv_fence(iv_fence(a.lo) / iv_fence(y));
+        l = -INFINITY;
+      }
+    } else if (a.hi <= 0.0) { /* x <= 0 */
+      if (part == 0) {
+        fesetround(FE_UPWARD);
+        h = iv_fence(iv_fence(a.hi) / iv_fence(y));
+        l = -INFINITY;
+      } else {
+        fesetround(FE_DOWNWARD);
+        l = iv_fence(iv_fence(a.hi) / iv_fence(y));
+      }
+    }
+    /* otherwise a contains 0 and has both signs: unbounded both ways */
+    if (isnan(l) || isnan(h)) { /* infinity / infinity */
+      fesetround(save);
+      return interval_invalid();
+    }
+    lo = fmin(lo, l);
+    hi = fmax(hi, h);
+  }
+
+  fesetround(save);
+  interval_t rv = {.lo = lo, .hi = hi, .valid = true};
+  return rv;
+}
+
+/* A divisor which contains 0 is divided by its non-zero part, see
+   interval_div_zero: the result is invalid only for the divisor [0, 0]. */
 static inline interval_t interval_div(interval_t a, interval_t b) {
   if (!a.valid || !b.valid) {
     return interval_invalid();
   }
   if (b.lo <= 0.0 && b.hi >= 0.0) {
-    return interval_invalid();
+    return interval_div_zero(a, b);
   }
 
   double temp[4];
@@ -549,8 +610,8 @@ static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
   return rv;
 }
 
-/* A negative exponent is the reciprocal of the positive power, which is
-   invalid if that power contains zero (interval_div). */
+/* A negative exponent is the reciprocal of the positive power: unbounded if
+   that power contains zero, invalid if it is exactly [0, 0] (interval_div). */
 static inline interval_t interval_pow_int(interval_t a, int32_t e) {
   if (e >= 0) {
     return interval_pow_uint(a, (uint32_t) e);

@@ -86,7 +86,11 @@ interval_t p = interval_mul(a, b);
 CHECK(p.valid && p.lo < p.hi && p.lo <= (1.0L / 3) * 0.1L && (1.0L / 3) * 0.1L <= p.hi);
 interval_t q = interval_div(a, b);
 CHECK(q.valid && q.lo <= (1.0L / 3) / 0.1L && (1.0L / 3) / 0.1L <= q.hi);
-CHECK(!interval_div(a, interval_from_double(0.0)).valid);
+interval_t exact_zero = {.lo = 0.0, .hi = 0.0, .valid = true};
+CHECK(!interval_div(a, exact_zero).valid);   // no part of the divisor is in the domain
+// (interval_from_double(0.0) is a little wider than 0, so it has a part which is)
+interval_t near_zero = interval_div(a, interval_from_double(0.0));
+CHECK(near_zero.valid && near_zero.lo == -INFINITY && near_zero.hi == INFINITY);
 
 // the domain rule: use the part of the interval which is in the domain
 interval_t neg_pos = {.lo = -1.0, .hi = 4.0, .valid = true};
@@ -212,9 +216,12 @@ for (int i = 0; i < 3000; i++) {
   }
 }
 
-// a negative exponent of an interval which contains zero is invalid
+// a negative exponent of an interval which contains zero is unbounded; of [0, 0] it is invalid
 interval_t z = {.lo = -1.0, .hi = 1.0, .valid = true};
-CHECK(!interval_pow_int(z, -1).valid);
+interval_t zi = interval_pow_int(z, -1);
+CHECK(zi.valid && zi.lo == -INFINITY && zi.hi == INFINITY);
+interval_t zero = {.lo = 0.0, .hi = 0.0, .valid = true};
+CHECK(!interval_pow_int(zero, -1).valid);
 CHECK(interval_pow_uint(z, 0).valid);
 
 // x^0 is exactly [1, 1], an exact base gives an exact power, and an invalid
@@ -389,7 +396,8 @@ CHECK(!interval_pow_uint(bad, 3).valid && !interval_pow_uint(bad, 0).valid);
 interval_t pos = {.lo = 2.0, .hi = 3.0, .valid = true};
 interval_t inv = interval_pow_int(pos, -2);
 CHECK(inv.lo <= 1.0 / 9.0 && inv.hi >= 1.0 / 4.0 && inv.hi < 0.2501);
-CHECK(!interval_pow_int(s, -2).valid);   // the power contains 0
+interval_t si = interval_pow_int(s, -2);   // the power [0, 4] contains 0
+CHECK(si.valid && si.lo <= 0.25 && si.lo > 0.2499 && si.hi == INFINITY);
 
 END_TEST
 
@@ -417,5 +425,93 @@ r = interval_sub(all, interval_from_double(1.0));
 CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
 r = interval_add(interval_from_double(INFINITY), interval_from_double(-INFINITY));
 CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+
+END_TEST
+
+// dividing by an interval which contains zero uses the part of it which is not zero
+START_TEST(interval_test11)
+
+#define RND01 ((get_rand() % 10001) / 10000.0)
+#define IV(l, h) ((interval_t){.lo = (l), .hi = (h), .valid = true})
+
+// b = [0, 4]: positive x gives [x.lo / 4, inf), negative x gives (-inf, x.hi / 4]
+interval_t r = interval_div(IV(1.0, 2.0), IV(0.0, 4.0));
+CHECK(r.valid && r.lo <= 0.25 && r.lo > 0.2499 && r.hi == INFINITY);
+r = interval_div(IV(-2.0, -1.0), IV(0.0, 4.0));
+CHECK(r.valid && r.hi >= -0.25 && r.hi < -0.2499 && r.lo == -INFINITY);
+// b = [-4, 0]: the signs swap
+r = interval_div(IV(1.0, 2.0), IV(-4.0, 0.0));
+CHECK(r.valid && r.hi >= -0.25 && r.hi < -0.2499 && r.lo == -INFINITY);
+r = interval_div(IV(-2.0, -1.0), IV(-4.0, 0.0));
+CHECK(r.valid && r.lo <= 0.25 && r.lo > 0.2499 && r.hi == INFINITY);
+// -0.0 is a zero too
+r = interval_div(IV(1.0, 2.0), IV(-0.0, 4.0));
+CHECK(r.valid && r.lo <= 0.25 && r.hi == INFINITY);
+
+// the finite bound is rounded outward when the quotient is not exact
+r = interval_div(IV(1.0, 1.0), IV(0.0, 3.0));
+CHECK(r.valid && r.lo <= 1.0L / 3 && r.lo > 0.3333 && r.hi == INFINITY);
+r = interval_div(IV(-1.0, -1.0), IV(0.0, 3.0));
+CHECK(r.valid && r.hi >= -1.0L / 3 && r.hi < -0.3333 && r.lo == -INFINITY);
+r = interval_div(IV(1.0, 1.0), IV(-3.0, 0.0));
+CHECK(r.valid && r.hi >= -1.0L / 3 && r.hi < -0.3333 && r.lo == -INFINITY);
+r = interval_div(IV(-1.0, -1.0), IV(-3.0, 0.0));
+CHECK(r.valid && r.lo <= 1.0L / 3 && r.lo > 0.3333 && r.hi == INFINITY);
+
+// zero strictly inside b, or both signs in x: everything is possible
+r = interval_div(IV(1.0, 2.0), IV(-1.0, 4.0));
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+r = interval_div(IV(-1.0, 2.0), IV(0.0, 4.0));
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+r = interval_div(IV(-1.0, 2.0), IV(-1.0, 4.0));
+CHECK(r.valid && r.lo == -INFINITY && r.hi == INFINITY);
+
+// x with 0 at an end keeps the half-line: 0 / y is 0
+r = interval_div(IV(0.0, 2.0), IV(0.0, 4.0));
+CHECK(r.valid && r.lo == 0.0 && r.hi == INFINITY);
+r = interval_div(IV(-2.0, 0.0), IV(0.0, 4.0));
+CHECK(r.valid && r.lo == -INFINITY && r.hi == 0.0);
+
+// x = [0, 0] is 0 wherever b is not 0, and b = [0, 0] has no quotient
+r = interval_div(IV(0.0, 0.0), IV(-1.0, 4.0));
+CHECK(r.valid && r.lo == 0.0 && r.hi == 0.0);
+CHECK(!interval_div(IV(1.0, 2.0), IV(0.0, 0.0)).valid);
+CHECK(!interval_div(IV(0.0, 0.0), IV(0.0, 0.0)).valid);
+CHECK(!interval_div(IV(1.0, 2.0), IV(-0.0, 0.0)).valid);
+
+// an invalid argument is still invalid
+interval_t bad = {.lo = 0, .hi = 0, .valid = false};
+CHECK(!interval_div(bad, IV(0.0, 4.0)).valid);
+CHECK(!interval_div(IV(1.0, 2.0), bad).valid);
+
+// infinity / infinity is not a number, but a finite lower end is fine
+CHECK(!interval_div(IV(INFINITY, INFINITY), IV(0.0, INFINITY)).valid);
+r = interval_div(IV(1.0, INFINITY), IV(0.0, INFINITY));
+CHECK(r.valid && r.lo == 0.0 && r.hi == INFINITY);
+
+// every sampled quotient is inside the result
+for (int i = 0; i < 2000; i++) {
+  double xl = RND01 * 8.0 - 4.0;
+  double xh = xl + RND01 * 3.0;
+  double yl = RND01 * 8.0 - 4.0;
+  double yh = yl + RND01 * 3.0;
+  if (i % 3 == 0) yl = 0.0;
+  if (i % 7 == 0) yh = 0.0;
+  if (yh < yl) yh = yl;
+  interval_t q = interval_div(IV(xl, xh), IV(yl, yh));
+  if (yl == 0.0 && yh == 0.0) {
+    CHECK(!q.valid);
+    continue;
+  }
+  CHECK(q.valid);
+  for (int j = 0; j < 20; j++) {
+    double x = xl + (xh - xl) * RND01;
+    double y = yl + (yh - yl) * RND01;
+    if (y == 0.0) continue;
+    CHECK(q.lo <= x / y && x / y <= q.hi);
+  }
+}
+#undef IV
+#undef RND01
 
 END_TEST
