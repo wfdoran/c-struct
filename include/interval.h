@@ -599,6 +599,26 @@ static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
     interval_t one = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
     return one;
   }
+  if (a.lo >= 0.0 || a.hi <= 0.0) {
+    /* All of one sign: there is no dependency problem, so multiplying the
+       interval is as tight as taking the ends, with one chain of
+       multiplications instead of two. */
+    interval_t sq = a;
+    interval_t pw = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
+    for (uint32_t k = e; k > 0; k >>= 1) {
+      if ((k & 1) == 1) {
+        pw = interval_mul(pw, sq);
+      }
+      if (k > 1) {
+        sq = interval_mul(sq, sq);
+      }
+    }
+    /* A 0 * infinity in the products (an end at 0 and one that overflows)
+       makes it invalid; the ends below still give a bound then. */
+    if (pw.valid) {
+      return pw;
+    }
+  }
   interval_t l = interval_pow_point(a.lo, e);
   interval_t h = interval_pow_point(a.hi, e);
   interval_t rv;
