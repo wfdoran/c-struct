@@ -33,6 +33,12 @@
 
 #include "cs_private.h"
 
+/* M_PI_2 is POSIX, not C11: define it when the system does not (the same
+   double as the system value). */
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679489661923
+#endif
+
 /* Math functions not provided yet:
 
      cbrt fmod log10 modf tan acos asin atan cosh sinh
