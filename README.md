@@ -58,6 +58,8 @@ pointers refer to, unless you give them a free function.
 * [Priority Queue](doc/pqueue.md): binary heap of key and value pairs.
 * [Channels](doc/chan.md): bounded channels, built on atomics rather than locks,
   for passing values between threads, with a non-blocking select.
+* [Memory Pool](doc/pool.md): constant time allocation of many objects of one
+  type from a few large blocks, with space reused when given back.
 * [Option](doc/option.md): a value which may be absent.
 * [Interval](doc/interval.md): interval arithmetic with directed rounding,
   for results which are guaranteed to contain the exact answer.
