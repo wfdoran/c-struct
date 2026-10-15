@@ -234,7 +234,10 @@ array_int_t *b = array_int_slice(a, 1, 4);
 CHECK(b != NULL);
 
 for (int i = 0; i < 5; i++) {
-  array_int_set(a, i, -1);
+  CHECK(array_int_set(a, -1, (size_t) i) == 0);
+}
+for (int i = 0; i < 5; i++) {
+  CHECK(array_int_get(a, i) == -1);
 }
 for (int i = 0; i < 3; i++) {
   CHECK(array_int_get(b, i) == i + 1);
