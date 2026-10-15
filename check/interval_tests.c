@@ -1,12 +1,26 @@
 #include <check.h>
+#include <float.h>
 #include <math.h>
 #include <interval.h>
+
+// Some tests compute the exact answer in long double and need it to be more precise than double.
+// Where long double is no wider (macOS on Apple silicon), the reference has the rounding error of
+// the library itself and a correct result can fail the comparison, so those tests are skipped.
+#if LDBL_MANT_DIG > DBL_MANT_DIG
+#define NEEDS_WIDE_LONG_DOUBLE
+#else
+#define NEEDS_WIDE_LONG_DOUBLE                                                         \
+  printf("skipped %s (long double is not wider than double)\n", __func__);              \
+  return 0;
+#endif
 
 // The sine and cosine of an interval which contains a maximum or a minimum must reach 1 or -1.
 // The interval is the two doubles on either side of the extremum, found in long double.  Before
 // the quotient by pi/2 was widened, a lower end just before the extremum was often judged to lie
 // after it once the argument was about 1e9 or more.
 START_TEST(interval_test1)
+
+NEEDS_WIDE_LONG_DOUBLE
 
 CHECK(interval_rounding_is_honored());
 
@@ -121,13 +135,21 @@ static interval_t random_interval(double mag, bool positive) {
   return r;
 }
 
-// the k-th of n + 1 points of an interval, in long double
+// the k-th of n + 1 points of an interval, in long double; the ends are exact
 static long double sample_point(interval_t a, int k, int n) {
+  if (k <= 0) {
+    return a.lo;
+  }
+  if (k >= n) {
+    return a.hi;
+  }
   return (long double) a.lo + ((long double) a.hi - (long double) a.lo) * k / n;
 }
 
 // sub, fma, fmax, fmin, neg, fabs, floor, ceil enclose the exact result at sample points
 START_TEST(interval_test4)
+
+NEEDS_WIDE_LONG_DOUBLE
 
 seed_rand(4);
 for (int i = 0; i < 3000; i++) {
@@ -357,6 +379,8 @@ END_TEST
 // integer powers of intervals of either sign enclose x^e, and are as tight as the shape of x^e
 // allows: an even power is never negative, and an odd power of [lo, hi] starts near lo^e
 START_TEST(interval_test9)
+
+NEEDS_WIDE_LONG_DOUBLE
 
 seed_rand(7);
 for (int i = 0; i < 4000; i++) {
