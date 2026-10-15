@@ -16,6 +16,9 @@
 #define TYPE GLUE3(pool_, prefix, _t)
 #define ENTRY GLUE3(pentry_, prefix, _t)
 
+/* While an entry is free, next links it to the next free entry.  While it is in
+   use, next holds the pool, which is how pool_prefix_put() recognizes space
+   that was not handed out by this pool or was already given back. */
 typedef struct ENTRY {
   data_t data;
   struct ENTRY *next;
@@ -30,7 +33,7 @@ typedef struct TYPE {
 
 
 static inline TYPE *GLUE3(pool_, prefix, _init)(size_t pool_size) {
-  if (pool_size == 0) {
+  if (pool_size == 0 || pool_size > SIZE_MAX / sizeof(ENTRY)) {
     return NULL;
   }
   TYPE *pool = malloc(sizeof(TYPE));
@@ -43,8 +46,8 @@ static inline TYPE *GLUE3(pool_, prefix, _init)(size_t pool_size) {
   }
   
   pool->head = pool->alloc;
-  for (int32_t i = 0; i < pool_size - 1; i++) {
-    pool->alloc[i].next = &(pool->alloc[i+1]);
+  for (size_t i = 0; i + 1 < pool_size; i++) {
+    pool->alloc[i].next = &(pool->alloc[i + 1]);
   }
   pool->alloc[pool_size - 1].next = NULL;
 
@@ -74,7 +77,7 @@ static inline data_t *GLUE3(pool_, prefix, _get)(TYPE *pool) {
 
   ENTRY *rv = pool->head;
   pool->head = rv->next;
-  rv->next = NULL;
+  rv->next = (ENTRY *) pool; /* in use: marked with the pool it came from */
 
   return (data_t*) rv;
 }
@@ -92,8 +95,8 @@ static inline int32_t GLUE3(pool_, prefix, _put)(TYPE *pool, data_t **d_ptr) {
     return -1;
   }
   ENTRY *e = (ENTRY*) d;
-  if (e->next != NULL) {
-    return -1;
+  if (e->next != (ENTRY *) pool) {
+    return -1; /* not in use in this pool: given back already, or not ours */
   }
   e->next = pool->head;
   pool->head = e;
