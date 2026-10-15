@@ -353,14 +353,17 @@ CS_PRIVATE static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
       value replaces the current value.
 
    return value:
-     -1 => error
-     0 => ok
+     -1 => error (the table is unchanged)
+     0 => ok, the key was not in the table and has been inserted
+     1 => ok, the key was already in the table and its value was replaced
+          (or combined with the new value by the update function)
 */
 
 /* Inserts key/value, or combines value with the current value if key is
    already present.  The caller holds the write lock and has computed
    hash = hash_mix64(hash_func(key)) before taking it.  An existing value
-   becomes update(old, value), or just value if update is NULL. */
+   becomes update(old, value), or just value if update is NULL.  Returns 0 if
+   the key was inserted, 1 if it was already there, -1 on error. */
 CS_PRIVATE static inline int32_t
 GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
                                    value_t value,
@@ -408,7 +411,7 @@ GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
       if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
         h->A[pos]->value =
             update == NULL ? value : update(h->A[pos]->value, value);
-        break;
+        return 1; /* replaced: the number of entries did not change */
       }
     }
   }

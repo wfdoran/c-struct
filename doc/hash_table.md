@@ -111,12 +111,25 @@ use an update function if it needs to be released.  If a compare function is set
 (the default for `char*` keys), it decides whether two keys with the same hash
 are the same key; without one, equal hashes mean equal keys.
 
-Returns 0 on success (whether the key was new or already present) and -1 on
-error (`h` is `NULL`, there is no hash function, or memory could not be
-allocated).  A -1 means the entry was not stored.  If memory runs out only while
-the table is being enlarged after a successful insert, `put` still returns 0 and
-the enlargement is retried by a later `put`; if the table can no longer grow and
-one empty slot is left, `put` of a new key returns -1.
+Returns 0 if the key was new and has been inserted, 1 if the key was already
+present and its value was replaced (or combined by the update function), and -1
+on error (`h` is `NULL`, there is no hash function, or memory could not be
+allocated).  A -1 means the entry was not stored.  **A return of 1 is not an
+error**, so test for failure with `rc < 0`, not `rc != 0`:
+
+```c
+int32_t rc = hash_int_put(h, key, value);
+if (rc < 0) {
+  /* failed */
+} else if (rc == 1) {
+  /* key was already there; its value was replaced */
+}
+```
+
+If memory runs out only while the table is being enlarged after a successful
+insert, `put` still returns 0 and the enlargement is retried by a later `put`;
+if the table can no longer grow and one empty slot is left, `put` of a new key
+returns -1.
 
 ### `int32_t hash_prefix_get(const htable_prefix_t *h, hkey_t key, value_t *value)`
 

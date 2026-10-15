@@ -75,7 +75,7 @@ CHECK(phash_pi_get(h, 7, &v) == 0);
 CHECK(phash_pi_put(h, 7, 70) == 0);
 CHECK(phash_pi_get(h, 7, &v) == 1);
 CHECK(v == 70);
-CHECK(phash_pi_put(h, 7, 71) == 0);
+CHECK(phash_pi_put(h, 7, 71) == 1);   // the key was there: replaced
 CHECK(phash_pi_get(h, 7, &v) == 1);
 CHECK(v == 71);
 CHECK(phash_pi_size(h) == 1);
@@ -153,13 +153,13 @@ phtable_pi_t *h = phash_pi_init(100);
 CHECK(phash_pi_capacity(h) == 256);
 
 phash_pi_set_update(h, add);
-phash_pi_put(h, 1, 10);
-phash_pi_put(h, 1, 5);
+CHECK(phash_pi_put(h, 1, 10) == 0);
+CHECK(phash_pi_put(h, 1, 5) == 1);   // combined with the update function
 int v;
 CHECK(phash_pi_get(h, 1, &v) == 1);
 CHECK(v == 15);
 
-CHECK(phash_pi_atomic_update(h, 1, 1, add) == 0);
+CHECK(phash_pi_atomic_update(h, 1, 1, add) == 1);
 CHECK(phash_pi_atomic_update(h, 2, 40, add) == 0);
 CHECK(phash_pi_get(h, 1, &v) == 1);
 CHECK(v == 16);

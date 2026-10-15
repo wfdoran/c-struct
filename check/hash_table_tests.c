@@ -99,7 +99,7 @@ CHECK(v == 70);
 CHECK(hash_hi_get(h, 7, NULL) == 1);
 CHECK(hash_hi_size(h) == 1);
 
-CHECK(hash_hi_put(h, 7, 71) == 0);
+CHECK(hash_hi_put(h, 7, 71) == 1);   // the key was there: replaced
 CHECK(hash_hi_get(h, 7, &v) == 1);
 CHECK(v == 71);
 CHECK(hash_hi_size(h) == 1);
@@ -456,7 +456,7 @@ for (int round = 0; round < 20; round++) {
 
     if (op <= 1) {
       int v = get_rand() % 100000;
-      CHECK(hash_hi_put(h, k, v) == 0);
+      CHECK(hash_hi_put(h, k, v) == (present[k] ? 1 : 0));
       if (!present[k]) {
         present[k] = 1;
         count++;
@@ -576,7 +576,7 @@ for (int rc = hash_hi_first(c, &it, &key, &value); rc == 0; rc = hash_hi_next(&i
 CHECK(seen == hash_hi_size(c));
 
 // the update function was copied, and the two tables are independent
-CHECK(hash_hi_put(c, 1, 100) == 0);
+CHECK(hash_hi_put(c, 1, 100) == 1);
 int v;
 CHECK(hash_hi_get(c, 1, &v) == 1 && v == 3 + 100);
 CHECK(hash_hi_get(h, 1, &v) == 1 && v == 3);

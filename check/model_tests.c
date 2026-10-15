@@ -389,8 +389,8 @@ static int run_hash_model(uint32_t seed, bool use_update) {
     int gh = -1, gp = -1;
 
     if (op < 2) {
-      CHECK(hash_mh_put(h, k, v) == 0);
-      CHECK(phash_mp_put(p, k, v) == 0);
+      CHECK(hash_mh_put(h, k, v) == (present[k] ? 1 : 0));
+      CHECK(phash_mp_put(p, k, v) == (present[k] ? 1 : 0));
       value[k] = (present[k] && use_update) ? value[k] + v : v;
       if (!present[k]) {
         present[k] = 1;

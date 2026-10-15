@@ -59,8 +59,10 @@ int add(int a, int b) { return a + b; }
 phash_words_atomic_update(h, word, 1, add);
 ```
 
-Returns 0 on success, and -1 if `h` is `NULL`, `update` is `NULL`, there is no
-hash function, or memory could not be allocated.  Unlike `put`, it uses the
+Returns 0 if the key was new and was inserted with `value`, 1 if it was already
+present and its value became `update(old_value, value)`, and -1 if `h` is
+`NULL`, `update` is `NULL`, there is no hash function, or memory could not be
+allocated.  Unlike `put`, it uses the
 `update` argument rather than the function set with `set_update`.
 
 ## Compiled in hash and equality

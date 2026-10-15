@@ -329,8 +329,10 @@ CS_PRIVATE static inline int32_t GLUE3(hash_, prefix, _rehash)(HTABLE *h) {
       value replaces the current value.
 
    return value:
-     -1 => error
-     0 => ok
+     -1 => error (the table is unchanged)
+     0 => ok, the key was not in the table and has been inserted
+     1 => ok, the key was already in the table and its value was replaced
+          (or combined with the new value by the update function)
 */
 
 static inline int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, hkey_t key,
@@ -381,7 +383,7 @@ static inline int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, hkey_t key,
       if (CS_KEYEQ(h->comp, key, h->A[pos]->key)) {
         h->A[pos]->value =
             h->update == NULL ? value : h->update(h->A[pos]->value, value);
-        break;
+        return 1; /* replaced: the number of entries did not change */
       }
     }
   }
