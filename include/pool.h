@@ -31,7 +31,6 @@ typedef struct TYPE {
   size_t pool_size;
 } TYPE;
 
-
 static inline TYPE *GLUE3(pool_, prefix, _init)(size_t pool_size) {
   if (pool_size == 0 || pool_size > SIZE_MAX / sizeof(ENTRY)) {
     return NULL;
@@ -44,7 +43,7 @@ static inline TYPE *GLUE3(pool_, prefix, _init)(size_t pool_size) {
   if (pool->alloc == NULL) {
     return NULL;
   }
-  
+
   pool->head = pool->alloc;
   for (size_t i = 0; i + 1 < pool_size; i++) {
     pool->alloc[i].next = &(pool->alloc[i + 1]);
@@ -60,7 +59,7 @@ static inline data_t *GLUE3(pool_, prefix, _get)(TYPE *pool) {
   if (pool == NULL) {
     return NULL;
   }
-  
+
   if (pool->head == NULL) {
     TYPE *p = pool;
     while (p->next != NULL) {
@@ -79,7 +78,7 @@ static inline data_t *GLUE3(pool_, prefix, _get)(TYPE *pool) {
   pool->head = rv->next;
   rv->next = (ENTRY *) pool; /* in use: marked with the pool it came from */
 
-  return (data_t*) rv;
+  return (data_t *) rv;
 }
 
 static inline int32_t GLUE3(pool_, prefix, _put)(TYPE *pool, data_t **d_ptr) {
@@ -94,7 +93,7 @@ static inline int32_t GLUE3(pool_, prefix, _put)(TYPE *pool, data_t **d_ptr) {
   if (d == NULL) {
     return -1;
   }
-  ENTRY *e = (ENTRY*) d;
+  ENTRY *e = (ENTRY *) d;
   if (e->next != (ENTRY *) pool) {
     return -1; /* not in use in this pool: given back already, or not ours */
   }
@@ -127,8 +126,6 @@ static inline int32_t GLUE3(pool_, prefix, _destroy)(TYPE **p_ptr) {
   *p_ptr = NULL;
   return 0;
 }
-  
-
 
 #undef TYPE
 #undef ENTRY

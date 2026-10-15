@@ -7,7 +7,6 @@ typedef struct {
   double r;
 } circle_t;
 
-
 #define data_t circle_t
 #define prefix circ
 
