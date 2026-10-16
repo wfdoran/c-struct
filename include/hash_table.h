@@ -59,16 +59,19 @@ typedef struct HNODE {
 #define HPOOL GLUE3(pool_hn_, prefix, _t)
 
 typedef struct HTABLE {
-  int64_t capacity;
-  int32_t shift; // log2(capacity): the capacity is always a power of two
-  int64_t size;
-  int64_t used; // live entries plus deleted markers
-  HNODE **A;
-  HPOOL *pool; // the space of the nodes; created by the first put
-  uint64_t (*hash_func)(hkey_t);
-  int (*comp)(hkey_t, hkey_t);
-  value_t (*update)(value_t, value_t);
-  HNODE deleted; // special marker for a deleted entry
+  int64_t capacity; // number of spots in the hash table
+  int32_t shift;    // log2(capacity): the capacity is always a power of two
+  int64_t size;     // number of filled spots (live entries) in the hash table
+  int64_t used;     // live entries plus deleted markers
+  HNODE **A;        // table of HNODE pointers, all NULL to start
+  HPOOL *pool;      // pool of HNODEs; created by the first put
+  uint64_t (*hash_func)(
+      hkey_t); // hash function on keys to decide where to put a (key,value) pair
+  int (*comp)(hkey_t, hkey_t); // compare two keys
+  value_t (*update)(value_t,
+                    value_t); // how to combine two values which have the same key
+  HNODE
+  deleted; // special marker for a deleted entry, part of size but not used
 } HTABLE;
 
 typedef struct HITER {
@@ -87,10 +90,10 @@ typedef struct HITER {
    https://en.wikipedia.org/wiki/Hash_table
 */
 
+/* hash_prefix_roundup_pow2 returns the smallest power of 2 which
+   is >= x, for x >= 1. */
 CS_PRIVATE static inline int64_t GLUE3(hash_, prefix,
                                        _roundup_pow2)(int64_t x) {
-  /* smallest power of two >= x, for x >= 1; unsigned so that the shifts and the
-     final increment cannot overflow a signed value */
   uint64_t v = (uint64_t) x - 1;
   v |= v >> 1;
   v |= v >> 2;
@@ -116,10 +119,7 @@ CS_PRIVATE static inline int64_t GLUE3(hash_, prefix,
 #define _unused(x) ((void) (x))
 
 static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
-  /* the scaling below must not overflow in either direction, and the capacity
-     (a power of two) must fit in an int64_t; no allocation of that many slots
-     could succeed anyway */
-  if (expected_size > (INT64_C(1) << 62) / 4 * 3) {
+  if (expected_size > (INT64_C(3) << 60)) {
     return NULL;
   }
   if (expected_size < 0) {
@@ -130,11 +130,14 @@ static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
     return NULL;
   }
 
-  expected_size = expected_size / 3 * 4 +
-                  expected_size % 3 * 4 / 3; // expected_size / LOAD_FACTOR
+  /* We start by allocating (4/3) the expected_size many entries.  But the
+     capacity must always be a power of 2, round up.  */
+  expected_size = expected_size / 3 * 4 + expected_size % 3 * 4 / 3;
   h->capacity = expected_size <= 16
                     ? 16
                     : GLUE3(hash_, prefix, _roundup_pow2)(expected_size);
+
+  /* h->shift = log2(h->capacity) */
   h->shift = 0;
   while (((int64_t) 1 << h->shift) < h->capacity) {
     h->shift++;
@@ -142,13 +145,16 @@ static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
   h->size = 0;
   h->used = 0;
   h->pool = NULL;
-  memset(&(h->deleted), 0, sizeof(h->deleted));
-  h->A = calloc(h->capacity,
-                sizeof(HNODE *)); /* all-bits-zero is a NULL pointer */
+  memset(&(h->deleted), 0,
+         sizeof(h->deleted)); // avoids some "maybe be uninitialized" warnings
+  h->A =
+      calloc(h->capacity, sizeof(HNODE *)); // all-bits-zero is a NULL pointer
   if (h->A == NULL) {
     free(h);
     return NULL;
   }
+
+  /* If possible set a default hash and comp function for the key type. */
   hkey_t temp;
   h->hash_func = DEFAULT_HASH(temp);
   h->comp = DEFAULT_COMP_TYPE(temp);
@@ -191,6 +197,8 @@ GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func)(hkey_t)) {
    possible, a further compare function can be set.  It should
    return 0 if the two hkey_t are the same, and non-zero if different.
 
+   This is only used for equal/not equal.
+
    Note: if hkey_t is char*, strcmp is used.
 */
 
@@ -202,10 +210,11 @@ static inline void GLUE3(hash_, prefix,
 /* void hash_prefix_set_update(htable_prefix_t *h, value_t (*update)(value_t,
    value_t));
 
-   When putting a hkey_t/value_t pair into a hash table where the hkey_t already
-   exists, the default is to overwrite the previous value_t with this new one.
-   Using this routine, you can set an update routine which combines the
-   previous value_t with the new value_t.
+   When putting a hkey_t/value_t pair into a hash table where the
+   hkey_t already exists, the default is to overwrite the previous
+   value_t with this new one.  Using this routine, you can set an
+   update routine which combines the previous value_t with the new
+   value_t.
 
    For example, if value_t is int, the following update function
 
