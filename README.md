@@ -34,7 +34,8 @@ gcc -std=gnu11 -I include example.c -o example
 The headers are `static inline`, so they can be included from any number of `.c`
 files, and a type can be instantiated several times with different labels.
 `-std=gnu11` is used throughout; the code also needs POSIX (`ssize_t`,
-pthreads).  The thread safe hash table needs `-pthread`.
+pthreads).  The thread safe hash table and the thread safe pool need
+`-pthread`.
 
 Conventions: functions are named `container_prefix_operation`.  Functions which
 can fail return `int32_t` with 0 for success and -1 for an error; lookups return
@@ -60,6 +61,8 @@ pointers refer to, unless you give them a free function.
   for passing values between threads, with a non-blocking select.
 * [Memory Pool](doc/pool.md): constant time allocation of many objects of one
   type from a few large blocks, with space reused when given back.
+* [Thread Safe Memory Pool](doc/ppool.md): the same pool with a mutex around
+  `get` and `put`, for sharing one pool between threads.
 * [Option](doc/option.md): a value which may be absent.
 * [Interval](doc/interval.md): interval arithmetic with directed rounding,
   for results which are guaranteed to contain the exact answer.

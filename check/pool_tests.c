@@ -77,7 +77,35 @@ static int take_and_check(pool_circ_t *pool, circle_t **v, size_t n, double base
   return 0;
 }
 
-// get gives different, writable objects, and the pool grows by blocks of twice the size
+// the size of the next block: 1.5 times the last, rounded up
+START_TEST(pool_test0)
+
+#if CS_POOL_GROWTH_NUM == 3 && CS_POOL_GROWTH_DEN == 2
+CHECK(cs_pool_next_size(1) == 2);
+CHECK(cs_pool_next_size(2) == 3);
+CHECK(cs_pool_next_size(3) == 5);
+CHECK(cs_pool_next_size(4) == 6);
+CHECK(cs_pool_next_size(5) == 8);
+CHECK(cs_pool_next_size(100) == 150);
+CHECK(cs_pool_next_size(101) == 152);
+#endif
+for (size_t n = 1; n < 100000; n++) {
+  size_t m = cs_pool_next_size(n);
+  CHECK(m > n);                       // it always grows
+  // NUM / DEN times n, rounded up
+  CHECK(m * CS_POOL_GROWTH_DEN >= n * CS_POOL_GROWTH_NUM &&
+        m * CS_POOL_GROWTH_DEN < n * CS_POOL_GROWTH_NUM + CS_POOL_GROWTH_DEN);
+}
+// no overflow: a huge block saturates, which init then refuses
+CHECK(cs_pool_next_size(SIZE_MAX) == SIZE_MAX);
+CHECK(cs_pool_next_size(SIZE_MAX - 1) == SIZE_MAX);
+CHECK(cs_pool_next_size(SIZE_MAX / 2) > SIZE_MAX / 2);
+CHECK(cs_pool_next_size(SIZE_MAX / 2 + 1) >= SIZE_MAX / 2 + 1);
+CHECK(pool_circ_init(cs_pool_next_size(SIZE_MAX)) == NULL);
+
+END_TEST
+
+// get gives different, writable objects, and the pool grows by blocks 1.5 times the size
 START_TEST(pool_test1)
 
 enum { N = 5000 };
@@ -87,15 +115,17 @@ pool_circ_t *pool = pool_circ_init(3);
 CHECK(pool != NULL);
 CHECK(take_and_check(pool, v, N, 1.0) == 0);
 
-// the blocks are 3, 6, 12, ... entries, and every object is inside one of them
+// the blocks are 3, 5, 8, 12, ... entries, and every object is inside one of them
 size_t total = 0;
 size_t expect = 3;
+size_t last = 0;
 for (pool_circ_t *b = pool; b != NULL; b = b->next) {
   CHECK(b->pool_size == expect);
   total += b->pool_size;
-  expect *= 2;
+  last = b->pool_size;
+  expect = cs_pool_next_size(expect);
 }
-CHECK(total >= N && total < 2 * N + 3);        // no more than the last block too many
+CHECK(total >= N && total - last < N);         // no more blocks than needed
 for (size_t i = 0; i < N; i++) {
   bool inside = false;
   for (pool_circ_t *b = pool; b != NULL; b = b->next) {
@@ -151,7 +181,12 @@ size_t blocks = 0;
 for (pool_circ_t *p = pool; p != NULL; p = p->next) {
   blocks++;
 }
-CHECK(blocks == 5);                              // 4 + 8 + 16 + 32 + 64 holds 124
+size_t needed = 0;                               // the blocks which N objects need, from a first block of 4
+for (size_t size = 4, held = 0; held < N; size = cs_pool_next_size(size)) {
+  held += size;
+  needed++;
+}
+CHECK(blocks == needed);
 
 CHECK(pool_circ_destroy(&pool) == 0);
 
@@ -257,8 +292,8 @@ CHECK(pool_circ_destroy(&pool) == 0);
 
 END_TEST
 
-// every size of the first block: it holds exactly that many objects, and the next block is twice
-// as large (the sizes next to 1, 2 and 3 are where an off by one in linking the entries shows)
+// every size of the first block: it holds exactly that many objects, and the next block is 1.5
+// times as large, rounded up (the sizes next to 1, 2 and 3 are where an off by one in linking the entries shows)
 START_TEST(pool_test5)
 
 for (size_t n = 1; n <= 40; n++) {
@@ -275,19 +310,21 @@ for (size_t n = 1; n <= 40; n++) {
 
   v[n] = pool_circ_get(pool);                   // the next one starts the second block
   CHECK(v[n] != NULL);
-  CHECK(pool->next != NULL && pool->next->pool_size == 2 * n);
-  for (size_t i = n + 1; i < 3 * n; i++) {
+  const size_t s2 = cs_pool_next_size(n);
+  const size_t s3 = cs_pool_next_size(s2);
+  CHECK(pool->next != NULL && pool->next->pool_size == s2);
+  for (size_t i = n + 1; i < n + s2; i++) {
     v[i] = pool_circ_get(pool);
     CHECK(v[i] != NULL);
   }
-  CHECK(pool->next->next == NULL);              // 3n objects fit in n + 2n
+  CHECK(pool->next->next == NULL);              // n + s2 objects fit in the two blocks
   CHECK(pool->head == NULL);
 
-  v[3 * n] = pool_circ_get(pool);               // 3n + 1 starts a third block of 4n
-  CHECK(v[3 * n] != NULL && pool->next->next != NULL && pool->next->next->pool_size == 4 * n);
+  v[n + s2] = pool_circ_get(pool);              // the next one starts a third block
+  CHECK(v[n + s2] != NULL && pool->next->next != NULL && pool->next->next->pool_size == s3);
 
-  for (size_t i = 0; i < 3 * n + 1 && i < 200; i++) {
-    for (size_t j = i + 1; j < 3 * n + 1 && j < 200; j++) {
+  for (size_t i = 0; i < n + s2 + 1 && i < 200; i++) {
+    for (size_t j = i + 1; j < n + s2 + 1 && j < 200; j++) {
       CHECK(v[i] != v[j]);
     }
   }

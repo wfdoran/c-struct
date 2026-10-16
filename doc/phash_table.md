@@ -40,6 +40,12 @@ Programs which use it need `-pthread`.  Every function is `static inline`.  Read
   computed before the lock is taken, so a `put` which is already running can
   still use the old function.  The compare and update functions run while the
   lock is held, so they must not call back into the table.
+* **Pooled nodes.**  The entries come from a memory pool exactly as in
+  `hash_table.md` (see "Technical Details" there), so removed entries are
+  reused and `destroy` frees everything at once.  The pool is the plain one of
+  `pool.md`: it is only touched while the write lock is held, so it does not
+  need a lock of its own (`ppool.md` is for programs which share a pool between
+  threads directly).
 * **Missing.**  There is no iteration, `clone` or `apply`; they would have to
   hold the lock for the whole walk.
 

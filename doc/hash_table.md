@@ -256,7 +256,18 @@ not be allocated.
 
 The table uses open addressing: a table is an array of pointers to entries, and
 a key's position is found by double hashing, so a lookup follows a probe
-sequence which depends on the whole hash.  Each entry is allocated separately.
+sequence which depends on the whole hash.  The entries are not allocated one
+by one: they come from a memory pool (`pool.md`) which the table creates when
+the first entry is put (an empty table owns none).  The first block holds as
+many entries as the initial capacity allows below the load factor, and each
+further block is 1.5 times as large as the last (rounded up).  The space of a removed entry goes
+back to the pool and is used by a later `put`, so putting and removing entries
+does not call `malloc` and `free` each time; the memory is returned to the
+system only by `destroy`, which frees every block at once without visiting the
+entries.  A table which once held a million entries keeps the memory after they
+are removed, and while it grows it can hold up to 1.5 times as much as its entries
+need, since the last block may be partly empty.  A `put` fails (returns -1) if
+the pool cannot get a block.
 The hash returned by the hash function is first run through a 64-bit mixing
 function, so the quality of the hash function does not matter much; in
 particular the integer and floating point hashes in `hash.h` are simple.

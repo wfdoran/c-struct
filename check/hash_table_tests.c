@@ -37,6 +37,29 @@
 #undef value_t
 #undef hkey_t
 
+// An instantiation whose allocations can be made to fail.
+static long hoom_budget = -1;   // allocations which may still succeed; -1 for no limit
+
+static __attribute__((noinline)) void *hoom_malloc(size_t n) {
+  if (hoom_budget == 0) {
+    return NULL;
+  }
+  if (hoom_budget > 0) {
+    hoom_budget--;
+  }
+  return malloc(n);
+}
+
+#define malloc hoom_malloc
+#define hkey_t int
+#define value_t int
+#define prefix ho
+#include <hash_table.h>
+#undef prefix
+#undef value_t
+#undef hkey_t
+#undef malloc
+
 #define _unused(x) ((void) (x))
 
 static int add(int previous, int current) {
@@ -633,5 +656,112 @@ CHECK(hash_hi_put(h, 7, 70) == 0);
 int v = 0;
 CHECK(hash_hi_get(h, 7, &v) == 1 && v == 70);
 hash_hi_destroy(&h);
+
+END_TEST
+
+
+// the number of blocks of the pool which holds the nodes of a table
+static int hash_blocks(const htable_hi_t *h) {
+  int n = 0;
+  for (const pool_hn_hi_t *p = h->pool; p != NULL; p = p->next) {
+    n++;
+  }
+  return n;
+}
+
+// The space of removed entries is used again by later puts: putting and removing the same number
+// of entries over and over does not add blocks to the pool, and an empty table has no pool.
+START_TEST(hash_table_test19)
+
+htable_hi_t *h = hash_hi_init(0);
+CHECK(h->pool == NULL);
+CHECK(hash_hi_remove(h, 1, NULL) == 0);
+CHECK(hash_hi_get(h, 1, NULL) == 0);
+CHECK(h->pool == NULL);
+
+enum { N = 5000 };
+for (int i = 0; i < N; i++) {
+  CHECK(hash_hi_put(h, i, i) == 0);
+}
+const int blocks = hash_blocks(h);
+CHECK(blocks > 1);   // it grew past the first block
+
+for (int round = 0; round < 20; round++) {
+  for (int i = 0; i < N; i++) {
+    CHECK(hash_hi_remove(h, i, NULL) == 1);
+  }
+  CHECK(hash_hi_size(h) == 0);
+  for (int i = 0; i < N; i++) {
+    CHECK(hash_hi_put(h, i + round, -i) == 0);
+  }
+  for (int i = 0; i < N; i++) {
+    CHECK(hash_hi_remove(h, i + round, NULL) == 1);
+  }
+  for (int i = 0; i < N; i++) {
+    CHECK(hash_hi_put(h, i, i) == 0);
+  }
+  CHECK(hash_blocks(h) == blocks);
+}
+for (int i = 0; i < N; i++) {
+  int v = -1;
+  CHECK(hash_hi_get(h, i, &v) == 1 && v == i);
+}
+
+// a clone has a pool of its own, and survives the original being destroyed
+htable_hi_t *c = hash_hi_clone(h);
+CHECK(c != NULL && c->pool != h->pool);
+hash_hi_destroy(&h);
+for (int i = 0; i < N; i++) {
+  int v = -1;
+  CHECK(hash_hi_get(c, i, &v) == 1 && v == i);
+}
+CHECK(hash_hi_remove(c, 7, NULL) == 1);
+CHECK(hash_hi_put(c, 7, 70) == 0);
+hash_hi_destroy(&c);
+
+// an emptied table is cloned without a pool
+htable_hi_t *e = hash_hi_init(0);
+htable_hi_t *ec = hash_hi_clone(e);
+CHECK(ec != NULL && ec->pool == NULL);
+hash_hi_destroy(&e);
+hash_hi_destroy(&ec);
+
+END_TEST
+
+// a put which cannot get space for the entry fails and changes nothing
+START_TEST(hash_table_test20)
+
+hoom_budget = -1;
+htable_ho_t *h = hash_ho_init(0);   // 16 slots; the first block holds 12 entries
+CHECK(h != NULL);
+
+hoom_budget = 0;   // not even the first block
+CHECK(hash_ho_put(h, 1, 10) == -1);
+CHECK(hash_ho_size(h) == 0 && hash_ho_get(h, 1, NULL) == 0);
+hoom_budget = -1;
+
+for (int i = 0; i < 12; i++) {
+  CHECK(hash_ho_put(h, i, i * 10) == 0);
+}
+hoom_budget = 0;   // the next entry needs a second block
+CHECK(hash_ho_put(h, 100, 1) == -1);
+CHECK(hash_ho_size(h) == 12 && hash_ho_get(h, 100, NULL) == 0);
+CHECK(hash_ho_put(h, 5, 55) == 1);   // replacing needs no space
+hoom_budget = -1;
+CHECK(hash_ho_put(h, 100, 1) == 0);
+CHECK(hash_ho_size(h) == 13);
+for (int i = 0; i < 12; i++) {
+  int v = -1;
+  CHECK(hash_ho_get(h, i, &v) == 1 && v == (i == 5 ? 55 : i * 10));
+}
+
+// a clone which cannot get its first block returns NULL
+hoom_budget = 0;
+CHECK(hash_ho_clone(h) == NULL);
+hoom_budget = -1;
+htable_ho_t *c = hash_ho_clone(h);
+CHECK(c != NULL && hash_ho_size(c) == 13);
+hash_ho_destroy(&c);
+hash_ho_destroy(&h);
 
 END_TEST

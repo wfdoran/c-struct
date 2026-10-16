@@ -1,7 +1,5 @@
 Possible Future Additions
 
-* memory pool (similar to the one in Go), to be used for the hash table nodes
-
 * least recently used
 
 * blocking select for channels

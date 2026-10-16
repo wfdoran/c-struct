@@ -417,3 +417,66 @@ CHECK(phash_pi_get(h, 7, &v) == 1 && v == 70);
 phash_pi_destroy(&h);
 
 END_TEST
+
+
+static int phash_blocks(const phtable_pi_t *h) {
+  int n = 0;
+  for (const pool_phn_pi_t *p = h->pool; p != NULL; p = p->next) {
+    n++;
+  }
+  return n;
+}
+
+// The space of removed entries is used again by later puts, also when several threads put and
+// remove at once, and an empty table has no pool.
+START_TEST(phash_table_test14)
+
+phtable_pi_t *h = phash_pi_init(0);
+CHECK(h->pool == NULL);
+CHECK(phash_pi_remove(h, 1, NULL) == 0);
+CHECK(h->pool == NULL);
+
+enum { THREADS = 4, PER = 4000, N = THREADS * PER };
+int bad = 0;
+#pragma omp parallel num_threads(THREADS)
+{
+  const int me = omp_get_thread_num();
+  for (int i = 0; i < PER; i++) {
+    if (phash_pi_put(h, me * PER + i, i) != 0) {
+#pragma omp atomic
+      bad++;
+    }
+  }
+}
+CHECK(bad == 0 && phash_pi_size(h) == N);
+const int blocks = phash_blocks(h);
+CHECK(blocks > 1);
+
+for (int round = 0; round < 5; round++) {
+#pragma omp parallel num_threads(THREADS)
+  {
+    const int me = omp_get_thread_num();
+    for (int i = 0; i < PER; i++) {
+      if (phash_pi_remove(h, me * PER + i, NULL) != 1) {
+#pragma omp atomic
+        bad++;
+      }
+    }
+    for (int i = 0; i < PER; i++) {
+      if (phash_pi_put(h, me * PER + i, i) != 0) {
+#pragma omp atomic
+        bad++;
+      }
+    }
+  }
+  CHECK(bad == 0);
+  CHECK(phash_pi_size(h) == N);
+  CHECK(phash_blocks(h) == blocks);
+}
+for (int k = 0; k < N; k++) {
+  int v = -1;
+  CHECK(phash_pi_get(h, k, &v) == 1 && v == k % PER);
+}
+phash_pi_destroy(&h);
+
+END_TEST

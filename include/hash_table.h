@@ -37,12 +37,34 @@ typedef struct HNODE {
   value_t value;
 } HNODE;
 
+/* The nodes are allocated from a pool (pool.h), which hands out the space of
+   many nodes with few calls to malloc and frees all of it at once when the
+   table is destroyed.  The pool header defines and undefines the same helper
+   macros as this one, so they are removed here and defined again after it. */
+#undef GLUE3
+#undef GLUE
+#undef GLUE_HELPER
+#pragma push_macro("data_t")
+#undef data_t
+#define data_t HNODE
+#define pool_label GLUE(hn_, prefix)
+#include "pool.h"
+#undef pool_label
+#undef data_t
+#pragma pop_macro("data_t")
+#define GLUE_HELPER(x, y) x##y
+#define GLUE(x, y) GLUE_HELPER(x, y)
+#define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
+
+#define HPOOL GLUE3(pool_hn_, prefix, _t)
+
 typedef struct HTABLE {
   int64_t capacity;
   int32_t shift; // log2(capacity): the capacity is always a power of two
   int64_t size;
   int64_t used; // live entries plus deleted markers
   HNODE **A;
+  HPOOL *pool; // the space of the nodes; created by the first put
   uint64_t (*hash_func)(hkey_t);
   int (*comp)(hkey_t, hkey_t);
   value_t (*update)(value_t, value_t);
@@ -119,6 +141,7 @@ static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
   }
   h->size = 0;
   h->used = 0;
+  h->pool = NULL;
   memset(&(h->deleted), 0, sizeof(h->deleted));
   h->A = calloc(h->capacity,
                 sizeof(HNODE *)); /* all-bits-zero is a NULL pointer */
@@ -229,6 +252,24 @@ static inline size_t GLUE3(hash_, prefix, _capacity)(const HTABLE *h) {
   return (size_t) h->capacity;
 }
 
+/* HNODE *hash_prefix_node_alloc(htable_prefix_t *h);
+
+   Space for one node, or NULL if memory is exhausted.  The pool is created by
+   the first call, with room for the entries the initial capacity holds below
+   the load factor; it then adds a block 1.5 times as large each time it is
+   full. Space of removed entries goes back to the pool and is used again.  An
+   empty table owns no pool.
+*/
+CS_PRIVATE static inline HNODE *GLUE3(hash_, prefix, _node_alloc)(HTABLE *h) {
+  if (h->pool == NULL) {
+    h->pool = GLUE3(pool_hn_, prefix, _init)((size_t) (h->capacity / 4 * 3));
+    if (h->pool == NULL) {
+      return NULL;
+    }
+  }
+  return GLUE3(pool_hn_, prefix, _get)(h->pool);
+}
+
 /* void hash_prefix_destroy(htable_prefix_t **h_ptr);
 
    Deallocates the hash table and resets all of the internal values of
@@ -250,10 +291,8 @@ static inline void GLUE3(hash_, prefix, _destroy)(HTABLE **h_ptr) {
     return;
   }
 
-  for (int64_t i = 0; i < h->capacity; i++) {
-    if (h->A[i] != &(h->deleted)) {
-      free(h->A[i]);
-    }
+  if (h->pool != NULL) {
+    GLUE3(pool_hn_, prefix, _destroy)(&h->pool); /* all the nodes at once */
   }
   free(h->A);
 
@@ -364,7 +403,7 @@ static inline int32_t GLUE3(hash_, prefix, _put)(HTABLE *h, hkey_t key,
           (uint64_t) h->used + 1 >= (uint64_t) h->capacity) {
         return -1;
       }
-      HNODE *n = malloc(sizeof(HNODE));
+      HNODE *n = GLUE3(hash_, prefix, _node_alloc)(h);
       if (n == NULL) {
         return -1;
       }
@@ -462,7 +501,7 @@ static inline int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, hkey_t key,
           if (value != NULL) {
             *value = h->A[pos]->value;
           }
-          free(h->A[pos]);
+          GLUE3(pool_hn_, prefix, _put)(h->pool, &h->A[pos]); /* sets it NULL */
           h->A[pos] = &(h->deleted);
           h->size--;
           return 1;
@@ -569,7 +608,7 @@ static inline HTABLE *GLUE3(hash_, prefix, _clone)(const HTABLE *h) {
     if (n == NULL || n == &(h->deleted)) {
       continue;
     }
-    HNODE *copy = malloc(sizeof(HNODE));
+    HNODE *copy = GLUE3(hash_, prefix, _node_alloc)(out);
     if (copy == NULL) {
       GLUE3(hash_, prefix, _destroy)(&out);
       return NULL;
@@ -589,6 +628,7 @@ static inline HTABLE *GLUE3(hash_, prefix, _clone)(const HTABLE *h) {
   return out;
 }
 
+#undef HPOOL
 #undef HNODE
 #undef HTABLE
 #undef HITER

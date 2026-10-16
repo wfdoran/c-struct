@@ -39,6 +39,28 @@ typedef struct PHNODE {
   value_t value;
 } PHNODE;
 
+/* The nodes are allocated from a pool (pool.h).  The pool is not thread safe,
+   and does not need to be here: nodes are taken and given back only while the
+   write lock is held, and the pool is destroyed with the table.  The pool
+   header defines and undefines the same helper macros as this one, so they are
+   removed here and defined again after it. */
+#undef GLUE3
+#undef GLUE
+#undef GLUE_HELPER
+#pragma push_macro("data_t")
+#undef data_t
+#define data_t PHNODE
+#define pool_label GLUE(phn_, prefix)
+#include "pool.h"
+#undef pool_label
+#undef data_t
+#pragma pop_macro("data_t")
+#define GLUE_HELPER(x, y) x##y
+#define GLUE(x, y) GLUE_HELPER(x, y)
+#define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
+
+#define PHPOOL GLUE3(pool_phn_, prefix, _t)
+
 /* capacity and size are atomic so that phash_prefix_size() and
    phash_prefix_capacity() can read them without the lock.  They are changed
    only while the write lock is held, so inside the lock relaxed loads and
@@ -52,6 +74,7 @@ typedef struct PHTABLE {
   _Atomic int64_t size;
   int64_t used; // live entries plus deleted markers
   PHNODE **A;
+  PHPOOL *pool; // the space of the nodes; created by the first put
   /* atomic so that it can be read without holding the lock: the hash of a key
      does not depend on the table, so it is computed before locking */
   _Atomic(uint64_t (*)(hkey_t)) hash_func;
@@ -129,6 +152,7 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
   }
   atomic_init(&h->size, 0);
   h->used = 0;
+  h->pool = NULL;
   memset(&(h->deleted), 0, sizeof(h->deleted));
   h->A =
       calloc(capacity, sizeof(PHNODE *)); /* all-bits-zero is a NULL pointer */
@@ -268,11 +292,8 @@ static inline void GLUE3(phash_, prefix, _destroy)(PHTABLE **h_ptr) {
     return;
   }
   pthread_rwlock_wrlock(&(h->rwlock));
-  const int64_t capacity = CS_LOAD(h->capacity);
-  for (int64_t i = 0; i < capacity; i++) {
-    if (h->A[i] != &(h->deleted)) {
-      free(h->A[i]);
-    }
+  if (h->pool != NULL) {
+    GLUE3(pool_phn_, prefix, _destroy)(&h->pool); /* all the nodes at once */
   }
   free(h->A);
 
@@ -337,6 +358,25 @@ CS_PRIVATE static inline int32_t GLUE3(phash_, prefix, _rehash)(PHTABLE *h) {
   return 0;
 }
 
+/* PHNODE *phash_prefix_node_alloc(phtable_prefix_t *h, int64_t capacity);
+
+   Space for one node, or NULL if memory is exhausted.  The caller holds the
+   write lock.  The pool is created by the first call, with room for the entries
+   the initial capacity holds below the load factor; it then adds a block 1.5
+   times as large each time it is full.  Space of removed entries goes back to
+   the pool and is used again.  An empty table owns no pool.
+*/
+CS_PRIVATE static inline PHNODE *
+GLUE3(phash_, prefix, _node_alloc)(PHTABLE *h, int64_t capacity) {
+  if (h->pool == NULL) {
+    h->pool = GLUE3(pool_phn_, prefix, _init)((size_t) (capacity / 4 * 3));
+    if (h->pool == NULL) {
+      return NULL;
+    }
+  }
+  return GLUE3(pool_phn_, prefix, _get)(h->pool);
+}
+
 /* int32_t phash_prefix_put(phtable_prefix_t *h, hkey_t key, value_t value)
 
    Insert a key/value pair into the hash table.
@@ -392,7 +432,7 @@ GLUE3(phash_, prefix, _put_locked)(PHTABLE *h, uint64_t hash, hkey_t key,
           (uint64_t) h->used + 1 >= (uint64_t) capacity) {
         return -1;
       }
-      PHNODE *n = malloc(sizeof(PHNODE));
+      PHNODE *n = GLUE3(phash_, prefix, _node_alloc)(h, capacity);
       if (n == NULL) {
         return -1;
       }
@@ -545,7 +585,8 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
           if (value != NULL) {
             *value = h->A[pos]->value;
           }
-          free(h->A[pos]);
+          GLUE3(pool_phn_, prefix, _put)
+          (h->pool, &h->A[pos]); /* sets it NULL */
           h->A[pos] = &(h->deleted);
           CS_STORE(h->size, CS_LOAD(h->size) - 1);
           pthread_rwlock_unlock(&(h->rwlock));
@@ -556,6 +597,7 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
   }
 }
 
+#undef PHPOOL
 #undef PHNODE
 #undef PHTABLE
 #undef GLUE3

@@ -211,6 +211,9 @@ interval_demo8: interval_demo8.c ../include/interval.h
 pool_demo1: pool_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) pool_demo1.c -o pool_demo1 -lm
 
+ppool_demo1: ppool_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) ppool_demo1.c -o ppool_demo1 -lpthread
+
 clean:
 	rm -rf array_demo1
 	rm -rf array_demo2
@@ -282,5 +285,6 @@ clean:
 	rm -rf interval_demo7
 	rm -rf interval_demo8
 	rm -rf pool_demo1
+	rm -rf ppool_demo1
 	rm -rf *~
 

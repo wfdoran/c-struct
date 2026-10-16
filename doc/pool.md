@@ -4,7 +4,8 @@ A pool hands out space for objects of one type, `data_t`, and takes it back.
 `get` and `put` take constant time, the objects are packed together in a few
 large blocks instead of being scattered by `malloc`, and everything is freed at
 once by `destroy`.  It suits a program which creates and drops many small
-objects of one type, such as the nodes of a tree or a hash table.
+objects of one type, such as the nodes of a tree or a hash table (the hash
+tables of this library keep their nodes in a pool).
 
 ```c
 #define data_t int
@@ -48,8 +49,13 @@ pool_circ_destroy(&pool);
 
 The pool is a chain of blocks.  `init` allocates the first block, with room for
 `pool_size` objects.  When every object of every block is in use, `get`
-allocates another block, **twice as large as the last one**, so the pool never
-runs out as long as memory lasts.  Space which is given back goes on a list of
+allocates another block, **1.5 times as large as the last one** (rounded up, so
+a block of 1 is followed by one of 2, 3 by 5), so the pool never runs out as
+long as memory lasts.  The factor is `CS_POOL_GROWTH_NUM / CS_POOL_GROWTH_DEN`
+(3 / 2); define both before the first include of `pool.h` (or with `-D`) to
+change it, as long as the numerator is larger than the denominator.  A smaller
+factor leaves less unused space in the last block, a larger one allocates
+less often.  Space which is given back goes on a list of
 free space, and `get` takes from that list first, the space given back most
 recently first.
 
@@ -130,9 +136,11 @@ Returns 0, or -1 if `p_ptr` or `*p_ptr` is `NULL`, so destroying twice is safe.
 
 * **Not thread safe.**  `get` and `put` change the list of free space without
   any locking, so calls on one pool must not overlap.  Either use one pool per
-  thread, or lock around the calls yourself.  (A container which already holds
-  its own lock around every operation, as the parallel hash table does, could
-  use a pool inside it without further locking.)
+  thread, lock around the calls yourself, or use the pool of
+  [`ppool.md`](ppool.md), which has a mutex built in.  (A container which
+  already holds its own lock around every operation does not need either: the
+  parallel hash table keeps its nodes in a plain pool and only touches it while
+  it holds its write lock.)
 * **The space is not cleared**, see `get`.
 * **Space must come from this pool**, see `put`.
 * **`init(0)` returns `NULL`.**  A pool needs room for at least one object.

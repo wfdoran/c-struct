@@ -5,16 +5,56 @@
 #error "data_t not defined"
 #endif
 
+/* pool_label is the name part of the pool types and functions, normally the
+   prefix.  The hash tables, which keep a pool of their nodes, set it to a label
+   of their own (and data_t to the node type), so that the pool inside a table
+   cannot clash with a pool of the same prefix made by the user.  Users do not
+   set it. */
+#ifndef pool_label
 #ifndef prefix
 #error "prefix not defined"
+#endif
+#define pool_label prefix
+#define POOL_LABEL_IS_PREFIX
+#endif
+
+/* Each new block is CS_POOL_GROWTH_NUM / CS_POOL_GROWTH_DEN times the size of
+   the last one, 3 / 2 = 1.5 unless it is set with -D (the numerator must be
+   larger than the denominator).  It is kept as a fraction so that the size is
+   computed exactly, in integers.  A smaller factor wastes less memory in the
+   last block, a larger one allocates less often. */
+#ifndef CS_POOL_GROWTH_NUM
+#define CS_POOL_GROWTH_NUM 3
+#endif
+#ifndef CS_POOL_GROWTH_DEN
+#define CS_POOL_GROWTH_DEN 2
+#endif
+
+#ifndef CS_POOL_NEXT_SIZE
+#define CS_POOL_NEXT_SIZE
+_Static_assert(CS_POOL_GROWTH_NUM > CS_POOL_GROWTH_DEN,
+               "a pool must grow: CS_POOL_GROWTH_NUM > CS_POOL_GROWTH_DEN");
+
+/* The size of the block which follows a block of n objects: n times the growth
+   factor, rounded up, so it is always larger than n.  Saturates at SIZE_MAX,
+   which pool_prefix_init() then refuses as too large. */
+static inline size_t cs_pool_next_size(size_t n) {
+  const size_t extra = CS_POOL_GROWTH_NUM - CS_POOL_GROWTH_DEN;
+  /* n * extra / DEN, rounded up, without overflowing in n * extra */
+  const size_t grow =
+      n / CS_POOL_GROWTH_DEN * extra +
+      (n % CS_POOL_GROWTH_DEN * extra + CS_POOL_GROWTH_DEN - 1) /
+          CS_POOL_GROWTH_DEN;
+  return grow > SIZE_MAX - n ? SIZE_MAX : n + grow;
+}
 #endif
 
 #define GLUE_HELPER(x, y) x##y
 #define GLUE(x, y) GLUE_HELPER(x, y)
 #define GLUE3(x, y, z) GLUE(GLUE(x, y), z)
 
-#define TYPE GLUE3(pool_, prefix, _t)
-#define ENTRY GLUE3(pentry_, prefix, _t)
+#define TYPE GLUE3(pool_, pool_label, _t)
+#define ENTRY GLUE3(pentry_, pool_label, _t)
 
 /* While an entry is free, next links it to the next free entry.  While it is in
    use, next holds the pool, which is how pool_prefix_put() recognizes space
@@ -39,8 +79,9 @@ typedef struct TYPE {
 /* pool_prefix_t* pool_prefix_init(size_t pool_size);
 
    Allocates a pool with room for pool_size objects of type data_t.  When all of
-   them are in use, pool_prefix_get() adds a block twice as large as the last
-   one, so the pool never runs out as long as memory lasts.
+   them are in use, pool_prefix_get() adds a block 1.5 times as large as the
+   last one (rounded up; CS_POOL_GROWTH_NUM / CS_POOL_GROWTH_DEN), so the pool
+   never runs out as long as memory lasts.
 
    All the entries of the block are linked into the list of free entries now, so
    this takes time proportional to pool_size.
@@ -48,7 +89,7 @@ typedef struct TYPE {
    Returns NULL if pool_size is 0, if the block would be too large to
    allocate, or if memory could not be allocated.
 */
-static inline TYPE *GLUE3(pool_, prefix, _init)(size_t pool_size) {
+static inline TYPE *GLUE3(pool_, pool_label, _init)(size_t pool_size) {
   if (pool_size == 0 || pool_size > SIZE_MAX / sizeof(ENTRY)) {
     return NULL;
   }
@@ -82,9 +123,9 @@ static inline TYPE *GLUE3(pool_, prefix, _init)(size_t pool_size) {
    pool_prefix_put(), or the pool is destroyed.  Space which was given back is
    handed out again first, the most recently given back first.
 
-   Not thread safe: calls on one pool must not overlap.
+   Not thread safe: calls on one pool must not overlap (ppool.h has a mutex).
 */
-static inline data_t *GLUE3(pool_, prefix, _get)(TYPE *pool) {
+static inline data_t *GLUE3(pool_, pool_label, _get)(TYPE *pool) {
   if (pool == NULL) {
     return NULL;
   }
@@ -94,7 +135,7 @@ static inline data_t *GLUE3(pool_, prefix, _get)(TYPE *pool) {
     while (p->next != NULL) {
       p = p->next;
     }
-    TYPE *p2 = GLUE3(pool_, prefix, _init)(p->pool_size * 2);
+    TYPE *p2 = GLUE3(pool_, pool_label, _init)(cs_pool_next_size(p->pool_size));
     if (p2 == NULL) {
       return NULL;
     }
@@ -127,9 +168,10 @@ static inline data_t *GLUE3(pool_, prefix, _get)(TYPE *pool) {
            this pool); nothing is changed, and *d_ptr is left as it is
       0 => ok
 
-   Not thread safe: calls on one pool must not overlap.
+   Not thread safe: calls on one pool must not overlap (ppool.h has a mutex).
 */
-static inline int32_t GLUE3(pool_, prefix, _put)(TYPE *pool, data_t **d_ptr) {
+static inline int32_t GLUE3(pool_, pool_label, _put)(TYPE *pool,
+                                                     data_t **d_ptr) {
   if (pool == NULL) {
     return -1;
   }
@@ -163,7 +205,7 @@ static inline int32_t GLUE3(pool_, prefix, _put)(TYPE *pool, data_t **d_ptr) {
      -1 => nothing to destroy (p_ptr or *p_ptr is NULL)
       0 => ok
 */
-static inline int32_t GLUE3(pool_, prefix, _destroy)(TYPE **p_ptr) {
+static inline int32_t GLUE3(pool_, pool_label, _destroy)(TYPE **p_ptr) {
   if (p_ptr == NULL) {
     return -1;
   }
@@ -173,7 +215,7 @@ static inline int32_t GLUE3(pool_, prefix, _destroy)(TYPE **p_ptr) {
   }
 
   if (pool->next != NULL) {
-    int32_t rc = GLUE3(pool_, prefix, _destroy)(&pool->next);
+    int32_t rc = GLUE3(pool_, pool_label, _destroy)(&pool->next);
     if (rc != 0) {
       return rc;
     }
@@ -188,6 +230,10 @@ static inline int32_t GLUE3(pool_, prefix, _destroy)(TYPE **p_ptr) {
 
 #undef TYPE
 #undef ENTRY
+#ifdef POOL_LABEL_IS_PREFIX
+#undef pool_label
+#undef POOL_LABEL_IS_PREFIX
+#endif
 #undef GLUE3
 #undef GLUE
 #undef GLUE_HELPER
