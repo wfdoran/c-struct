@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "cs_private.h"
+
 #ifndef data_t
 #error "data_t not defined"
 #endif
@@ -30,15 +32,17 @@
 #define CS_POOL_GROWTH_DEN 2
 #endif
 
-#ifndef CS_POOL_NEXT_SIZE
-#define CS_POOL_NEXT_SIZE
+/* CS_POOL_NEXT_SIZE_DEFINED is internal: it makes the function below be defined
+   once however many pools are instantiated. */
+#ifndef CS_POOL_NEXT_SIZE_DEFINED
+#define CS_POOL_NEXT_SIZE_DEFINED
 _Static_assert(CS_POOL_GROWTH_NUM > CS_POOL_GROWTH_DEN,
                "a pool must grow: CS_POOL_GROWTH_NUM > CS_POOL_GROWTH_DEN");
 
 /* The size of the block which follows a block of n objects: n times the growth
    factor, rounded up, so it is always larger than n.  Saturates at SIZE_MAX,
    which pool_prefix_init() then refuses as too large. */
-static inline size_t cs_pool_next_size(size_t n) {
+CS_PRIVATE static inline size_t cs_pool_next_size(size_t n) {
   const size_t extra = CS_POOL_GROWTH_NUM - CS_POOL_GROWTH_DEN;
   /* n * extra / DEN, rounded up, without overflowing in n * extra */
   const size_t grow =
