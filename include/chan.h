@@ -160,13 +160,16 @@ typedef struct SELECT {
 
 /* chan_prefix_t *chan_prefix_init(int64_t capacity);
 
-   Allocates a channel that buffers up to capacity values.  A capacity
-   below 1 is rounded up to 1: unbuffered (rendezvous) channels are not
-   provided.
+   Allocates a channel that buffers up to capacity values.  Unbuffered
+   (rendezvous) channels are not provided, so a capacity below 1 is refused.
+
+   Returns NULL if capacity is below 1, if the slot array for that capacity
+   cannot be sized, or if memory could not be allocated; the caller cannot tell
+   these apart.
 */
 static inline CHAN *GLUE3(chan_, prefix, _init)(int64_t capacity) {
   if (capacity < 1) {
-    capacity = 1;
+    return NULL;
   }
 
   /* slots are found with a mask, so round the slot array up to a power of two

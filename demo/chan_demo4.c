@@ -42,7 +42,7 @@ int main(void) {
   int capacity = 10;
   chan_int_t *ch1 = chan_int_init(capacity);
 
-  chan_float_t *ch2 = chan_float_init(0);
+  chan_float_t *ch2 = chan_float_init(1);
 
   int nth = 6;
   int n = 1000;

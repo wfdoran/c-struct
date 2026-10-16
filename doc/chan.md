@@ -17,13 +17,17 @@ type and prefix label before including `chan.h`.
 
 ### `chan_prefix_t *chan_prefix_init(int64_t capacity)`
 
-Allocates and initializes a channel with the given capacity.  A capacity below 1
-is rounded up to 1; unbuffered (rendezvous) channels are not provided.  To the
-user, a `chan_prefix_t` should be viewed as an opaque object.  There should be
-no need to directly access its fields
+Allocates and initializes a channel with the given capacity, the most values it
+holds at once.  The capacity must be at least 1: unbuffered (rendezvous)
+channels are not provided, so `chan_prefix_init(0)` does not give a channel
+which waits for a receiver; it fails.  To the user, a `chan_prefix_t` should be
+viewed as an opaque object.  There should be no need to directly access its
+fields
 
-Returns a pointer to the newly allocated chan_prefix_t on success or
-NULL on error. 
+Returns a pointer to the newly allocated chan_prefix_t on success or `NULL` on
+error: the capacity is below 1, it is too large for the slot array to be
+allocated, or memory could not be allocated.  The caller cannot tell these
+apart; a capacity from user input should be checked first.
 
 ### `void chan_prefix_destroy(chan_prefix_t **c)`
 

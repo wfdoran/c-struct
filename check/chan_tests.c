@@ -378,18 +378,21 @@ for (int ci = 0; ci < 10; ci++) {
 
 END_TEST
 
-// init: a capacity below 1 is rounded up to 1, one which cannot be allocated gives NULL, and
+// init: a capacity below 1 is refused, one which cannot be allocated gives NULL, and
 // every call refuses a NULL channel
 START_TEST(chan_test8)
 
 int64_t small[] = {0, -1, -5, INT64_MIN};
 for (int i = 0; i < 4; i++) {
-  chan_int_t *c = chan_int_init(small[i]);
-  CHECK(c != NULL);
-  CHECK(chan_int_trysend(c, 1) == CHAN_SUCCESS);
-  CHECK(chan_int_trysend(c, 2) == CHAN_FULL);     // exactly one value
-  chan_int_destroy(&c);
+  CHECK(chan_int_init(small[i]) == NULL);
 }
+
+// the smallest channel holds exactly one value
+chan_int_t *one = chan_int_init(1);
+CHECK(one != NULL);
+CHECK(chan_int_trysend(one, 1) == CHAN_SUCCESS);
+CHECK(chan_int_trysend(one, 2) == CHAN_FULL);
+chan_int_destroy(&one);
 
 CHECK(chan_int_init(INT64_MAX) == NULL);          // the slot array cannot be sized
 CHECK(chan_int_init(INT64_C(1) << 62) == NULL);   // more than a size_t of values
