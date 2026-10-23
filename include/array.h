@@ -876,6 +876,19 @@ static inline TYPE *GLUE3(array_, prefix, _deserialize)(const char *filename) {
     if (arr_size > SIZE_MAX / data_size) {
       goto fail;
     }
+    /* the size comes from the file: refuse one the rest of the file cannot
+       hold, before allocating for it */
+    long here = ftell(fp);
+    if (here < 0 || fseek(fp, 0, SEEK_END) != 0) {
+      goto fail;
+    }
+    long end = ftell(fp);
+    if (end < here || fseek(fp, here, SEEK_SET) != 0) {
+      goto fail;
+    }
+    if ((uint64_t) (end - here) / data_size < arr_size) {
+      goto fail;
+    }
     data_t *buf = malloc(arr_size * data_size);
     if (buf == NULL) {
       goto fail;
