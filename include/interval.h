@@ -368,17 +368,12 @@ static inline interval_t interval_exp(interval_t a) {
     return interval_invalid();
   }
 
+  /* libm is called in the caller's rounding mode: its error bound is for
+     round-to-nearest, and the one ulp of widening covers it */
   interval_t rv;
-  int save = fegetround();
-
-  fesetround(FE_UPWARD);
   rv.hi = interval_ulp_up(exp(a.hi));
-
-  fesetround(FE_DOWNWARD);
   rv.lo = fmax(interval_ulp_down(exp(a.lo)),
                0.0); /* exp is positive: do not widen below 0 */
-
-  fesetround(save);
 
   rv.valid = true;
   return rv;
@@ -389,16 +384,10 @@ static inline interval_t interval_erf(interval_t a) {
     return interval_invalid();
   }
 
+  /* see interval_exp for why there is no rounding mode here */
   interval_t rv;
-  int save = fegetround();
-
-  fesetround(FE_UPWARD);
   rv.hi = fmin(interval_ulp_up(erf(a.hi)), 1.0);
-
-  fesetround(FE_DOWNWARD);
   rv.lo = fmax(interval_ulp_down(erf(a.lo)), -1.0);
-
-  fesetround(save);
 
   rv.valid = true;
   return rv;
@@ -450,18 +439,12 @@ static inline interval_t interval_log(interval_t a) {
     return interval_invalid();
   }
 
+  /* see interval_exp for why there is no rounding mode here */
   interval_t rv;
-  int save = fegetround();
-
-  fesetround(FE_UPWARD);
   rv.hi = interval_ulp_up(log(a.hi));
-
-  fesetround(FE_DOWNWARD);
   double lo =
       a.lo > 0 ? a.lo : 0.0; /* log(0) is -inf: the lower bound is unbounded */
   rv.lo = interval_ulp_down(log(lo));
-
-  fesetround(save);
 
   rv.valid = true;
   return rv;
@@ -686,15 +669,17 @@ static inline interval_t interval_sin(interval_t a) {
 
   int save = fegetround();
 
-  /* start with the min and max of values from a. */
-  fesetround(FE_UPWARD);
-  rv.hi = fmax(sin(a.lo), sin(a.hi));
+  /* start with the min and max of values from a.  libm is called in the
+     caller's rounding mode, see interval_exp. */
+  const double s_lo = sin(a.lo);
+  const double s_hi = sin(a.hi);
+  rv.hi = fmax(s_lo, s_hi);
+  rv.lo = fmin(s_lo, s_hi);
 
+  fesetround(FE_UPWARD);
   double mult_hi = iv_fence(iv_fence(a.hi) / M_PI_2);
 
   fesetround(FE_DOWNWARD);
-  rv.lo = fmin(sin(a.lo), sin(a.hi));
-
   double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
 
   /* M_PI_2 is pi/2 rounded to a double (relative error 0.18 DBL_EPSILON), which
@@ -738,15 +723,16 @@ static inline interval_t interval_cos(interval_t a) {
 
   int save = fegetround();
 
-  /* start with the min and max of values from a. */
-  fesetround(FE_UPWARD);
-  rv.hi = fmax(cos(a.lo), cos(a.hi));
+  /* start with the min and max of values from a, see interval_sin */
+  const double c_lo = cos(a.lo);
+  const double c_hi = cos(a.hi);
+  rv.hi = fmax(c_lo, c_hi);
+  rv.lo = fmin(c_lo, c_hi);
 
+  fesetround(FE_UPWARD);
   double mult_hi = iv_fence(iv_fence(a.hi) / M_PI_2);
 
   fesetround(FE_DOWNWARD);
-  rv.lo = fmin(cos(a.lo), cos(a.hi));
-
   double mult_lo = iv_fence(iv_fence(a.lo) / M_PI_2);
 
   /* M_PI_2 is pi/2 rounded to a double (relative error 0.18 DBL_EPSILON), which
