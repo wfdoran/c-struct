@@ -494,11 +494,20 @@ static inline interval_t interval_fabs(interval_t a) {
   return rv;
 }
 
+#pragma push_macro("data_t")
+#pragma push_macro("prefix")
+#pragma push_macro("data_less")
+#undef data_t
+#undef prefix
+#undef data_less
 #define data_t double
 #define prefix ival
 #include "pqueue.h"
 #undef prefix
 #undef data_t
+#pragma pop_macro("data_less")
+#pragma pop_macro("prefix")
+#pragma pop_macro("data_t")
 
 CS_PRIVATE static inline double interval_get_key(interval_t a) {
   return fmax(fabs(a.lo), fabs(a.hi));
