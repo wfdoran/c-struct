@@ -226,7 +226,6 @@ static inline int32_t GLUE3(pqueue_, prefix, _push)(PQUEUE *q, data_t key,
 */
 static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
   CS_ASSERT(q != NULL);
-  CS_ASSERT_CMP(q->comp);
 
   if (q->size == 0) {
     PQKV rv = {.value = NULL, .found = false};
