@@ -349,14 +349,6 @@ static inline interval_t interval_fmin(interval_t a, interval_t b) {
     return interval_invalid();
   }
 
-  if (a.hi < b.lo) {
-    return a;
-  }
-
-  if (b.hi < a.lo) {
-    return b;
-  }
-
   /* min is exact: no rounding mode needed */
   interval_t rv = {
       .lo = fmin(a.lo, b.lo), .hi = fmin(a.hi, b.hi), .valid = true};
