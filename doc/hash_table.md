@@ -160,13 +160,13 @@ found.  With entries in the table it is refused and nothing is changed.
 
 Returns 0, or -1 if `h` is `NULL` or the table has entries.
 
-### `void hash_prefix_set_comp(htable_prefix_t *h, int (*comp) (hkey_t, hkey_t))`
+### `int32_t hash_prefix_set_comp(htable_prefix_t *h, int (*comp) (hkey_t, hkey_t))`
 
 Sets a compare function which is used to tell keys with the same hash apart.  It
 should return 0 if the two keys are the same and non-zero if they are different.
-If none is set, two keys with the same hash are considered to be the same key.
+If none is set, two keys with the same hash are considered to be the same key.  Returns 0, or -1 if `h` is `NULL`.
 
-### `void hash_prefix_set_update(htable_prefix_t *h, value_t (*update) (value_t, value_t))`
+### `int32_t hash_prefix_set_update(htable_prefix_t *h, value_t (*update) (value_t, value_t))`
 
 Sets a function which combines the old value with the new one when
 `hash_prefix_put` finds the key already present.  For example, with `value_t` an
@@ -198,13 +198,13 @@ dangling pointer.
 
 ### `size_t hash_prefix_size(const htable_prefix_t *h)`
 
-Returns the number of entries in the table.
+Returns the number of entries in the table, or 0 if `h` is `NULL`.
 
 ### `size_t hash_prefix_capacity(const htable_prefix_t *h)`
 
 Returns the number of slots allocated for the table.  When more than 75% of the
 slots are in use (by entries or by markers left by removed entries), the table
-is rebuilt, doubling in size if it needs the room.
+is rebuilt, doubling in size if it needs the room.  Returns 0 if `h` is `NULL`.
 
 ## Iteration
 
@@ -225,24 +225,25 @@ for (int32_t rc = hash_prefix_first(h, &it, &key, &value); rc == 0;
 ### `int32_t hash_prefix_first(const htable_prefix_t *h, hiter_prefix_t *it, hkey_t *key, value_t *value)`
 
 Starts an iteration.  Returns 0 and fills in `*key` and `*value` with the first
-entry, or returns 1 if the table is empty.  Either of `key` and `value` may be
+entry, or returns 1 if the table is empty (or `h` or `it` is `NULL`).  Either of `key` and `value` may be
 `NULL`.
 
 ### `int32_t hash_prefix_next(hiter_prefix_t *it, hkey_t *key, value_t *value)`
 
 Returns 0 and fills in the next entry, or returns 1 when there are no more.
-Once it has returned 1 it keeps returning 1.
+Once it has returned 1 it keeps returning 1, and it returns 1 if `it` is `NULL`.
 
 ## Global Operations
 
-### `void hash_prefix_apply(htable_prefix_t *h, value_t (*f)(hkey_t, value_t))`
+### `int32_t hash_prefix_apply(htable_prefix_t *h, value_t (*f)(hkey_t, value_t))`
 
-Replaces the value of every entry by `f(key, value)`.
+Replaces the value of every entry by `f(key, value)`.  Returns 0, or -1 if `h` or
+`f` is `NULL`.
 
-### `void hash_prefix_apply_r(htable_prefix_t *h, value_t (*f)(hkey_t, value_t, void*), void *arg)`
+### `int32_t hash_prefix_apply_r(htable_prefix_t *h, value_t (*f)(hkey_t, value_t, void*), void *arg)`
 
 The same, but `arg` is passed through to `f` as a third argument, for state or
-results.
+results.  Returns 0, or -1 if `h` or `f` is `NULL`.
 
 ### `htable_prefix_t *hash_prefix_clone(const htable_prefix_t *h)`
 

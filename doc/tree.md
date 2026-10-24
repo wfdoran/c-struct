@@ -54,21 +54,22 @@ changed.  To use another order, build a new tree.
 
 Returns 0, or -1 if `t` is `NULL` or the tree has entries.
 
-### `void tree_prefix_set_update(tree_prefix_t *t, void *(*update) (void *, void *));`
+### `int32_t tree_prefix_set_update(tree_prefix_t *t, void *(*update) (void *, void *));`
 
 The default for `tree_prefix_insert` is to store `value` in the node with the
 given key, replacing the old value if the key already exists.  This function
 allows you to prescribe the behavior: the node's value becomes
 `update(current_value, passed_value)`.  For a new node the current value is
-`NULL`.  Any memory management is up to `update`.
+`NULL`.  Any memory management is up to `update`.  Returns 0, or -1 if `t` is `NULL`.
 
-### `void tree_prefix_set_value_free(tree_prefix_t *t, void (*value_free)(void *))`
+### `int32_t tree_prefix_set_value_free(tree_prefix_t *t, void (*value_free)(void *))`
 
 Sets a function which frees a value.  By default no function is set and values
 are never freed.  When one is set it is used when `tree_prefix_insert` replaces
 the value of an existing key (if no update function is set), and by
 `tree_prefix_destroy` for every remaining value.  The most common use is to pass
-the system `free()` when the values were allocated with `malloc()`.
+the system `free()` when the values were allocated with `malloc()`.  Returns 0, or
+-1 if `t` is `NULL`.
 
 ### Ownership of values
 
@@ -173,7 +174,8 @@ for (int32_t rc = tree_prefix_first(t, &it, &key, &value); rc == 0;
 ### `int32_t tree_prefix_first(const tree_prefix_t *t, titer_prefix_t *it, data_t *key, void **value)`
 ### `int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, void **value)`
 
-An in-order walk, starting at the smallest key.
+An in-order walk, starting at the smallest key.  `next` returns 1 if `it` is
+`NULL`, and `first` also if `t` is `NULL`.
 
 ### `int32_t tree_prefix_first_from(const tree_prefix_t *t, data_t from, titer_prefix_t *it, data_t *key, void **value)`
 
@@ -187,11 +189,11 @@ Continue with `tree_prefix_next()`.
 The same, but a post-order walk: every node comes after its children, ending
 with the root.  This is the order to use to free or destroy things node by node.
 
-### `void tree_prefix_print(const tree_prefix_t *t, void (*node_print) (data_t, void *))`
+### `int32_t tree_prefix_print(const tree_prefix_t *t, void (*node_print) (data_t, void *))`
 
 Prints a picture of the tree sideways to standard output, one node per line,
 calling `node_print(key, value)` to print each node's contents.  Useful for
-debugging.
+debugging.  Returns 0, or -1 if `t` is `NULL`.
 
 ## Compiled in comparison
 

@@ -190,7 +190,8 @@ GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func)(hkey_t)) {
   return 0;
 }
 
-/* void hash_prefix_set_comp(htable_prefix_t *h, int (*comp)(hkey_t, hkey_t));
+/* int32_t hash_prefix_set_comp(htable_prefix_t *h,
+                                int (*comp)(hkey_t, hkey_t));
 
    If no comp function is given, it is assumed the hash value means
    the same hkey_t.  If hash collisions with different hkey_ts are
@@ -200,14 +201,22 @@ GLUE3(hash_, prefix, _set_hash)(HTABLE *h, uint64_t (*hash_func)(hkey_t)) {
    This is only used for equal/not equal.
 
    Note: if hkey_t is char*, strcmp is used.
+
+   return value:
+     -1 => error (h is NULL; nothing is changed)
+      0 => ok
 */
 
-static inline void GLUE3(hash_, prefix,
-                         _set_comp)(HTABLE *h, int (*comp)(hkey_t, hkey_t)) {
+static inline int32_t GLUE3(hash_, prefix,
+                            _set_comp)(HTABLE *h, int (*comp)(hkey_t, hkey_t)) {
+  if (h == NULL) {
+    return -1;
+  }
   h->comp = comp;
+  return 0;
 }
 
-/* void hash_prefix_set_update(htable_prefix_t *h, value_t (*update)(value_t,
+/* int32_t hash_prefix_set_update(htable_prefix_t *h, value_t (*update)(value_t,
    value_t));
 
    When putting a hkey_t/value_t pair into a hash table where the
@@ -236,29 +245,39 @@ static inline void GLUE3(hash_, prefix,
 
    (Putting the pointer already stored for a key calls update(p, p), so the
    check is needed.)
+
+   return value:
+     -1 => error (h is NULL; nothing is changed)
+      0 => ok
 */
-static inline void GLUE3(hash_, prefix,
-                         _set_update)(HTABLE *h,
-                                      value_t (*update)(value_t, value_t)) {
+static inline int32_t GLUE3(hash_, prefix,
+                            _set_update)(HTABLE *h,
+                                         value_t (*update)(value_t, value_t)) {
+  if (h == NULL) {
+    return -1;
+  }
   h->update = update;
+  return 0;
 }
 
 /* size_t hash_prefix_size(const htable_prefix_t *h);
 
-   Returns the number of unique hkey_ts inserted into the hash table.
+   Returns the number of unique hkey_ts inserted into the hash table, or 0 if h
+   is NULL.
 */
 static inline size_t GLUE3(hash_, prefix, _size)(const HTABLE *h) {
-  return (size_t) h->size;
+  return h == NULL ? 0 : (size_t) h->size;
 }
 
 /* size_t hash_prefix_capacity(const htable_prefix_t *h);
 
    Returns the allocated size of the hash table.
 
-   Once this is 75% filled, it is automatically doubled.
+   Once this is 75% filled, it is automatically doubled.  Returns 0 if h is
+   NULL.
 */
 static inline size_t GLUE3(hash_, prefix, _capacity)(const HTABLE *h) {
-  return (size_t) h->capacity;
+  return h == NULL ? 0 : (size_t) h->capacity;
 }
 
 /* HNODE *hash_prefix_node_alloc(htable_prefix_t *h);
@@ -530,7 +549,8 @@ static inline int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, hkey_t key,
    starts the iteration and next steps it, and both return
 
      0 => *key and *value (either may be NULL) hold the next entry
-     1 => there are no more entries
+     1 => there are no more entries (also if h, it or the iterator's table is
+          NULL)
 
    so a loop is
 
@@ -544,6 +564,9 @@ static inline int32_t GLUE3(hash_, prefix, _remove)(HTABLE *h, hkey_t key,
 */
 static inline int32_t GLUE3(hash_, prefix, _next)(HITER *it, hkey_t *key,
                                                   value_t *value) {
+  if (it == NULL || it->h == NULL) {
+    return 1;
+  }
   const HTABLE *h = it->h;
 
   while (it->curr < h->capacity) {
@@ -564,30 +587,49 @@ static inline int32_t GLUE3(hash_, prefix, _next)(HITER *it, hkey_t *key,
 static inline int32_t GLUE3(hash_, prefix, _first)(const HTABLE *h, HITER *it,
                                                    hkey_t *key,
                                                    value_t *value) {
+  if (it == NULL) {
+    return 1;
+  }
   it->h = h;
   it->curr = 0;
   return GLUE3(hash_, prefix, _next)(it, key, value);
 }
 
-static inline void GLUE3(hash_, prefix, _apply)(HTABLE *h,
-                                                value_t (*f)(hkey_t, value_t)) {
+/* int32_t hash_prefix_apply(htable_prefix_t *h, value_t (*f)(hkey_t, value_t));
+   int32_t hash_prefix_apply_r(htable_prefix_t *h,
+                               value_t (*f)(hkey_t, value_t, void *),
+                               void *arg);
+
+   Replaces the value of every entry by f(key, value), or f(key, value, arg).
+   Returns 0, or -1 if h or f is NULL (nothing is changed).
+*/
+static inline int32_t GLUE3(hash_, prefix,
+                            _apply)(HTABLE *h, value_t (*f)(hkey_t, value_t)) {
+  if (h == NULL || f == NULL) {
+    return -1;
+  }
   for (int64_t idx = 0; idx < h->capacity; idx++) {
     HNODE *a = h->A[idx];
     if (a != NULL && a != &(h->deleted)) {
       a->value = f(a->key, a->value);
     }
   }
+  return 0;
 }
 
-static inline void
+static inline int32_t
 GLUE3(hash_, prefix, _apply_r)(HTABLE *h, value_t (*f)(hkey_t, value_t, void *),
                                void *arg) {
+  if (h == NULL || f == NULL) {
+    return -1;
+  }
   for (int64_t idx = 0; idx < h->capacity; idx++) {
     HNODE *a = h->A[idx];
     if (a != NULL && a != &(h->deleted)) {
       a->value = f(a->key, a->value, arg);
     }
   }
+  return 0;
 }
 
 /* htable_prefix_t *hash_prefix_clone(const htable_prefix_t *h);

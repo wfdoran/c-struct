@@ -116,8 +116,8 @@ GLUE3(tree_, prefix, _set_comp)(TREE *a, int (*comp)(data_t *, data_t *)) {
   return 0;
 }
 
-/* void tree_prefix_set_update(tree_prefix_t *a, void *(*update) (void *, void
-   *));
+/* int32_t tree_prefix_set_update(tree_prefix_t *a,
+                                  void *(*update) (void *, void *));
 
    Attaches an update function.  When inserting, if a node with the
    key value already exists, this function is used to update the value
@@ -129,17 +129,23 @@ GLUE3(tree_, prefix, _set_comp)(TREE *a, int (*comp)(data_t *, data_t *)) {
     used when initializing a node.
 
         new_value = update(NULL, passed_value)
+
+    return value:
+      -1 => error (a is NULL; nothing is changed)
+       0 => ok
 */
 
-static inline void
+static inline int32_t
 GLUE3(tree_, prefix, _set_update)(TREE *a, void *(*update)(void *, void *) ) {
   if (a == NULL) {
-    return;
+    return -1;
   }
   a->update = update;
+  return 0;
 }
 
-/* void tree_prefix_set_value_free(tree_prefix_t *a, void (*value_free)(void *)
+/* int32_t tree_prefix_set_value_free(tree_prefix_t *a,
+                                      void (*value_free)(void *));
 
     Attaches a free functions for values in each node.  This is used
     in two places:
@@ -159,14 +165,19 @@ GLUE3(tree_, prefix, _set_update)(TREE *a, void *(*update)(void *, void *) ) {
     the tree, retrieve lends it, and delete hands it back unfreed.  Inserting
     the pointer already stored for a key (with no update) frees it and leaves
     a dangling pointer in the tree; see "Ownership of values" in doc/tree.md.
+
+    return value:
+      -1 => error (a is NULL; nothing is changed)
+       0 => ok
 */
 
-static inline void GLUE3(tree_, prefix,
-                         _set_value_free)(TREE *a, void (*value_free)(void *)) {
+static inline int32_t
+GLUE3(tree_, prefix, _set_value_free)(TREE *a, void (*value_free)(void *)) {
   if (a == NULL) {
-    return;
+    return -1;
   }
   a->value_free = value_free;
+  return 0;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -868,10 +879,13 @@ static inline int GLUE3(tree_, prefix, _height)(const TREE *a) {
 /* int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, void **value);
 
    Returns the entry at the iterator and steps the iterator to the next one in
-   key order.
+   key order.  Returns 1 (no entry) if it is NULL.
 */
 static inline int32_t GLUE3(tree_, prefix, _next)(TITER *it, data_t *key,
                                                   void **value) {
+  if (it == NULL) {
+    return 1;
+  }
   NODE *n = it->node;
   if (n == NULL) {
     return 1;
@@ -908,6 +922,9 @@ static inline int32_t GLUE3(tree_, prefix, _next)(TITER *it, data_t *key,
 */
 static inline int32_t GLUE3(tree_, prefix, _first)(const TREE *a, TITER *it,
                                                    data_t *key, void **value) {
+  if (it == NULL) {
+    return 1;
+  }
   NODE *n = a == NULL ? NULL : a->root;
   if (n != NULL) {
     while (n->left != NULL) {
@@ -927,6 +944,9 @@ static inline int32_t GLUE3(tree_, prefix, _first)(const TREE *a, TITER *it,
 static inline int32_t GLUE3(tree_, prefix,
                             _first_from)(const TREE *a, data_t from, TITER *it,
                                          data_t *key, void **value) {
+  if (it == NULL) {
+    return 1;
+  }
   NODE *best = NULL;
   NODE *n = a == NULL ? NULL : a->root;
   while (n != NULL) {
@@ -972,6 +992,9 @@ CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _post_descent)(NODE *n) {
 */
 static inline int32_t GLUE3(tree_, prefix, _post_next)(TITER *it, data_t *key,
                                                        void **value) {
+  if (it == NULL) {
+    return 1;
+  }
   NODE *n = it->node;
   if (n == NULL) {
     return 1;
@@ -995,6 +1018,9 @@ static inline int32_t GLUE3(tree_, prefix, _post_next)(TITER *it, data_t *key,
 static inline int32_t GLUE3(tree_, prefix, _post_first)(const TREE *a,
                                                         TITER *it, data_t *key,
                                                         void **value) {
+  if (it == NULL) {
+    return 1;
+  }
   it->node = a == NULL || a->root == NULL
                  ? NULL
                  : GLUE3(tree_, prefix, _post_descent)(a->root);
@@ -1066,13 +1092,14 @@ GLUE3(tree_, prefix, _print_node)(void (*node_print)(data_t, void *), NODE *n,
   GLUE3(tree_, prefix, _print_node)(node_print, n->right, depth + 1, rmask);
 }
 
-static inline void GLUE3(tree_, prefix,
-                         _print)(const TREE *a,
-                                 void (*node_print)(data_t, void *)) {
+static inline int32_t GLUE3(tree_, prefix,
+                            _print)(const TREE *a,
+                                    void (*node_print)(data_t, void *)) {
   if (a == NULL) {
-    return;
+    return -1;
   }
   GLUE3(tree_, prefix, _print_node)(node_print, a->root, 0, 0);
+  return 0;
 }
 
 #undef NODE

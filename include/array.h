@@ -652,19 +652,18 @@ static inline int32_t GLUE3(array_, prefix, _reserve)(TYPE *a,
 }
 
 /*
-   Returns the number of entries in the array.
+   Returns the number of entries in the array, or 0 if a is NULL.
 */
 static inline size_t GLUE3(array_, prefix, _size)(const TYPE *a) {
-  CS_ASSERT(a != NULL);
-  return a->size;
+  return a == NULL ? 0 : a->size;
 }
 
 /*
-   Returns the capacity in the array until a resize is needed.
+   Returns the capacity in the array until a resize is needed, or 0 if a is
+   NULL.
 */
 static inline size_t GLUE3(array_, prefix, _capacity)(const TYPE *a) {
-  CS_ASSERT(a != NULL);
-  return a->capacity;
+  return a == NULL ? 0 : a->capacity;
 }
 
 #define HEAP_PARENT(x) (((x) -1) / 2)

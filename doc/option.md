@@ -60,14 +60,14 @@ Returns the held value, or `other` if the option is empty.
 
 ## Changing
 
-### `void option_prefix_set(option_prefix_t *x, data_t value)`
+### `int32_t option_prefix_set(option_prefix_t *x, data_t value)`
 
-Makes the option hold `value`.
+Makes the option hold `value`.  Returns 0, or -1 if `x` is `NULL`.
 
 ### `bool option_prefix_get_clear(option_prefix_t *x, data_t *value)`
 
 Like `get`, and if there was a value, also leaves the option empty.  Useful to
-take a value out of an option exactly once.
+take a value out of an option exactly once.  Returns false if `x` is `NULL`.
 
 ### `int32_t option_prefix_map(option_prefix_t *x, data_t (*f) (data_t))`
 

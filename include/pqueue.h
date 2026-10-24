@@ -120,18 +120,26 @@ GLUE3(pqueue_, prefix, _set_comp)(PQUEUE *q, int (*comp)(data_t *, data_t *)) {
   return 0;
 }
 
-/* void pqueue_prefix_set_value_free(pqueue_prefix_t *q, void (*value_free)(void
-   *));
+/* int32_t pqueue_prefix_set_value_free(pqueue_prefix_t *q,
+                                        void (*value_free)(void *));
 
    Attaches a free function for the values held in the queue.  This is
    used when pqueue_prefix_destroy() is called, to free the value of
    every remaining entry.  The most common usage is to pass the system
    free() for the value_free assuming the values were allocated by the
    system malloc().
+
+   return value:
+     -1 => error (q is NULL; nothing is changed)
+      0 => ok
 */
-static inline void
+static inline int32_t
 GLUE3(pqueue_, prefix, _set_value_free)(PQUEUE *q, void (*value_free)(void *)) {
+  if (q == NULL) {
+    return -1;
+  }
   q->value_free = value_free;
+  return 0;
 }
 
 /* ----------------------------------------------------------------------- */
@@ -222,12 +230,10 @@ static inline int32_t GLUE3(pqueue_, prefix, _push)(PQUEUE *q, data_t key,
 
    Removes and returns the key/value pair at the top of the priority
    queue (the largest key, using the default comp).  If the queue is
-   empty, the returned pqkv_prefix_t has found set to false.
+   empty, or q is NULL, the returned pqkv_prefix_t has found set to false.
 */
 static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
-  CS_ASSERT(q != NULL);
-
-  if (q->size == 0) {
+  if (q == NULL || q->size == 0) {
     PQKV rv = {.value = NULL, .found = false};
     return rv;
   }
@@ -265,13 +271,11 @@ static inline PQKV GLUE3(pqueue_, prefix, _pop)(PQUEUE *q) {
 /* pqkv_prefix_t pqueue_prefix_peek(const pqueue_prefix_t *q);
 
    Returns the key/value pair at the top of the priority queue without
-   removing it.  If the queue is empty, the returned pqkv_prefix_t has
-   found set to false.
+   removing it.  If the queue is empty, or q is NULL, the returned
+   pqkv_prefix_t has found set to false.
 */
 static inline PQKV GLUE3(pqueue_, prefix, _peek)(const PQUEUE *q) {
-  CS_ASSERT(q != NULL);
-
-  if (q->size == 0) {
+  if (q == NULL || q->size == 0) {
     PQKV rv = {.value = NULL, .found = false};
     return rv;
   }
@@ -282,20 +286,18 @@ static inline PQKV GLUE3(pqueue_, prefix, _peek)(const PQUEUE *q) {
 
 /*
 
-  Returns the number of entries in the priority queue.
+  Returns the number of entries in the priority queue, or 0 if q is NULL.
 */
 static inline size_t GLUE3(pqueue_, prefix, _size)(const PQUEUE *q) {
-  CS_ASSERT(q != NULL);
-  return q->size;
+  return q == NULL ? 0 : q->size;
 }
 
 /*
 
-  Returns true if the priority queue has no entries.
+  Returns true if the priority queue has no entries, or q is NULL.
 */
 static inline bool GLUE3(pqueue_, prefix, _is_empty)(const PQUEUE *q) {
-  CS_ASSERT(q != NULL);
-  return q->size == 0;
+  return q == NULL || q->size == 0;
 }
 
 #undef PQUEUE_RIGHT_CHILD

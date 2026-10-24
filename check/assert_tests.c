@@ -80,8 +80,8 @@ static void child_array_pop(void) {
   array_int_pop(a);
 }
 
-static void child_pqueue_null(void) {
-  pqueue_int_size(NULL);
+static void child_array_null(void) {
+  array_int_get(NULL, 0);
 }
 
 static void child_bisect(void) {
@@ -137,8 +137,8 @@ CHECK(strstr(msg, "idx < a->size") != NULL);
 CHECK(run_child(child_array_pop, msg, sizeof(msg)) == SIGABRT);
 CHECK(strstr(msg, "array_int_pop") != NULL);
 
-CHECK(run_child(child_pqueue_null, msg, sizeof(msg)) == SIGABRT);
-CHECK(strstr(msg, "q != NULL") != NULL);
+CHECK(run_child(child_array_null, msg, sizeof(msg)) == SIGABRT);
+CHECK(strstr(msg, "a != NULL") != NULL);
 
 END_TEST
 

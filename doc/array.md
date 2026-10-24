@@ -151,12 +151,12 @@ or -1 if `a` is `NULL`.
 
 ### `size_t array_prefix_size(const array_prefix_t *a)`
 
-Gives the size of the array.
+Gives the size of the array, or 0 if `a` is `NULL`.
 
 ### `size_t array_prefix_capacity(const array_prefix_t *a)`
 
-Gives the number of entries the array can hold before it has to grow.  See
-`array_prefix_reserve()` to set it.
+Gives the number of entries the array can hold before it has to grow, or 0 if
+`a` is `NULL`.  See `array_prefix_reserve()` to set it.
 
 ## Collective Operations
 

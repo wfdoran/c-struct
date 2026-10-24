@@ -209,7 +209,8 @@ GLUE3(phash_, prefix, _set_hash)(PHTABLE *h, uint64_t (*hash_func)(hkey_t)) {
   return 0;
 }
 
-/* void phash_prefix_set_comp(phtable_prefix_t *h, int (*comp)(hkey_t, hkey_t));
+/* int32_t phash_prefix_set_comp(phtable_prefix_t *h,
+                                 int (*comp)(hkey_t, hkey_t));
 
    If no comp function is given, it is assumed the hash value means
    the same hkey_t.  If hash collisions with different hkey_ts are
@@ -217,17 +218,25 @@ GLUE3(phash_, prefix, _set_hash)(PHTABLE *h, uint64_t (*hash_func)(hkey_t)) {
    return 0 if the two hkey_t are the same, and non-zero if different.
 
    Note: if hkey_t is char*, strcmp is used.
+
+   return value:
+     -1 => error (h is NULL; nothing is changed)
+      0 => ok
 */
 
-static inline void GLUE3(phash_, prefix,
-                         _set_comp)(PHTABLE *h, int (*comp)(hkey_t, hkey_t)) {
+static inline int32_t
+GLUE3(phash_, prefix, _set_comp)(PHTABLE *h, int (*comp)(hkey_t, hkey_t)) {
+  if (h == NULL) {
+    return -1;
+  }
   pthread_rwlock_wrlock(&(h->rwlock));
   h->comp = comp;
   pthread_rwlock_unlock(&(h->rwlock));
+  return 0;
 }
 
-/* void phash_prefix_set_update(phtable_prefix_t *h, value_t (*update)(value_t,
-   value_t));
+/* int32_t phash_prefix_set_update(phtable_prefix_t *h,
+                                   value_t (*update)(value_t, value_t));
 
    When putting a hkey_t/value_t pair into a hash table where the hkey_t already
    exists, the default is to overwrite the previous value_t with this new one.
@@ -241,23 +250,31 @@ static inline void GLUE3(phash_, prefix,
      }
 
    would keep the sum the values in the hash table.
+
+   return value:
+     -1 => error (h is NULL; nothing is changed)
+      0 => ok
 */
-static inline void GLUE3(phash_, prefix,
-                         _set_update)(PHTABLE *h,
-                                      value_t (*update)(value_t, value_t)) {
+static inline int32_t GLUE3(phash_, prefix,
+                            _set_update)(PHTABLE *h,
+                                         value_t (*update)(value_t, value_t)) {
+  if (h == NULL) {
+    return -1;
+  }
   pthread_rwlock_wrlock(&(h->rwlock));
   h->update = update;
   pthread_rwlock_unlock(&(h->rwlock));
+  return 0;
 }
 
 /* size_t phash_prefix_size(const phtable_prefix_t *h);
 
-   Returns the number of unique hkey_ts inserted into the hash table.  It does
-   not take the lock: while other threads change the table, the value is the
-   size at some moment during the call.
+   Returns the number of unique hkey_ts inserted into the hash table, or 0 if h
+   is NULL.  It does not take the lock: while other threads change the table,
+   the value is the size at some moment during the call.
 */
 static inline size_t GLUE3(phash_, prefix, _size)(const PHTABLE *h) {
-  return (size_t) CS_LOAD(h->size);
+  return h == NULL ? 0 : (size_t) CS_LOAD(h->size);
 }
 
 /* size_t phash_prefix_capacity(const phtable_prefix_t *h);
@@ -265,10 +282,11 @@ static inline size_t GLUE3(phash_, prefix, _size)(const PHTABLE *h) {
    Returns the allocated size of the hash table.
 
    Once this is 75% filled, it is automatically doubled.  Like
-   phash_prefix_size(), it does not take the lock.
+   phash_prefix_size(), it does not take the lock, and it returns 0 if h is
+   NULL.
 */
 static inline size_t GLUE3(phash_, prefix, _capacity)(const PHTABLE *h) {
-  return (size_t) CS_LOAD(h->capacity);
+  return h == NULL ? 0 : (size_t) CS_LOAD(h->capacity);
 }
 
 /* void phash_prefix_destroy(phtable_prefix_t **h_ptr);

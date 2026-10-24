@@ -64,11 +64,11 @@ To use another order, build a new queue.
 
 Returns 0, or -1 if `q` or `comp` is `NULL`, or the queue has entries.
 
-### `void pqueue_prefix_set_value_free(pqueue_prefix_t *q, void (*value_free) (void *))`
+### `int32_t pqueue_prefix_set_value_free(pqueue_prefix_t *q, void (*value_free) (void *))`
 
 Sets a function which `pqueue_prefix_destroy()` applies to the value of every
 remaining entry.  The usual choice is the system `free()` for values allocated
-with `malloc()`.
+with `malloc()`.  Returns 0, or -1 if `q` is `NULL`.
 
 ### `int32_t pqueue_prefix_push(pqueue_prefix_t *q, data_t key, void *value)`
 
@@ -79,17 +79,18 @@ unchanged).
 ### `pqkv_prefix_t pqueue_prefix_pop(pqueue_prefix_t *q)`
 
 Removes and returns the entry with the largest key.  `found` is `false` if the
-queue is empty.
+queue is empty or `q` is `NULL`.
 
 ### `pqkv_prefix_t pqueue_prefix_peek(const pqueue_prefix_t *q)`
 
 Returns the entry with the largest key without removing it.  `found` is `false`
-if the queue is empty.
+if the queue is empty or `q` is `NULL`.
 
 ### `size_t pqueue_prefix_size(const pqueue_prefix_t *q)`
 ### `bool pqueue_prefix_is_empty(const pqueue_prefix_t *q)`
 
-The number of entries, and whether there are none.
+The number of entries, and whether there are none.  A `NULL` queue has 0 entries
+and is empty.
 
 ## Compiled in comparison
 

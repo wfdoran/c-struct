@@ -38,15 +38,15 @@ Initializes an empty list.  Returns `NULL` if memory could not be allocated.
 Frees all of the nodes and the list itself, and sets the user's pointer to
 `NULL`.  It does not free what the entries point to.
 
-### `void llist_prefix_set_comp(llist_prefix_t *a, int (*comp) (data_t *, data_t *))`
+### `int32_t llist_prefix_set_comp(llist_prefix_t *a, int (*comp) (data_t *, data_t *))`
 
 Sets the comparison function used by `llist_prefix_msort()`.  For basic types
 (`int`, `double`, `char*`, ...) one is provided by `comp.h`; other types need
-one set here.
+one set here.  Returns 0, or -1 if `a` is `NULL`.
 
 ### `size_t llist_prefix_size(const llist_prefix_t *a)`
 
-Returns the number of entries in the list.
+Returns the number of entries in the list, or 0 if `a` is `NULL`.
 
 ### `int32_t llist_prefix_add_start(llist_prefix_t *a, data_t v)`
 ### `int32_t llist_prefix_add_end(llist_prefix_t *a, data_t v)`
@@ -80,12 +80,14 @@ for (int32_t rc = llist_int_first(a, &n, &x); rc == 0; rc = llist_int_next(&n, &
 ### `int32_t llist_prefix_first(llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
 ### `int32_t llist_prefix_last(llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t *value)`
 
-Put `*n_ptr` at the first or last node.
+Put `*n_ptr` at the first or last node.  Return 0, or 1 if there is no such node
+(an empty list, or `a` or `n_ptr` is `NULL`).
 
 ### `int32_t llist_prefix_next(lnode_prefix_t **n_ptr, data_t *value)`
 ### `int32_t llist_prefix_prev(lnode_prefix_t **n_ptr, data_t *value)`
 
-Move `*n_ptr` to the next or previous node.
+Move `*n_ptr` to the next or previous node.  Return 0, or 1 if there is none
+(or `n_ptr` is `NULL`).
 
 ## Changing the List While Walking
 
@@ -94,13 +96,13 @@ Move `*n_ptr` to the next or previous node.
 
 Remove the current node, return its value, and move `*n_ptr` to the next
 (`remove_forward`) or previous (`remove_backwards`) node, which is `NULL` at the
-end.  Return `null_value` if `*n_ptr` is `NULL`.
+end.  Return `null_value` if `a`, `n_ptr` or `*n_ptr` is `NULL`.
 
 ### `int32_t llist_prefix_insert_before(llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t v)`
 ### `int32_t llist_prefix_insert_after(llist_prefix_t *a, lnode_prefix_t **n_ptr, data_t v)`
 
 Insert a new entry before or after the current node, and move `*n_ptr` to the
-new node.  Return 0, or -1 if `*n_ptr` is `NULL` (use `add_start` or `add_end`
+new node.  Return 0, or -1 if `a`, `n_ptr` or `*n_ptr` is `NULL` (use `add_start` or `add_end`
 to put the first entry into an empty list) or memory could not be allocated.
 
 ## Sorting
@@ -115,11 +117,11 @@ O(n log n) time for every input, uses O(log n) stack, and does not allocate.
 Returns 0 on success, or -1 if `a` is `NULL` or no comparison function is
 available.
 
-### `void llist_prefix_add_node(llist_prefix_t *a, lnode_prefix_t *n)`
+### `int32_t llist_prefix_add_node(llist_prefix_t *a, lnode_prefix_t *n)`
 
 Appends an already allocated node to the end of the list without allocating.
 The node must not be in any list.  This is mainly a building block for code
-which rearranges nodes itself.
+which rearranges nodes itself.  Returns 0, or -1 if `a` or `n` is `NULL`.
 
 ## Compiled in comparison
 
