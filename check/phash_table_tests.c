@@ -480,3 +480,50 @@ for (int k = 0; k < N; k++) {
 phash_pi_destroy(&h);
 
 END_TEST
+
+// set_comp stores the comparison function, and the table then uses it to decide
+// whether two keys with the same hash are the same key
+static int phash_pi_comp_calls;
+static int phash_pi_counting_comp(int a, int b) {
+  phash_pi_comp_calls++;
+  return a != b;
+}
+static int phash_pi_never_equal(int a, int b) {
+  (void) a;
+  (void) b;
+  return 1;
+}
+
+START_TEST(phash_table_test15)
+
+phtable_pi_t *h = phash_pi_init(0);
+int v = -1;
+
+// no comparison function for int keys: the same hash is the same key
+CHECK(phash_pi_put(h, 1, 10) == 0);
+CHECK(phash_pi_put(h, 1, 11) == 1);
+CHECK(phash_pi_size(h) == 1);
+
+// the function is called to compare the key with the entry of the same hash
+CHECK(phash_pi_set_comp(h, phash_pi_counting_comp) == 0);
+phash_pi_comp_calls = 0;
+CHECK(phash_pi_put(h, 1, 12) == 1);
+CHECK(phash_pi_comp_calls == 1);
+CHECK(phash_pi_get(h, 1, &v) == 1 && v == 12);
+CHECK(phash_pi_comp_calls == 2);
+
+// and its answer decides: if the keys are never equal, the key is not found
+// and a put adds a second entry
+CHECK(phash_pi_set_comp(h, phash_pi_never_equal) == 0);
+CHECK(phash_pi_get(h, 1, NULL) == 0);
+CHECK(phash_pi_put(h, 1, 13) == 0);
+CHECK(phash_pi_size(h) == 2);
+
+// NULL goes back to the hash alone
+CHECK(phash_pi_set_comp(h, NULL) == 0);
+CHECK(phash_pi_get(h, 1, NULL) == 1);
+
+CHECK(phash_pi_set_comp(NULL, phash_pi_never_equal) == -1);
+phash_pi_destroy(&h);
+
+END_TEST

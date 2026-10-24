@@ -765,3 +765,50 @@ hash_ho_destroy(&c);
 hash_ho_destroy(&h);
 
 END_TEST
+
+// set_comp stores the comparison function, and the table then uses it to decide
+// whether two keys with the same hash are the same key
+static int hash_hi_comp_calls;
+static int hash_hi_counting_comp(int a, int b) {
+  hash_hi_comp_calls++;
+  return a != b;
+}
+static int hash_hi_never_equal(int a, int b) {
+  (void) a;
+  (void) b;
+  return 1;
+}
+
+START_TEST(hash_table_test21)
+
+htable_hi_t *h = hash_hi_init(0);
+int v = -1;
+
+// no comparison function for int keys: the same hash is the same key
+CHECK(hash_hi_put(h, 1, 10) == 0);
+CHECK(hash_hi_put(h, 1, 11) == 1);
+CHECK(hash_hi_size(h) == 1);
+
+// the function is called to compare the key with the entry of the same hash
+CHECK(hash_hi_set_comp(h, hash_hi_counting_comp) == 0);
+hash_hi_comp_calls = 0;
+CHECK(hash_hi_put(h, 1, 12) == 1);
+CHECK(hash_hi_comp_calls == 1);
+CHECK(hash_hi_get(h, 1, &v) == 1 && v == 12);
+CHECK(hash_hi_comp_calls == 2);
+
+// and its answer decides: if the keys are never equal, the key is not found
+// and a put adds a second entry
+CHECK(hash_hi_set_comp(h, hash_hi_never_equal) == 0);
+CHECK(hash_hi_get(h, 1, NULL) == 0);
+CHECK(hash_hi_put(h, 1, 13) == 0);
+CHECK(hash_hi_size(h) == 2);
+
+// NULL goes back to the hash alone
+CHECK(hash_hi_set_comp(h, NULL) == 0);
+CHECK(hash_hi_get(h, 1, NULL) == 1);
+
+CHECK(hash_hi_set_comp(NULL, hash_hi_never_equal) == -1);
+hash_hi_destroy(&h);
+
+END_TEST
