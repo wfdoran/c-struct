@@ -13,6 +13,33 @@ type and prefix label before including `chan.h`.
 #undef data_t
 ```
 
+## Do not use more threads than CPUs
+
+The channel is fast when every thread that uses it has a CPU to itself, and it
+slows down sharply once there are more sending and receiving threads than
+logical CPUs.  A sender or receiver first claims a slot, then copies the value,
+then publishes the slot, and slots must be published in the order they were
+claimed.  If a thread is descheduled between the claim and the publish, every
+later sender or receiver waits for it, and the waiting threads occupy the CPUs
+that the descheduled thread needs.  `sched_yield` and sleeping do not fix this
+(sleeping is slower still).
+
+Measured with 12 logical CPUs, capacity 64, and N producers sending to N
+consumers (2N threads):
+
+| producer/consumer pairs | threads | throughput (messages per second) |
+|---:|---:|---:|
+| 1 | 2 | 12,000,000 |
+| 4 | 8 | 4,700,000 |
+| 8 | 16 | 450,000 |
+| 12 | 24 | 220,000 |
+| 16 | 32 | 150,000 |
+
+At 12 pairs about 90% of the thread time is spent waiting.  The numbers depend
+on the machine, but the shape does not: keep the number of threads which send
+to or receive from a channel at or below the number of CPUs.  Many more threads
+which are blocked, and so not running, are fine.
+
 ## Functions
 
 ### `chan_prefix_t *chan_prefix_init(int64_t capacity)`

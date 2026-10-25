@@ -38,7 +38,10 @@
 
 /* Called in the loops that wait for an earlier sender or receiver to publish
    its slot.  That wait is normally very short, so spin first, but if the
-   thread being waited for has been descheduled, give up the processor. */
+   thread being waited for has been descheduled, give up the processor.
+
+   Known limit: with more sending and receiving threads than CPUs this wait
+   becomes long and throughput collapses (see doc/chan.md). */
 static inline void chan_wait(int32_t *spins) {
   if (++*spins >= 64) {
     *spins = 0;
