@@ -42,7 +42,7 @@ int main(void) {
 
   titer_intarr_t it;
   int32_t key;
-  void *value;
+  void *value = NULL;
   for (int32_t rc = tree_intarr_first(t, &it, &key, &value); rc == 0;
        rc = tree_intarr_next(&it, &key, &value)) {
     printf("%3d :", key);

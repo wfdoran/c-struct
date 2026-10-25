@@ -43,7 +43,7 @@ int main(void) {
 
   titer_int_t it;
   int key;
-  void *value;
+  void *value = NULL;
   for (int32_t rc = tree_int_first(t, &it, &key, &value); rc == 0;
        rc = tree_int_next(&it, &key, &value)) {
     printf("%5d %5d\n", key, *((int *) value));

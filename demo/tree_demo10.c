@@ -24,7 +24,7 @@ int main(void) {
   printf("\n");
 
   titer_int32_t it;
-  int32_t key;
+  int32_t key = 0;
   int32_t left = 0x3fff;
   int32_t right = 0xcfff;
 
