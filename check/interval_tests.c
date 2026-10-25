@@ -256,6 +256,16 @@ CHECK(!interval_pow_uint(bad, 0).valid);
 CHECK(!interval_pow_int(bad, 0).valid);
 CHECK(!interval_pow_int(bad, -2).valid);
 
+// the macro takes every integer type and float/double, not only int, uint32_t and interval_t
+CHECK(interval_pow(two, 3L).lo == 8.0 && interval_pow(two, 3LL).hi == 8.0);
+CHECK(interval_pow(two, (short) 3).lo == 8.0 && interval_pow(two, (signed char) 3).hi == 8.0);
+CHECK(interval_pow(two, (size_t) 3).lo == 8.0 && interval_pow(two, 3ULL).hi == 8.0);
+CHECK(interval_pow(two, (unsigned char) 3).lo == 8.0 && interval_pow(two, 3U).hi == 8.0);
+CHECK(interval_pow(two, (int64_t) -2).lo <= 0.25 && interval_pow(two, (int64_t) -2).hi >= 0.25);
+CHECK(interval_pow(two, UINT64_C(40)).lo == 1099511627776.0);
+CHECK(interval_pow(two, 3.0).lo <= 8.0 && interval_pow(two, 3.0).hi >= 8.0);
+CHECK(interval_pow(two, 3.0f).valid);
+
 END_TEST
 
 // from_int64 encloses large integers exactly, add_many encloses the sum, and the endpoints

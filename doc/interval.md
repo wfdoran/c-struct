@@ -163,13 +163,17 @@ the result is invalid only if `hi < 0`.
 
 A macro which chooses on the type of `e`:
 
-* `interval_pow_int(interval_t a, int32_t e)`: for an `int` exponent.  A
+* `interval_pow_int(interval_t a, int64_t e)`: for a signed integer exponent
+  (`int`, `long`, ...).  A
   negative exponent is the reciprocal of the positive power, so it is unbounded
   when that power contains 0, and invalid when it is exactly `[0, 0]`.
-* `interval_pow_uint(interval_t a, uint32_t e)`: for a `uint32_t` exponent.
+* `interval_pow_uint(interval_t a, uint64_t e)`: for an unsigned integer
+  exponent (`unsigned`, `size_t`, ...).
   The power of each end is taken by repeated squaring and the bounds are chosen
   from the shape of `x^e`, so the range is tight: an even power is never
   negative (`[-1, 2]^2` is `[0, 4]`, not `[-2, 4]`).
+* `interval_pow_real(interval_t a, double e)`: for a `float` or `double`
+  exponent, as `interval_pow_dbl` with the point interval `[e, e]`.
 * `interval_pow_dbl(interval_t a, interval_t b)`: for an `interval_t`
   exponent, as `exp(b * log(a))`, so the domain of `log` applies: `a` must
   have a positive part.

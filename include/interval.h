@@ -560,7 +560,7 @@ done:
 }
 
 /* x^e for the single double x, rounded outwards. */
-CS_PRIVATE static inline interval_t interval_pow_point(double x, uint32_t e) {
+CS_PRIVATE static inline interval_t interval_pow_point(double x, uint64_t e) {
   interval_t p = {.lo = x, .hi = x, .valid = true};
   interval_t rv = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
   while (e > 0) {
@@ -579,7 +579,7 @@ CS_PRIVATE static inline interval_t interval_pow_point(double x, uint32_t e) {
    too wide a range (for example [-1,2]^2 as [-2,4]), so the power of each end
    is taken and the bounds are chosen from the shape of x^e: increasing for odd
    e and for any e on x >= 0, decreasing for even e on x <= 0. */
-static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
+static inline interval_t interval_pow_uint(interval_t a, uint64_t e) {
   if (!a.valid) {
     return interval_invalid();
   }
@@ -594,7 +594,7 @@ static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
        multiplications instead of two. */
     interval_t sq = a;
     interval_t pw = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
-    for (uint32_t k = e; k > 0; k >>= 1) {
+    for (uint64_t k = e; k > 0; k >>= 1) {
       if ((k & 1) == 1) {
         pw = interval_mul(pw, sq);
       }
@@ -627,12 +627,12 @@ static inline interval_t interval_pow_uint(interval_t a, uint32_t e) {
 
 /* A negative exponent is the reciprocal of the positive power: unbounded if
    that power contains zero, invalid if it is exactly [0, 0] (interval_div). */
-static inline interval_t interval_pow_int(interval_t a, int32_t e) {
+static inline interval_t interval_pow_int(interval_t a, int64_t e) {
   if (e >= 0) {
-    return interval_pow_uint(a, (uint32_t) e);
+    return interval_pow_uint(a, (uint64_t) e);
   }
   interval_t one = {.lo = 1.0, .hi = 1.0, .valid = true};
-  return interval_div(one, interval_pow_uint(a, UINT32_C(0) - (uint32_t) e));
+  return interval_div(one, interval_pow_uint(a, UINT64_C(0) - (uint64_t) e));
 }
 
 static inline interval_t interval_pow_dbl(interval_t a, interval_t b) {
@@ -641,18 +641,32 @@ static inline interval_t interval_pow_dbl(interval_t a, interval_t b) {
   return interval_exp(x2);
 }
 
-#define interval_pow(x, e)                                                     \
-  _Generic((e), int                                                            \
-           : interval_pow_int, uint32_t                                        \
-           : interval_pow_uint, interval_t                                     \
-           : interval_pow_dbl)(x, e)
+static inline interval_t interval_pow_real(interval_t a, double e) {
+  return interval_pow_dbl(a, interval_from_double(e));
+}
+
+/* Every integer type is listed (int64_t and uint64_t are long or long long
+   depending on the platform), so is float and double.  Any other type is a
+   compile error. */
+// clang-format off
+#define interval_pow(x, e)                        \
+  _Generic((e),                                   \
+           signed char: interval_pow_int,         \
+           short: interval_pow_int,               \
+           int: interval_pow_int,                 \
+           long: interval_pow_int,                \
+           long long: interval_pow_int,           \
+           unsigned char: interval_pow_uint,      \
+           unsigned short: interval_pow_uint,     \
+           unsigned int: interval_pow_uint,       \
+           unsigned long: interval_pow_uint,      \
+           unsigned long long: interval_pow_uint, \
+           float: interval_pow_real,              \
+           double: interval_pow_real,             \
+           interval_t: interval_pow_dbl)(x, e)
+// clang-format on
 
 static inline interval_t interval_sin(interval_t a) {
-  // sin(k * 2pi + 0 * pi/2) = 0
-  // sin(k * 2pi + 1 * pi/2) = 1
-  // sin(k * 2pi + 2 * pi/2) = 0
-  // sin(k * 2pi + 3 * pi/2) = -1
-
   if (!a.valid) {
     return interval_invalid();
   }
