@@ -97,9 +97,8 @@ static inline interval_t interval_from_double(double x) {
   if (isnan(x)) {
     return interval_invalid();
   }
-  interval_t rv = {.lo = nextafter(x, -INFINITY),
-                   .hi = nextafter(x, INFINITY),
-                   .valid = true};
+  interval_t rv = {
+      .lo = interval_ulp_down(x), .hi = interval_ulp_up(x), .valid = true};
   return rv;
 }
 
