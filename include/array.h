@@ -734,7 +734,6 @@ static inline int32_t GLUE3(array_, prefix, _heappush)(TYPE *a, data_t value) {
 
 static inline data_t GLUE3(array_, prefix, _heappop)(TYPE *a) {
   CS_ASSERT(a != NULL);
-  CS_ASSERT_CMP(a->comp);
   if (a->size == 0) {
     if (a->have_null_value) {
       return a->null_value;
@@ -742,6 +741,7 @@ static inline data_t GLUE3(array_, prefix, _heappop)(TYPE *a) {
       CS_ASSERT(a->size != 0);
     }
   }
+  CS_ASSERT_CMP(a->comp);
   data_t rv = a->data[0];
   a->size--;
 
