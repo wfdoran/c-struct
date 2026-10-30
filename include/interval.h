@@ -102,6 +102,21 @@ static inline interval_t interval_from_double(double x) {
   return rv;
 }
 
+/* An interval with no spread, [x, x].  Use it when x is exactly the number you
+   mean, such as a small integer or 0.5, and not a decimal like 0.1 which the
+   double only approximates (use interval_from_double() for that).  Only use it
+   if you are sure.
+
+   The conservative view used in this file is to use it only for 1.0 and 0.0.
+*/
+static inline interval_t interval_exact(double x) {
+  if (isnan(x)) {
+    return interval_invalid();
+  }
+  interval_t rv = {.lo = x, .hi = x, .valid = true};
+  return rv;
+}
+
 static inline interval_t interval_from_int64(int64_t x) {
   interval_t rv;
   int save = fegetround();
@@ -571,8 +586,8 @@ done:
 
 /* x^e for the single double x, rounded outwards. */
 CS_PRIVATE static inline interval_t interval_pow_point(double x, uint64_t e) {
-  interval_t p = {.lo = x, .hi = x, .valid = true};
-  interval_t rv = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
+  interval_t p = interval_exact(x);
+  interval_t rv = interval_exact(1.0);
   while (e > 0) {
     if ((e & 1) == 1) {
       rv = interval_mul(rv, p);
@@ -595,7 +610,7 @@ static inline interval_t interval_pow_uint(interval_t a, uint64_t e) {
   }
   if (e == 0) {
     /* x^0 is 1 for every x, including 0: 0^0 is taken to be 1 */
-    interval_t one = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
+    interval_t one = interval_exact(1.0); 
     return one;
   }
   if (a.lo >= 0.0 || a.hi <= 0.0) {
@@ -603,7 +618,7 @@ static inline interval_t interval_pow_uint(interval_t a, uint64_t e) {
        interval is as tight as taking the ends, with one chain of
        multiplications instead of two. */
     interval_t sq = a;
-    interval_t pw = {.lo = 1.0, .hi = 1.0, .valid = true}; /* 1 is exact */
+    interval_t pw = interval_exact(1.0);
     for (uint64_t k = e; k > 0; k >>= 1) {
       if ((k & 1) == 1) {
         pw = interval_mul(pw, sq);
@@ -641,7 +656,7 @@ static inline interval_t interval_pow_int(interval_t a, int64_t e) {
   if (e >= 0) {
     return interval_pow_uint(a, (uint64_t) e);
   }
-  interval_t one = {.lo = 1.0, .hi = 1.0, .valid = true};
+  interval_t one = interval_exact(1.0);
   return interval_div(one, interval_pow_uint(a, UINT64_C(0) - (uint64_t) e));
 }
 

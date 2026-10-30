@@ -607,3 +607,44 @@ for (int fn = 0; fn < 3; fn++) {
 CHECK(!failed);
 
 END_TEST
+
+// interval_exact has no spread, and exact operands give exact results
+START_TEST(interval_test13)
+
+const double values[] = {0.0, -0.0, 1.0, -1.0, 0.1, DBL_MAX, DBL_MIN, INFINITY, -INFINITY};
+for (size_t i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
+  interval_t e = interval_exact(values[i]);
+  CHECK(e.valid && e.lo == values[i] && e.hi == values[i]);
+}
+CHECK(!interval_exact(NAN).valid);
+
+// interval_from_double is the wider one, and contains the exact one
+interval_t e = interval_exact(0.1);
+interval_t f = interval_from_double(0.1);
+CHECK(f.lo < e.lo && e.hi < f.hi);
+
+// exact operands give exact results
+interval_t two = interval_exact(2.0);
+interval_t r = interval_add(two, interval_exact(1.0));
+CHECK(r.valid && r.lo == 3.0 && r.hi == 3.0);
+r = interval_mul(two, interval_exact(3.0));
+CHECK(r.valid && r.lo == 6.0 && r.hi == 6.0);
+
+// zero and negative integer exponents
+r = interval_pow(two, -1);
+CHECK(r.valid && r.lo == 0.5 && r.hi == 0.5);
+r = interval_pow(two, 0);
+CHECK(r.valid && r.lo == 1.0 && r.hi == 1.0);
+r = interval_pow_uint(interval_exact(0.0), 0);
+CHECK(r.valid && r.lo == 1.0 && r.hi == 1.0);
+
+// a real exponent is only known to the precision of the double, unless the caller says it is exact
+r = interval_pow(two, 3.0);
+CHECK(r.valid && r.lo <= 8.0 && 8.0 <= r.hi);
+r = interval_pow(two, interval_exact(3.0));
+CHECK(r.valid && r.lo <= 8.0 && 8.0 <= r.hi);
+
+// a NaN bound is not a valid interval
+CHECK(!interval_mul(interval_exact(0.0), interval_exact(INFINITY)).valid);
+
+END_TEST
