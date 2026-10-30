@@ -33,18 +33,18 @@ COMP_DEFINE(bool, _Bool)
    need: every NaN is equal to every other NaN and greater than every number,
    and -0.0 equals 0.0 (as hash_double() assumes).  With the plain comparison a
    NaN would compare equal to every key. */
-#define COMP_DEFINE_FLOAT(name, T)                                             \
-  static inline int comp_##name(T *a, T *b) {                                  \
-    if (*a < *b) {                                                             \
-      return -1;                                                               \
-    }                                                                          \
-    if (*a > *b) {                                                             \
-      return 1;                                                                \
-    }                                                                          \
-    if (*a == *b) {                                                            \
-      return 0;                                                                \
-    }                                                                          \
-    return (*a != *a) - (*b != *b); /* unordered: a NaN is the larger */       \
+#define COMP_DEFINE_FLOAT(name, T)					\
+  static inline int comp_##name(T *a, T *b) {				\
+    if (*a < *b) {							\
+      return -1;							\
+    }									\
+    if (*a > *b) {							\
+      return 1;								\
+    }									\
+    if (*a == *b) {							\
+      return 0;								\
+    }									\
+    return (*a != *a) - (*b != *b);					\
   }
 
 COMP_DEFINE_FLOAT(float, float)

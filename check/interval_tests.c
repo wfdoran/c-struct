@@ -559,3 +559,51 @@ for (int i = 0; i < 2000; i++) {
 #undef RND01
 
 END_TEST
+
+// The exp, log and erf of a point must contain the exact value whatever rounding mode the caller
+// has set.  libm is only accurate to one ulp in round to nearest, so calling it in the caller's
+// mode can give a bound which is too narrow.  The mode is restored before anything is checked, so
+// that a failure does not leave it changed.
+START_TEST(interval_test12)
+
+NEEDS_WIDE_LONG_DOUBLE
+
+const int modes[] = {FE_TONEAREST, FE_UPWARD, FE_DOWNWARD, FE_TOWARDZERO};
+const char *mode_names[] = {"nearest", "upward", "downward", "toward zero"};
+const char *fn_names[] = {"exp", "log", "erf"};
+long bad[3][4] = {{0}};
+const int save = fegetround();
+
+for (int i = 0; i < 20000; i++) {
+  double x = (get_rand() % 600001) / 10000.0 - 30.0;   // [-30, 30]
+  double p = (get_rand() % 1000000) / 1000.0 + 0.001;   // (0, 1000]
+  interval_t ix = {.lo = x, .hi = x, .valid = true};
+  interval_t ip = {.lo = p, .hi = p, .valid = true};
+  const long double ex = expl(x), lg = logl(p), er = erfl(x);
+
+  for (int m = 0; m < 4; m++) {
+    fesetround(modes[m]);
+    interval_t e = interval_exp(ix);
+    interval_t l = interval_log(ip);
+    interval_t f = interval_erf(ix);
+    fesetround(save);
+
+    bad[0][m] += !(e.valid && e.lo <= ex && ex <= e.hi);
+    bad[1][m] += !(l.valid && l.lo <= lg && lg <= l.hi);
+    bad[2][m] += !(f.valid && f.lo <= er && er <= f.hi);
+  }
+}
+
+int failed = 0;
+for (int fn = 0; fn < 3; fn++) {
+  for (int m = 0; m < 4; m++) {
+    if (bad[fn][m] != 0) {
+      printf("interval_%s in rounding mode %s: %ld of 20000 results miss the exact value\n",
+             fn_names[fn], mode_names[m], bad[fn][m]);
+      failed = 1;
+    }
+  }
+}
+CHECK(!failed);
+
+END_TEST
