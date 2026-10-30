@@ -69,6 +69,17 @@ static inline double iv_fence(double x) {
   return v;
 }
 
+/* libm is accurate to about one ulp only in round to nearest, so f(x) is
+   computed in that mode whatever mode the caller has set; the caller's mode is
+   restored. */
+static inline double iv_libm(double (*f)(double), double x) {
+  int save = fegetround();
+  fesetround(FE_TONEAREST);
+  double r = iv_fence(f(iv_fence(x)));
+  fesetround(save);
+  return r;
+}
+
 typedef struct {
   double lo;
   double hi;
@@ -360,11 +371,11 @@ static inline interval_t interval_exp(interval_t a) {
     return interval_invalid();
   }
 
-  /* libm is called in the caller's rounding mode: its error bound is for
-     round-to-nearest, and the one ulp of widening covers it */
+  /* libm is called in round to nearest (iv_libm), where its error bound holds,
+     and the one ulp of widening covers it */
   interval_t rv;
-  rv.hi = interval_ulp_up(exp(a.hi));
-  rv.lo = fmax(interval_ulp_down(exp(a.lo)),
+  rv.hi = interval_ulp_up(iv_libm(exp, a.hi));
+  rv.lo = fmax(interval_ulp_down(iv_libm(exp, a.lo)),
                0.0); /* exp is positive: do not widen below 0 */
 
   rv.valid = true;
@@ -376,10 +387,10 @@ static inline interval_t interval_erf(interval_t a) {
     return interval_invalid();
   }
 
-  /* see interval_exp for why there is no rounding mode here */
+  /* see interval_exp: libm is called through iv_libm */
   interval_t rv;
-  rv.hi = fmin(interval_ulp_up(erf(a.hi)), 1.0);
-  rv.lo = fmax(interval_ulp_down(erf(a.lo)), -1.0);
+  rv.hi = fmin(interval_ulp_up(iv_libm(erf, a.hi)), 1.0);
+  rv.lo = fmax(interval_ulp_down(iv_libm(erf, a.lo)), -1.0);
 
   rv.valid = true;
   return rv;
@@ -431,12 +442,12 @@ static inline interval_t interval_log(interval_t a) {
     return interval_invalid();
   }
 
-  /* see interval_exp for why there is no rounding mode here */
+  /* see interval_exp: libm is called through iv_libm */
   interval_t rv;
-  rv.hi = interval_ulp_up(log(a.hi));
+  rv.hi = interval_ulp_up(iv_libm(log, a.hi));
   double lo =
       a.lo > 0 ? a.lo : 0.0; /* log(0) is -inf: the lower bound is unbounded */
-  rv.lo = interval_ulp_down(log(lo));
+  rv.lo = interval_ulp_down(iv_libm(log, lo));
 
   rv.valid = true;
   return rv;
@@ -675,10 +686,10 @@ static inline interval_t interval_sin(interval_t a) {
 
   int save = fegetround();
 
-  /* start with the min and max of values from a.  libm is called in the
-     caller's rounding mode, see interval_exp. */
-  const double s_lo = sin(a.lo);
-  const double s_hi = sin(a.hi);
+  /* start with the min and max of values from a.  libm is called through
+     iv_libm, see interval_exp. */
+  const double s_lo = iv_libm(sin, a.lo);
+  const double s_hi = iv_libm(sin, a.hi);
   rv.hi = fmax(s_lo, s_hi);
   rv.lo = fmin(s_lo, s_hi);
 
@@ -730,8 +741,8 @@ static inline interval_t interval_cos(interval_t a) {
   int save = fegetround();
 
   /* start with the min and max of values from a, see interval_sin */
-  const double c_lo = cos(a.lo);
-  const double c_hi = cos(a.hi);
+  const double c_lo = iv_libm(cos, a.lo);
+  const double c_hi = iv_libm(cos, a.hi);
   rv.hi = fmax(c_lo, c_hi);
   rv.lo = fmin(c_lo, c_hi);
 
