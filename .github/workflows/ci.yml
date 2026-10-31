@@ -33,3 +33,33 @@ jobs:
       - name: Check the documentation examples
         working-directory: check
         run: make doc-check CC=${{ matrix.cc }}
+
+  # AddressSanitizer and UBSan; the other sanitizer targets are not run (see
+  # the comment on test-tsan in check/makefile)
+  sanitizers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y gawk
+
+      - name: Unit tests under AddressSanitizer and UBSan
+        working-directory: check
+        run: make test-asan
+
+  # The image is pinned: the formatting depends on the clang-format version, and
+  # a newer image has a newer one.
+  format:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y clang-format
+
+      - name: Check that the headers are formatted
+        working-directory: include
+        run: make check-format
