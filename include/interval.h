@@ -33,8 +33,8 @@
 
 #include "cs_private.h"
 
-/* M_PI_2 is POSIX, not C11: define it when the system does not (the same
-   double as the system value). */
+/* M_PI_2 is POSIX, not C11: define it when the system does not (the
+   same double as the system value). */
 #ifndef M_PI_2
 #define M_PI_2 1.57079632679489661923
 #endif
@@ -49,8 +49,9 @@
 #pragma STDC FENV_ACCESS ON
 #endif
 
-/* The math library functions are not guaranteed to honor the rounding mode
-   or to be correctly rounded, so results from them are widened by one ulp. */
+/* The math library functions are not guaranteed to honor the rounding
+   mode or to be correctly rounded, so results from them are widened
+   by one ulp. */
 static inline double interval_ulp_up(double x) {
   return nextafter(x, INFINITY);
 }
@@ -59,19 +60,20 @@ static inline double interval_ulp_down(double x) {
   return nextafter(x, -INFINITY);
 }
 
-/* Passing a value through a volatile object forces it to be computed at this
-   point in the program.  The compiler may not move the operation above the
-   fesetround() call before it or below the one after it, and may not share
-   it with an identical operation done under another rounding mode.  (Neither
-   -frounding-math nor FENV_ACCESS is enough for gcc to guarantee this.) */
+/* Passing a value through a volatile object forces it to be computed
+   at this point in the program.  The compiler may not move the
+   operation above the fesetround() call before it or below the one
+   after it, and may not share it with an identical operation done
+   under another rounding mode.  (Neither -frounding-math nor
+   FENV_ACCESS is enough for gcc to guarantee this.) */
 static inline double iv_fence(double x) {
   volatile double v = x;
   return v;
 }
 
-/* libm is accurate to about one ulp only in round to nearest, so f(x) is
-   computed in that mode whatever mode the caller has set; the caller's mode is
-   restored. */
+/* libm is accurate to about one ulp only in round to nearest, so f(x)
+   is computed in that mode whatever mode the caller has set; the
+   caller's mode is restored. */
 static inline double iv_libm(double (*f)(double), double x) {
   int save = fegetround();
   fesetround(FE_TONEAREST);
@@ -86,13 +88,15 @@ typedef struct {
   bool valid;
 } interval_t;
 
-/* The result of an operation which has no result, or is given an invalid
-   interval. */
+/* The result of an operation which has no result, or is given an
+   invalid interval. */
 static inline interval_t interval_invalid(void) {
   interval_t rv = {.lo = 0, .hi = 0, .valid = false};
   return rv;
 }
 
+/* Converts a double into an interval, rounding the passed value up
+   and down. */
 static inline interval_t interval_from_double(double x) {
   if (isnan(x)) {
     return interval_invalid();
@@ -240,6 +244,10 @@ static inline interval_t interval_fma(interval_t a, interval_t b,
   temp[2] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.lo), iv_fence(c.hi)));
   temp[3] = iv_fence(fma(iv_fence(a.hi), iv_fence(b.hi), iv_fence(c.hi)));
   rv.hi = fmax(fmax(fmax(temp[0], temp[1]), temp[2]), temp[3]);
+  /* the upward pass adds c.hi and the downward pass c.lo, so inf + -inf can
+     give a NaN in only one of them: look at both */
+  const bool up_nan =
+      isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3]);
 
   fesetround(FE_DOWNWARD);
   temp[0] = iv_fence(fma(iv_fence(a.lo), iv_fence(b.lo), iv_fence(c.lo)));
@@ -251,7 +259,8 @@ static inline interval_t interval_fma(interval_t a, interval_t b,
   fesetround(save);
 
   /* fmin and fmax ignore NaN, which would silently drop a 0 * infinity term */
-  if (isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) || isnan(temp[3])) {
+  if (up_nan || isnan(temp[0]) || isnan(temp[1]) || isnan(temp[2]) ||
+      isnan(temp[3])) {
     return interval_invalid();
   }
 
@@ -269,7 +278,7 @@ CS_PRIVATE static inline interval_t interval_div_zero(interval_t a,
     return interval_invalid(); /* no part of b is in the domain */
   }
   if (a.lo == 0.0 && a.hi == 0.0) {
-    interval_t zero = {.lo = 0.0, .hi = 0.0, .valid = true};
+    interval_t zero = interval_exact(0.0);
     return zero; /* 0 / y is 0 for every y which is not 0 */
   }
 
@@ -610,7 +619,7 @@ static inline interval_t interval_pow_uint(interval_t a, uint64_t e) {
   }
   if (e == 0) {
     /* x^0 is 1 for every x, including 0: 0^0 is taken to be 1 */
-    interval_t one = interval_exact(1.0); 
+    interval_t one = interval_exact(1.0);
     return one;
   }
   if (a.lo >= 0.0 || a.hi <= 0.0) {

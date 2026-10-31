@@ -648,3 +648,108 @@ CHECK(r.valid && r.lo <= 8.0 && 8.0 <= r.hi);
 CHECK(!interval_mul(interval_exact(0.0), interval_exact(INFINITY)).valid);
 
 END_TEST
+
+// A NaN in either pass of interval_fma makes the result invalid.  The upward pass adds c.hi and the
+// downward pass c.lo, so inf + -inf can give a NaN in only one of them.
+START_TEST(interval_test14)
+
+interval_t one = interval_exact(1.0);
+interval_t ninf = interval_exact(-INFINITY);
+interval_t pinf = interval_exact(INFINITY);
+
+// -inf * 1 + c: NaN upward only, for c = [0, inf]
+interval_t r = interval_fma(ninf, one, (interval_t){.lo = 0.0, .hi = INFINITY, .valid = true});
+CHECK(!r.valid);
+// inf * 1 + c: NaN downward only, for c = [-inf, 0]
+r = interval_fma(pinf, one, (interval_t){.lo = -INFINITY, .hi = 0.0, .valid = true});
+CHECK(!r.valid);
+// NaN in both passes
+r = interval_fma(ninf, one, interval_exact(INFINITY));
+CHECK(!r.valid);
+r = interval_fma(pinf, one, interval_exact(-INFINITY));
+CHECK(!r.valid);
+// 0 * inf
+r = interval_fma(interval_exact(0.0), pinf, one);
+CHECK(!r.valid);
+
+// no NaN: the result is valid and finite
+r = interval_fma(interval_exact(2.0), interval_exact(3.0), interval_exact(1.0));
+CHECK(r.valid && r.lo == 7.0 && r.hi == 7.0);
+// an infinite product plus a finite or same-signed infinite c is fine
+r = interval_fma(pinf, one, (interval_t){.lo = 0.0, .hi = INFINITY, .valid = true});
+CHECK(r.valid && r.lo == INFINITY && r.hi == INFINITY);
+
+END_TEST
+
+// A valid result never has a NaN bound, and its lower bound is never above its upper bound.  Every
+// function is called with every interval made of the special values, which is where 0 * inf,
+// inf - inf and inf / inf come from.  (interval_test14 is the case which this found in
+// interval_fma, where only one of the two passes gives a NaN.)
+static int interval_result_ok(interval_t r) {
+  return !r.valid || (!isnan(r.lo) && !isnan(r.hi) && r.lo <= r.hi);
+}
+
+START_TEST(interval_test15)
+
+const double v[] = {-INFINITY, -5.0, -1.0, -0.0, 0.0, 1.0, 5.0, INFINITY};
+const int n = sizeof(v) / sizeof(v[0]);
+long calls = 0;
+long bad = 0;
+
+#define RESULT(r)                                                                          \
+  do {                                                                                     \
+    calls++;                                                                               \
+    if (!interval_result_ok(r)) {                                                          \
+      bad++;                                                                               \
+      if (bad <= 10) {                                                                     \
+        printf("%s of [%g, %g] [%g, %g] [%g, %g] has a NaN or reversed bound\n", #r, a.lo, \
+               a.hi, b.lo, b.hi, c.lo, c.hi);                                              \
+      }                                                                                    \
+    }                                                                                      \
+  } while (0)
+
+for (int i = 0; i < n; i++) {
+  for (int j = i; j < n; j++) {
+    interval_t a = {.lo = v[i], .hi = v[j], .valid = true};
+    for (int k = 0; k < n; k++) {
+      for (int l = k; l < n; l++) {
+        interval_t b = {.lo = v[k], .hi = v[l], .valid = true};
+        for (int m = 0; m < n; m++) {
+          for (int o = m; o < n; o++) {
+            interval_t c = {.lo = v[m], .hi = v[o], .valid = true};
+            RESULT(interval_fma(a, b, c));
+          }
+        }
+        interval_t c = interval_exact(0.0);   // only printed: these take two intervals
+        RESULT(interval_add(a, b));
+        RESULT(interval_sub(a, b));
+        RESULT(interval_mul(a, b));
+        RESULT(interval_div(a, b));
+        RESULT(interval_fmax(a, b));
+        RESULT(interval_fmin(a, b));
+        RESULT(interval_pow(a, b));
+      }
+    }
+    interval_t b = a;
+    interval_t c = a;
+    RESULT(interval_exp(a));
+    RESULT(interval_log(a));
+    RESULT(interval_erf(a));
+    RESULT(interval_sqrt(a));
+    RESULT(interval_sin(a));
+    RESULT(interval_cos(a));
+    RESULT(interval_fabs(a));
+    RESULT(interval_neg(a));
+    RESULT(interval_floor(a));
+    RESULT(interval_ceil(a));
+    RESULT(interval_pow(a, 2));
+    RESULT(interval_pow(a, 3));
+    RESULT(interval_pow(a, -2));
+  }
+}
+#undef RESULT
+
+CHECK(calls > 0);
+CHECK(bad == 0);
+
+END_TEST
