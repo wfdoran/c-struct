@@ -65,13 +65,13 @@ typedef struct HTABLE {
   int64_t used;     // live entries plus deleted markers
   HNODE **A;        // table of HNODE pointers, all NULL to start
   HPOOL *pool;      // pool of HNODEs; created by the first put
-  uint64_t (*hash_func)(
-      hkey_t); // hash function on keys to decide where to put a (key,value) pair
-  int (*comp)(hkey_t, hkey_t); // compare two keys
-  value_t (*update)(value_t,
-                    value_t); // how to combine two values which have the same key
-  HNODE
-  deleted; // special marker for a deleted entry, part of size but not used
+  uint64_t (*hash_func)(hkey_t); // hash function on keys to decide where to put
+                                 // a (key,value) pair
+  int (*comp)(hkey_t, hkey_t);   // compare two keys
+  value_t (*update)(
+      value_t,
+      value_t);  // how to combine two values which have the same key
+  HNODE deleted; // marker for a deleted entry: counted in used, not in size
 } HTABLE;
 
 typedef struct HITER {
