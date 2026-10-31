@@ -91,9 +91,13 @@ static inline void serialize_string(const char *s, FILE *fp) {
   fwrite(s, sizeof(char), s_len, fp);
 }
 
-static inline char *deserialize_string(FILE *fp) {
+/* Returns a malloc'ed string, or NULL if the file is truncated, the string is
+   longer than max_len, or memory is exhausted.  The length comes from the
+   file, so max_len keeps a corrupt file from asking for a huge allocation:
+   pass the longest string the caller can accept. */
+static inline char *deserialize_string(FILE *fp, size_t max_len) {
   size_t s_len;
-  if (!deserialize_size(fp, &s_len) || s_len >= SIZE_MAX) {
+  if (!deserialize_size(fp, &s_len) || s_len > max_len || s_len >= SIZE_MAX) {
     return NULL;
   }
   char *s = malloc(s_len + 1);

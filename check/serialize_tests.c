@@ -106,12 +106,12 @@ fclose(fp);
 
 fp = fopen(TEST_FILE, "rb");
 for (int i = 0; i < 4; i++) {
-  char *s = deserialize_string(fp);
+  char *s = deserialize_string(fp, 1000);
   CHECK(s != NULL);
   CHECK(strcmp(s, strs[i]) == 0);
   free(s);
 }
-CHECK(deserialize_string(fp) == NULL);
+CHECK(deserialize_string(fp, 1000) == NULL);
 fclose(fp);
 
 // the length says 1000 bytes but only 3 follow
@@ -120,7 +120,28 @@ serialize_size(1000, fp);
 fwrite("abc", 1, 3, fp);
 fclose(fp);
 fp = fopen(TEST_FILE, "rb");
-CHECK(deserialize_string(fp) == NULL);
+CHECK(deserialize_string(fp, 1000) == NULL);
+fclose(fp);
+
+// a string longer than max_len is refused, one of exactly max_len is not
+fp = fopen(TEST_FILE, "wb");
+serialize_string(long_string, fp);
+serialize_string(long_string, fp);
+fclose(fp);
+fp = fopen(TEST_FILE, "rb");
+char *s = deserialize_string(fp, 1000);
+CHECK(s != NULL && strlen(s) == 1000);
+free(s);
+CHECK(deserialize_string(fp, 999) == NULL);
+fclose(fp);
+
+// a length of a terabyte, in a file of a few bytes, is refused without allocating it
+fp = fopen(TEST_FILE, "wb");
+serialize_size((size_t) 1 << 40, fp);
+fwrite("abc", 1, 3, fp);
+fclose(fp);
+fp = fopen(TEST_FILE, "rb");
+CHECK(deserialize_string(fp, 256) == NULL);
 fclose(fp);
 
 free(long_string);
@@ -303,6 +324,33 @@ fp = fopen(TEST_FILE, "rb");
 CHECK(deserialize_size(fp, &r));
 CHECK(r == (size_t) 1 << 63);
 fclose(fp);
+
+remove(TEST_FILE);
+
+END_TEST
+
+// A prefix name of a terabyte, in a file of a few bytes, is refused (the name is not allocated),
+// and so is one that is merely longer than any identifier.
+START_TEST(serialize_test10)
+
+FILE *fp = fopen(TEST_FILE, "wb");
+fwrite("Array===", 1, 8, fp);
+fputc(1, fp);   // the format version
+serialize_size((size_t) 1 << 40, fp);
+fwrite("ser", 1, 3, fp);
+fclose(fp);
+CHECK(array_ser_deserialize(TEST_FILE) == NULL);
+
+char *name = malloc(1001);
+memset(name, 's', 1000);
+name[1000] = 0;
+fp = fopen(TEST_FILE, "wb");
+fwrite("Array===", 1, 8, fp);
+fputc(1, fp);
+serialize_string(name, fp);
+fclose(fp);
+free(name);
+CHECK(array_ser_deserialize(TEST_FILE) == NULL);
 
 remove(TEST_FILE);
 

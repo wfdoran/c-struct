@@ -790,6 +790,10 @@ static inline ssize_t GLUE3(array_, prefix, _index)(const TYPE *a, data_t v) {
    the entries.  Files from before the version byte are refused. */
 #define ARRAY_FORMAT_VERSION 1
 
+/* The prefix is a C identifier: refuse a longer name before allocating for
+   it. */
+#define ARRAY_PREFIX_MAX_LEN 256
+
 static inline int32_t GLUE3(array_, prefix, _serialize)(const TYPE *a,
                                                         const char *filename) {
   if (a == NULL || filename == NULL) {
@@ -845,7 +849,7 @@ static inline TYPE *GLUE3(array_, prefix, _deserialize)(const char *filename) {
     goto fail; /* includes files from before the version byte existed */
   }
 
-  prefix_str = deserialize_string(fp);
+  prefix_str = deserialize_string(fp, ARRAY_PREFIX_MAX_LEN);
   if (prefix_str == NULL || strcmp(prefix_str, ARRAY_STR(prefix)) != 0) {
     goto fail;
   }
@@ -922,6 +926,7 @@ fail:
 #undef ARRAY_STR
 #undef ARRAY_STR_HELPER
 #undef ARRAY_FORMAT_VERSION
+#undef ARRAY_PREFIX_MAX_LEN
 #undef CS_MIN_CAPACITY
 #undef HEAP_RIGHT_CHILD
 #undef HEAP_LEFT_CHILD
