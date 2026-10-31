@@ -1,5 +1,8 @@
 CC = gcc
-CFLAGS = -O2 -std=gnu11 -g -Wall -fopenmp
+# WERROR=-Werror makes a warning an error; CI does that, so that a warning in a
+# header does not get lost in the build output.
+WERROR =
+CFLAGS = -O2 -std=gnu11 -g -Wall -Wextra -fopenmp $(WERROR)
 INCLUDE = -I../include -I./
 
 TESTS = assert array linked_list tree chan hash_table phash_table pqueue option serialize comp any interval link hook model pool ppool macro null
@@ -50,7 +53,7 @@ doc-check:
 # ---------------------------------------------------------------------------
 
 SETARCH = setarch -R
-SANFLAGS = -O1 -g -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -fopenmp
+SANFLAGS = -O1 -g -fno-omit-frame-pointer -std=gnu11 -Wall -Wextra -fopenmp $(WERROR)
 ASAN_FLAGS = $(SANFLAGS) -fsanitize=address,undefined -fno-sanitize-recover=undefined
 TSAN_FLAGS = $(SANFLAGS) -fsanitize=thread
 

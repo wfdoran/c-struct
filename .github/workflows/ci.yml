@@ -22,7 +22,7 @@ jobs:
 
       - name: Build unit_tests
         working-directory: check
-        run: make CC=${{ matrix.cc }}
+        run: make CC=${{ matrix.cc }} WERROR=-Werror
 
       # unit_tests exits with a non-zero status if any test failed
       - name: Run unit_tests
@@ -47,7 +47,7 @@ jobs:
 
       - name: Unit tests under AddressSanitizer and UBSan
         working-directory: check
-        run: make test-asan
+        run: make test-asan WERROR=-Werror
 
   # The image is pinned: the formatting depends on the clang-format version, and
   # a newer image has a newer one.

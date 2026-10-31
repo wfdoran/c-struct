@@ -109,7 +109,7 @@ bool good_recv = true;
 
     #pragma omp section
     for (int i = 0; i < n; i++) {
-      int value;
+      int value = 0;
       int32_t rc = chan_int_recv(a, &value);
       if (rc != CHAN_SUCCESS || value != i) {
 	good_recv = false;
