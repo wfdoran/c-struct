@@ -42,7 +42,13 @@ can fail return `int32_t` with 0 for success and -1 for an error; lookups return
 a struct with a `found` flag, or a count (1 found, 0 not found); a few accessors
 use `CS_ASSERT` (`cs_assert.h`) on misuse: it prints `ASSERT failure:`, the file,
 function, line and condition to stderr and aborts, and, unlike `assert()`, it is
-not removed by `-DNDEBUG`.  The containers never free the data that stored
+not removed by `-DNDEBUG`.  A `NULL` container is an error, not a crash:
+functions which return a status return -1, functions which return a count
+return 0, iterators report that there is nothing, and lookups report not found.
+The exception is a function which returns an element or a position and so has
+no way to report an error (for example `array_prefix_get()`, `array_prefix_pop()`,
+`array_prefix_fold()` and `array_prefix_bisect()`): given a `NULL` array, it is an
+ASSERT failure.  The containers never free the data that stored
 pointers refer to, unless you give them a free function.
 
 ## Containers

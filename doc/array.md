@@ -23,6 +23,13 @@ An optional null value can be given before including the header with
 `#define default_null_value some_value`; the header undefines it again.  See
 `array_prefix_set_null_value()`.
 
+A `NULL` array is an error, not a crash, for every function which can report one:
+those which return a status give -1, `array_prefix_size()` and
+`array_prefix_capacity()` give 0.  The functions which return an element or a
+position cannot report an error, so a `NULL` array is an ASSERT failure for them:
+`get`, `pop`, `pop_first`, `fold`, `fold2`, `heappop`, `index` and the three
+`bisect` functions.
+
 ## Basic Operations
 
 ### `array_prefix_t *array_prefix_init(void)`
