@@ -43,8 +43,6 @@ typedef struct {
 /*                  constructors / destructor                              */
 /* ----------------------------------------------------------------------- */
 
-#define _unused(x) ((void) (x))
-
 static inline LLIST *GLUE3(llist_, prefix, _init)(void) {
   LLIST *a = malloc(sizeof(LLIST));
   if (a == NULL) {
@@ -57,8 +55,8 @@ static inline LLIST *GLUE3(llist_, prefix, _init)(void) {
 
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
-  _unused(temp);
-  _unused(DEFAULT_COMP_TYPE(temp));
+  CS_UNUSED(temp);
+  CS_UNUSED(DEFAULT_COMP_TYPE(temp));
 
   return a;
 }
@@ -408,7 +406,7 @@ static inline int32_t GLUE3(llist_, prefix,
 
 CS_PRIVATE static inline LNODE *
 GLUE3(llist_, prefix, _merge_nodes)(LLIST *a, LNODE *x, LNODE *y) {
-  _unused(a); /* with data_less defined, CS_CMP does not use a->comp */
+  CS_UNUSED(a); /* with data_less defined, CS_CMP does not use a->comp */
   LNODE head;
   LNODE *tail = &head;
 
@@ -506,7 +504,6 @@ static inline int32_t GLUE3(llist_, prefix, _add_node)(LLIST *a, LNODE *n) {
 
 /* the internal macros of this header (and its optional null/sentinel setting)
    are removed so that they do not leak into the includer */
-#undef _unused
 #undef null_value
 #undef CS_CMP
 #undef CS_HAVE_CMP

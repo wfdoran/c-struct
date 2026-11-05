@@ -60,7 +60,6 @@ static __attribute__((noinline)) void *hoom_malloc(size_t n) {
 #undef hkey_t
 #undef malloc
 
-#define _unused(x) ((void) (x))
 
 static int add(int previous, int current) {
   return previous + current;
@@ -77,12 +76,12 @@ static int key_at_slot0(void) {
 }
 
 static int times_two(int key, int value) {
-  _unused(key);
+  CS_UNUSED(key);
   return 2 * value;
 }
 
 static int add_arg(int key, int value, void *arg) {
-  _unused(key);
+  CS_UNUSED(key);
   return value + *(int *) arg;
 }
 

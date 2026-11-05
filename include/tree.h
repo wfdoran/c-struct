@@ -69,8 +69,6 @@ typedef struct {
 /*                         constructors                                    */
 /* ----------------------------------------------------------------------- */
 
-#define _unused(x) ((void) (x))
-
 /* tree_prefix_t* tree_prefix_init(void);
 
    allocates and returns an empty binary tree.  The caller must free the
@@ -85,11 +83,11 @@ static inline TREE *GLUE3(tree_, prefix, _init)(void) {
   a->root = NULL;
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
-  _unused(temp);
+  CS_UNUSED(temp);
   a->update = NULL;
   a->value_free = NULL;
 
-  _unused(DEFAULT_COMP_TYPE(temp));
+  CS_UNUSED(DEFAULT_COMP_TYPE(temp));
 
   return a;
 }
@@ -1112,7 +1110,6 @@ static inline int32_t GLUE3(tree_, prefix,
 
 /* the internal macros of this header (and its optional null/sentinel setting)
    are removed so that they do not leak into the includer */
-#undef _unused
 #undef KEYVAL
 #undef CS_CMP
 #undef CS_HAVE_CMP

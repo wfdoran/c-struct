@@ -123,8 +123,6 @@ CS_PRIVATE static inline int64_t GLUE3(phash_, prefix,
 
 */
 
-#define _unused(x) ((void) (x))
-
 static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
   /* the scaling below must not overflow in either direction, and the capacity
      (a power of two) must fit in an int64_t; no allocation of that many slots
@@ -163,7 +161,7 @@ static inline PHTABLE *GLUE3(phash_, prefix, _init)(int64_t expected_size) {
   hkey_t temp;
   h->hash_func = DEFAULT_HASH(temp);
   h->comp = DEFAULT_COMP_TYPE(temp);
-  _unused(temp);
+  CS_UNUSED(temp);
   h->update = NULL;
 
   if (pthread_rwlock_init(&(h->rwlock), NULL) != 0) {
@@ -624,7 +622,6 @@ static inline int32_t GLUE3(phash_, prefix, _remove)(PHTABLE *h, hkey_t key,
 
 /* the internal macros of this header (and its optional null/sentinel setting)
    are removed so that they do not leak into the includer */
-#undef _unused
 #undef LOAD_FACTOR
 #undef CS_KEYEQ
 #undef CS_HASH

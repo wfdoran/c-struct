@@ -26,8 +26,6 @@
 
 #define TYPE GLUE3(array_, prefix, _t)
 
-#define _unused(x) ((void) (x))
-
 typedef struct {
   data_t *data;
   data_t *alloc;
@@ -78,8 +76,8 @@ CS_PRIVATE static inline TYPE *GLUE3(array_, prefix, _alloc)(size_t capacity,
 CS_PRIVATE static inline void GLUE3(array_, prefix, _set_defaults)(TYPE *a) {
   data_t temp;
   a->comp = DEFAULT_COMP(temp);
-  _unused(temp);
-  _unused(DEFAULT_COMP_TYPE(temp));
+  CS_UNUSED(temp);
+  CS_UNUSED(DEFAULT_COMP_TYPE(temp));
 
 #ifdef default_null_value
   a->null_value = default_null_value;
@@ -939,7 +937,6 @@ fail:
 
 /* the internal macros of this header (and its optional null/sentinel setting)
    are removed so that they do not leak into the includer */
-#undef _unused
 #undef default_null_value
 #undef CS_CMP
 #undef CS_HAVE_CMP

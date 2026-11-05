@@ -43,7 +43,6 @@ static int comp_pair(pair_t *a, pair_t *b) {
   return 0;
 }
 
-#define _unused(x) ((void) (x))
 
 
 static void *new_counter(void) {

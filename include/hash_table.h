@@ -116,8 +116,6 @@ CS_PRIVATE static inline int64_t GLUE3(hash_, prefix,
 
 */
 
-#define _unused(x) ((void) (x))
-
 static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
   if (expected_size > (INT64_C(3) << 60)) {
     return NULL;
@@ -158,7 +156,7 @@ static inline HTABLE *GLUE3(hash_, prefix, _init)(int64_t expected_size) {
   hkey_t temp;
   h->hash_func = DEFAULT_HASH(temp);
   h->comp = DEFAULT_COMP_TYPE(temp);
-  _unused(temp);
+  CS_UNUSED(temp);
   h->update = NULL;
 
   return h;
@@ -689,7 +687,6 @@ static inline HTABLE *GLUE3(hash_, prefix, _clone)(const HTABLE *h) {
 
 /* the internal macros of this header (and its optional null/sentinel setting)
    are removed so that they do not leak into the includer */
-#undef _unused
 #undef LOAD_FACTOR
 #undef CS_KEYEQ
 #undef CS_HASH

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "cs_assert.h"
 #include "cs_cache.h"
+#include "cs_private.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -58,8 +59,6 @@ typedef struct {
 /*                         constructors                                    */
 /* ----------------------------------------------------------------------- */
 
-#define _unused(x) ((void) (x))
-
 /* pqueue_prefix_t* pqueue_prefix_init(void);
 
    allocates and returns an empty priority queue.  The caller must
@@ -85,10 +84,10 @@ static inline PQUEUE *GLUE3(pqueue_, prefix, _init)(void) {
   q->size = 0;
   data_t temp;
   q->comp = DEFAULT_COMP(temp);
-  _unused(temp);
+  CS_UNUSED(temp);
   q->value_free = NULL;
 
-  _unused(DEFAULT_COMP_TYPE(temp));
+  CS_UNUSED(DEFAULT_COMP_TYPE(temp));
 
   return q;
 }
@@ -314,7 +313,6 @@ static inline bool GLUE3(pqueue_, prefix, _is_empty)(const PQUEUE *q) {
 
 /* the internal macros of this header (and its optional null/sentinel setting)
    are removed so that they do not leak into the includer */
-#undef _unused
 #undef CS_CMP
 #undef CS_HAVE_CMP
 #undef CS_ASSERT_CMP

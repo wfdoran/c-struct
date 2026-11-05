@@ -8,4 +8,9 @@
    documented functions instead. */
 #define CS_PRIVATE
 
+/* Marks a variable or expression as used on purpose, to keep the compiler
+   quiet about it.  Unlike the other macros of the headers it is not
+   undefined at the end of them. */
+#define CS_UNUSED(x) ((void) (x))
+
 #endif
