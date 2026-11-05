@@ -2,7 +2,9 @@
 
 #define data_t char *
 #define prefix str
+#define value_t char *
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -15,7 +17,7 @@ int main(void) {
   tree_str_insert(t, "Dave", "656-666-6666");
 
   key_str_value_t rv = tree_str_retrieve(t, "Bill");
-  printf("%s\n", (char *) rv.value);
+  printf("%s\n", rv.value);
 
   tree_str_destroy(&t);
   return 0;

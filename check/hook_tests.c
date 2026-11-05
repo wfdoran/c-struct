@@ -21,7 +21,9 @@ typedef struct {
 #define data_t rec_t
 #define prefix hrec
 #define data_less(a, b) ((a).k < (b).k)
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -121,7 +123,7 @@ CHECK(t != NULL && q != NULL && l != NULL);
 int present[200] = {0};
 for (int i = 0; i < 2000; i++) {
   rec_t r = {.k = (int32_t) (get_rand() % 200), .tag = i};
-  CHECK(tree_hrec_insert(t, r, NULL) == 0);
+  CHECK(tree_hrec_insert(t, r, 0) == 0);
   present[r.k] = 1;
   CHECK(pqueue_hrec_push(q, r, NULL) == 0);
   CHECK(llist_hrec_add_end(l, r) == 0);

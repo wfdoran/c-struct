@@ -11,20 +11,24 @@
 
 #define data_t int32_t
 #define prefix intarr
+#define value_t array_int32_t *
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
-void *update(void *cur, void *value) {
-  array_int32_t *arr = cur == NULL ? array_int32_init() : cur;
-  int32_t v = *(int32_t *) value;
-  array_int32_append(arr, v);
-  return arr;
+// each insert passes an array with one element; it is moved onto the array
+// which is already in the tree
+array_int32_t *update(array_int32_t *cur, array_int32_t *value) {
+  for (size_t i = 0; i < array_int32_size(value); i++) {
+    array_int32_append(cur, array_int32_get(value, i));
+  }
+  array_int32_destroy(&value);
+  return cur;
 }
 
-void value_free(void *a) {
-  array_int32_t *b = a;
-  array_int32_destroy(&b);
+void value_free(array_int32_t *a) {
+  array_int32_destroy(&a);
 }
 
 int main(void) {
@@ -37,12 +41,14 @@ int main(void) {
     int32_t key = rand() % 200;
     int32_t value = rand();
 
-    tree_intarr_insert(t, key, &value);
+    array_int32_t *single = array_int32_init();
+    array_int32_append(single, value);
+    tree_intarr_insert(t, key, single);
   }
 
   titer_intarr_t it;
   int32_t key;
-  void *value = NULL;
+  array_int32_t *value = NULL;
   for (int32_t rc = tree_intarr_first(t, &it, &key, &value); rc == 0;
        rc = tree_intarr_next(&it, &key, &value)) {
     printf("%3d :", key);

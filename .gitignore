@@ -57,6 +57,8 @@ option_demo3
 option_demo4
 option_demo5
 unit_tests
+unit_tests_asan
+unit_tests_tsan
 unit_tests.c
 unit_tests.h
 *.o

@@ -5,7 +5,9 @@
 
 #define data_t double
 #define prefix double
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -19,7 +21,7 @@ int main(void) {
 
   for (int i = 0; i < n; i++) {
     vals[i] = ((double) ((rand() >> 3) & 0xffff)) / 0x1000;
-    tree_double_insert(t, vals[i], NULL);
+    tree_double_insert(t, vals[i], 0);
   }
   printf("Tree Size: %zu\n", tree_double_size(t));
   printf("Tree Height: %d\n", tree_double_height(t));

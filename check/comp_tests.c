@@ -17,7 +17,9 @@
 
 #define data_t unsigned long long
 #define prefix ullong
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef data_t
 #undef prefix
 
@@ -46,7 +48,9 @@
 
 #define data_t double
 #define prefix dbl
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -300,8 +304,8 @@ CHECK(array_llong_bisect(a, 3000000000000LL) == 2);
 array_llong_destroy(&a);
 
 tree_ullong_t *t = tree_ullong_init();
-CHECK(tree_ullong_insert(t, ULLONG_MAX, NULL) == 0);
-CHECK(tree_ullong_insert(t, 1, NULL) == 0);
+CHECK(tree_ullong_insert(t, ULLONG_MAX, 0) == 0);
+CHECK(tree_ullong_insert(t, 1, 0) == 0);
 CHECK(tree_ullong_delete_min(t).key == 1);
 tree_ullong_destroy(&t);
 
@@ -364,17 +368,17 @@ START_TEST(comp_test8)
 
 tree_dbl_t *t = tree_dbl_init();
 for (int i = 1; i <= 5; i++) {
-  CHECK(tree_dbl_insert(t, (double) i, (void *) (long) (i * 10)) == 0);
+  CHECK(tree_dbl_insert(t, (double) i, i * 10) == 0);
 }
-CHECK(tree_dbl_insert(t, NAN, (void *) 999L) == 0);
+CHECK(tree_dbl_insert(t, NAN, 999) == 0);
 CHECK(tree_dbl_size(t) == 6);                                    // a node was added
 for (int i = 1; i <= 5; i++) {
   key_dbl_value_t r = tree_dbl_retrieve(t, (double) i);
-  CHECK(r.found && (long) r.value == i * 10);                    // nothing was overwritten
+  CHECK(r.found && r.value == i * 10);                    // nothing was overwritten
 }
-CHECK(tree_dbl_retrieve(t, NAN).found && (long) tree_dbl_retrieve(t, -NAN).value == 999);
-CHECK(tree_dbl_insert(t, NAN, (void *) 7L) == 0);                // the NaN is one key
-CHECK(tree_dbl_size(t) == 6 && (long) tree_dbl_retrieve(t, NAN).value == 7);
+CHECK(tree_dbl_retrieve(t, NAN).found && tree_dbl_retrieve(t, -NAN).value == 999);
+CHECK(tree_dbl_insert(t, NAN, 7) == 0);                // the NaN is one key
+CHECK(tree_dbl_size(t) == 6 && tree_dbl_retrieve(t, NAN).value == 7);
 CHECK(isnan(tree_dbl_retrieve_max(t).key));
 CHECK(tree_dbl_retrieve_min(t).key == 1.0);
 CHECK(tree_dbl_num_less(t, NAN) == 5 && tree_dbl_num_greater(t, 5.0) == 1);

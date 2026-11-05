@@ -1,31 +1,35 @@
 # Binary Tree
 
-An ordered map from keys of type `data_t` to `void *` values, kept balanced as
+An ordered map from keys of type `data_t` to values of type `value_t`, kept balanced as
 an AVL tree.  Insert, delete and retrieve take O(log n) time, and the tree also
 answers rank questions ("how many keys are less than this one", "which key has
 rank k").
 
 ```c
 #define data_t key_type
+#define value_t int
 #define prefix name
 #include <tree.h>
 #undef prefix
+#undef value_t
 #undef data_t
 ```
 
-This provides the tree type `tree_prefix_t`, and the type returned by most
+`value_t` can be any type: `int`, a `struct`, a pointer such as `void *`.
+`tree.h` does not define or undefine it, as with `hash_table.h`.  This
+provides the tree type `tree_prefix_t`, and the type returned by most
 operations:
 
 ```c
 typedef struct {
 	data_t key;
-	void *value;
+	value_t value;
 	bool found;
 } key_prefix_value_t;
 ```
 
 `found` is `false` when nothing matched, and in that case `key` and `value`
-should be ignored.  In the descriptions below, `prefix` stands for whatever
+should be ignored (`value` is then all zero bytes).  In the descriptions below, `prefix` stands for whatever
 label you chose.  Every function is `static inline`, so the header can be
 included from as many `.c` files as you like.
 
@@ -54,15 +58,15 @@ changed.  To use another order, build a new tree.
 
 Returns 0, or -1 if `t` is `NULL` or the tree has entries.
 
-### `int32_t tree_prefix_set_update(tree_prefix_t *t, void *(*update) (void *, void *));`
+### `int32_t tree_prefix_set_update(tree_prefix_t *t, value_t (*update) (value_t, value_t));`
 
 The default for `tree_prefix_insert` is to store `value` in the node with the
 given key, replacing the old value if the key already exists.  This function
 allows you to prescribe the behavior: the node's value becomes
-`update(current_value, passed_value)`.  For a new node the current value is
-`NULL`.  Any memory management is up to `update`.  Returns 0, or -1 if `t` is `NULL`.
+`update(current_value, passed_value)`.  For a new node `update` is not called:
+the node gets `passed_value`.  Any memory management is up to `update`.  Returns 0, or -1 if `t` is `NULL`.
 
-### `int32_t tree_prefix_set_value_free(tree_prefix_t *t, void (*value_free)(void *))`
+### `int32_t tree_prefix_set_value_free(tree_prefix_t *t, void (*value_free)(value_t))`
 
 Sets a function which frees a value.  By default no function is set and values
 are never freed.  When one is set it is used when `tree_prefix_insert` replaces
@@ -92,7 +96,7 @@ with the same pointer as both arguments, and it must handle that case.
 
 ## Insert, Delete, Retrieve
 
-### `int32_t tree_prefix_insert(tree_prefix_t *t, data_t key, void *value);`
+### `int32_t tree_prefix_insert(tree_prefix_t *t, data_t key, value_t value);`
 
 Inserts a key-value pair into a binary tree.  Returns 0 on success, or -1 if `t`
 is `NULL`, no comparison function has been set, or memory could not be allocated
@@ -164,32 +168,32 @@ modified during a walk.
 ```c
 titer_prefix_t it;
 data_t key;
-void *value;
+value_t value;
 for (int32_t rc = tree_prefix_first(t, &it, &key, &value); rc == 0;
      rc = tree_prefix_next(&it, &key, &value)) {
     ...
 }
 ```
 
-### `int32_t tree_prefix_first(const tree_prefix_t *t, titer_prefix_t *it, data_t *key, void **value)`
-### `int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, void **value)`
+### `int32_t tree_prefix_first(const tree_prefix_t *t, titer_prefix_t *it, data_t *key, value_t *value)`
+### `int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, value_t *value)`
 
 An in-order walk, starting at the smallest key.  `next` returns 1 if `it` is
 `NULL`, and `first` also if `t` is `NULL`.
 
-### `int32_t tree_prefix_first_from(const tree_prefix_t *t, data_t from, titer_prefix_t *it, data_t *key, void **value)`
+### `int32_t tree_prefix_first_from(const tree_prefix_t *t, data_t from, titer_prefix_t *it, data_t *key, value_t *value)`
 
 Starts the in-order walk at the first node which is equal to or greater than
 `from`, which need not be in the tree.  Returns 1 if there is no such node.
 Continue with `tree_prefix_next()`.
 
-### `int32_t tree_prefix_post_first(const tree_prefix_t *t, titer_prefix_t *it, data_t *key, void **value)`
-### `int32_t tree_prefix_post_next(titer_prefix_t *it, data_t *key, void **value)`
+### `int32_t tree_prefix_post_first(const tree_prefix_t *t, titer_prefix_t *it, data_t *key, value_t *value)`
+### `int32_t tree_prefix_post_next(titer_prefix_t *it, data_t *key, value_t *value)`
 
 The same, but a post-order walk: every node comes after its children, ending
 with the root.  This is the order to use to free or destroy things node by node.
 
-### `int32_t tree_prefix_print(const tree_prefix_t *t, void (*node_print) (data_t, void *))`
+### `int32_t tree_prefix_print(const tree_prefix_t *t, void (*node_print) (data_t, value_t))`
 
 Prints a picture of the tree sideways to standard output, one node per line,
 calling `node_print(key, value)` to print each node's contents.  Useful for
@@ -203,6 +207,7 @@ header:
 
 ```c
 #define data_t int
+#define value_t int
 #define prefix int
 #define data_less(a, b) ((a) < (b))
 #include <tree.h>

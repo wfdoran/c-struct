@@ -18,7 +18,9 @@
 
 #define data_t int
 #define prefix int
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef data_t
 #undef prefix
 
@@ -71,7 +73,7 @@ array_int_destroy(&a);
 
 tree_int_t *t = tree_int_init();
 for (int i = 0; i < 100; i++) {
-  tree_int_insert(t, i * 7 % 100, NULL);
+  tree_int_insert(t, i * 7 % 100, 0);
 }
 CHECK(tree_int_size(t) == 100);
 CHECK(tree_int_delete_min(t).key == 0);

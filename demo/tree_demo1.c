@@ -5,7 +5,9 @@
 
 #define data_t int32_t
 #define prefix int32
+#define value_t void *
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 

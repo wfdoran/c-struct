@@ -5,7 +5,9 @@
 
 #define data_t int32_t
 #define prefix int32
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -15,10 +17,10 @@ int main(void) {
   tree_int32_t *t = tree_int32_init();
 
   int32_t marker = 40000;
-  tree_int32_insert(t, marker, NULL);
+  tree_int32_insert(t, marker, 0);
   for (int i = 0; i < 20; i++) {
     int32_t val = (rand() >> 3) & 0xffff;
-    tree_int32_insert(t, val, NULL);
+    tree_int32_insert(t, val, 0);
   }
 
   for (size_t i = 0; i < tree_int32_size(t); i++) {

@@ -4,7 +4,9 @@
 
 #define data_t float
 #define prefix float
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -15,7 +17,7 @@ int main(void) {
 
   for (int i = 0; i < 50; i++) {
     float key = (float) rand() / (1 << 15);
-    tree_float_insert(t, key, NULL);
+    tree_float_insert(t, key, 0);
   }
 
   while (true) {

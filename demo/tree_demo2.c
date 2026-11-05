@@ -5,7 +5,9 @@
 
 #define data_t int64_t
 #define prefix int64
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -20,7 +22,7 @@ int main(void) {
     for (int j = 0; j < 5; j++) {
       bits = (bits << 13) + (uint64_t) rand();
     }
-    tree_int64_insert(t, (int64_t) bits, NULL);
+    tree_int64_insert(t, (int64_t) bits, 0);
   }
   printf("Tree Size: %zu\n", tree_int64_size(t));
   printf("Tree Height: %d\n", tree_int64_height(t));

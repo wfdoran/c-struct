@@ -5,22 +5,15 @@
 
 #define data_t int
 #define prefix int
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
-void *update(void *prev, void *curr) {
-  (void) curr;
-  if (prev == NULL) {
-    int *rv = malloc(sizeof(int));
-    *rv = 1;
-    return rv;
-  }
-
-  int *t = (int *) prev;
-  int t_val = *t;
-  *t = t_val + 1;
-  return (void *) t;
+// counts the occurrences of a key: each insert passes 1
+int update(int prev, int curr) {
+  return prev + curr;
 }
 
 int main(void) {
@@ -28,14 +21,13 @@ int main(void) {
 
   tree_int_t *t = tree_int_init();
   tree_int_set_update(t, &update);
-  tree_int_set_value_free(t, &free);
 
   int n = 100;
   int samples = 1000;
 
   for (int i = 0; i < samples; i++) {
     int v = rand() % n;
-    tree_int_insert(t, v, NULL);
+    tree_int_insert(t, v, 1);
   }
   printf("Tree Size: %zu\n", tree_int_size(t));
   printf("Tree Height: %d\n", tree_int_height(t));
@@ -43,10 +35,10 @@ int main(void) {
 
   titer_int_t it;
   int key;
-  void *value = NULL;
+  int value = 0;
   for (int32_t rc = tree_int_first(t, &it, &key, &value); rc == 0;
        rc = tree_int_next(&it, &key, &value)) {
-    printf("%5d %5d\n", key, *((int *) value));
+    printf("%5d %5d\n", key, value);
   }
   printf("\n");
 

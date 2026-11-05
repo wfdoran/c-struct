@@ -7,7 +7,9 @@
 
 #define data_t int
 #define prefix int
+#define value_t void *
 #include <tree.h>
+#undef value_t
 #undef data_t
 #undef prefix
 
@@ -19,7 +21,9 @@ typedef struct {
 
 #define data_t pair_t
 #define prefix pair
+#define value_t void *
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -42,18 +46,17 @@ static int comp_pair(pair_t *a, pair_t *b) {
 #define _unused(x) ((void) (x))
 
 
-static void* add_one(void *current, void *new) {
-  _unused(new);
-  int *a = (int*) current;
+static void *new_counter(void) {
+  int *rv = malloc(sizeof(int));
+  *rv = 1;
+  return rv;
+}
 
-  if (a == NULL) {
-    int *rv = malloc(sizeof(int));
-    *rv = 1;
-    return (void*) rv;
-  }
-
-  int x = *a;
-  *a = (x + 1);
+// adds the count of the passed counter to the current one, and frees the passed one
+static void *add_one(void *current, void *incoming) {
+  int *a = (int *) current;
+  *a += *(int *) incoming;
+  free(incoming);
   return a;
 }
 
@@ -61,7 +64,9 @@ static void* add_one(void *current, void *new) {
 
 #define data_t int
 #define prefix dn
+#define value_t void *
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -72,7 +77,9 @@ typedef struct {
 
 #define data_t nocomp_t
 #define prefix nc
+#define value_t void *
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -93,10 +100,45 @@ static void *oom_malloc(size_t n) {
 #define malloc oom_malloc
 #define data_t int
 #define prefix oom
+#define value_t void *
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 #undef malloc
+
+// values which are not pointers: value_t is a struct
+typedef struct {
+  long n;
+  double w;
+} val_t;
+
+#define data_t int
+#define prefix sv
+#define value_t val_t
+#include <tree.h>
+#undef value_t
+#undef prefix
+#undef data_t
+
+static int sv_freed;
+static long sv_freed_sum;
+
+static void sv_free(val_t v) {
+  sv_freed++;
+  sv_freed_sum += v.n;
+}
+
+static val_t sv_sum(val_t cur, val_t in) {
+  return (val_t){.n = cur.n + in.n, .w = cur.w + in.w};
+}
+
+static int sv_printed;
+
+static void sv_print(int k, val_t v) {
+  sv_printed += (v.n == k * 10);
+  printf("%ld", v.n);
+}
 
 START_TEST(tree_test1)
 
@@ -248,7 +290,7 @@ int m = 5;
 
 for (int i = 0; i < m; i++) {
   for (int j = 0; j < n; j++) {
-    tree_int_insert(a, j, NULL);
+    tree_int_insert(a, j, new_counter());
   }
 }
 
@@ -880,10 +922,10 @@ tree_int_destroy(&t);                    // the 2 values which are left
 CHECK(tree_free_count == 3);
 CHECK(t == NULL);
 
-// update: the new value is update(current, incoming), and a new node gets update(NULL, incoming)
+// update: the new value is update(current, incoming); a new node just gets incoming
 t = tree_int_init();
 tree_int_set_update(t, sum_values);
-tree_int_insert(t, 7, (void *) 5);      // new: update(NULL, 5) is 5
+tree_int_insert(t, 7, (void *) 5);      // new: update is not called, the value is 5
 CHECK((long) tree_int_retrieve(t, 7).value == 5);
 tree_int_insert(t, 7, (void *) 6);
 tree_int_insert(t, 7, (void *) 7);
@@ -906,13 +948,13 @@ free(second);
 tree_int_destroy(&t);
 CHECK(tree_free_count == 1);
 
-// the demo's counter: add_one is update(NULL) -> new counter, update(c) -> c + 1
+// the demo's counter: a new key gets the counter, an existing key adds the passed counter to it
 t = tree_int_init();
 tree_int_set_update(t, add_one);
 tree_int_set_value_free(t, count_free);
 tree_free_count = 0;
 for (int i = 0; i < 30; i++) {
-  tree_int_insert(t, i % 3, NULL);
+  tree_int_insert(t, i % 3, new_counter());
 }
 CHECK(tree_int_size(t) == 3);
 CHECK(*(int *) tree_int_retrieve(t, 0).value == 10);
@@ -1177,5 +1219,106 @@ for (int k = 1; k <= 3; k++) {
 }
 CHECK(tree_int_first(t, &it, &key, NULL) == 0 && key == 1);   // ascending now
 tree_int_destroy(&t);
+
+END_TEST
+
+
+// value_t which is a struct: the values are stored, returned and passed by value
+START_TEST(tree_test25)
+
+tree_sv_t *t = tree_sv_init();
+CHECK(t != NULL);
+for (int k = 0; k < 20; k++) {
+  CHECK(tree_sv_insert(t, k, (val_t){.n = k * 10, .w = k / 2.0}) == 0);
+}
+CHECK(tree_sv_size(t) == 20);
+
+key_sv_value_t r = tree_sv_retrieve(t, 7);
+CHECK(r.found && r.key == 7 && r.value.n == 70 && r.value.w == 3.5);
+r = tree_sv_retrieve(t, 99);
+CHECK(!r.found && r.value.n == 0 && r.value.w == 0.0);        // not found: zero value
+CHECK(tree_sv_retrieve_min(t).value.n == 0);
+CHECK(tree_sv_retrieve_max(t).value.n == 190);
+CHECK(tree_sv_get_rank(t, 5).value.n == 50);
+CHECK(!tree_sv_get_rank(t, 20).found && tree_sv_get_rank(t, 20).value.n == 0);
+
+// without update or value_free the new value replaces the old one
+CHECK(tree_sv_insert(t, 7, (val_t){.n = 1, .w = 2.0}) == 0);
+CHECK(tree_sv_size(t) == 20 && tree_sv_retrieve(t, 7).value.n == 1);
+CHECK(tree_sv_insert(t, 7, (val_t){.n = 70, .w = 3.5}) == 0);
+
+// walks
+titer_sv_t it;
+int key;
+val_t v;
+int expect = 0;
+for (int32_t rc = tree_sv_first(t, &it, &key, &v); rc == 0; rc = tree_sv_next(&it, &key, &v)) {
+  CHECK(key == expect && v.n == expect * 10);
+  expect++;
+}
+CHECK(expect == 20);
+expect = 10;
+for (int32_t rc = tree_sv_first_from(t, 10, &it, &key, &v); rc == 0; rc = tree_sv_next(&it, &key, &v)) {
+  CHECK(key == expect && v.n == expect * 10);
+  expect++;
+}
+CHECK(expect == 20);
+int count = 0;
+for (int32_t rc = tree_sv_post_first(t, &it, &key, &v); rc == 0; rc = tree_sv_post_next(&it, &key, &v)) {
+  CHECK(v.n == key * 10);
+  count++;
+}
+CHECK(count == 20);
+
+// print
+sv_printed = 0;
+fflush(stdout);
+int saved = dup(STDOUT_FILENO);
+int fd = open("/dev/null", O_WRONLY);
+CHECK(saved >= 0 && fd >= 0);
+dup2(fd, STDOUT_FILENO);
+close(fd);
+CHECK(tree_sv_print(t, sv_print) == 0);
+fflush(stdout);
+dup2(saved, STDOUT_FILENO);
+close(saved);
+CHECK(sv_printed == 20);
+
+// delete hands the value back, and does not free it
+tree_sv_set_value_free(t, sv_free);
+sv_freed = 0;
+sv_freed_sum = 0;
+r = tree_sv_delete(t, 3);
+CHECK(r.found && r.value.n == 30 && sv_freed == 0);
+r = tree_sv_delete(t, 3);
+CHECK(!r.found && r.value.n == 0);
+r = tree_sv_delete_min(t);
+CHECK(r.found && r.key == 0 && r.value.n == 0 && sv_freed == 0);
+r = tree_sv_delete_max(t);
+CHECK(r.found && r.key == 19 && r.value.n == 190 && sv_freed == 0);
+
+// value_free is given the replaced value
+CHECK(tree_sv_insert(t, 5, (val_t){.n = 500, .w = 0}) == 0);
+CHECK(sv_freed == 1 && sv_freed_sum == 50);
+
+// destroy frees the 17 values which are left
+tree_sv_destroy(&t);
+CHECK(t == NULL);
+CHECK(sv_freed == 18);
+
+// update combines the values; a new key stores the passed value as it is
+t = tree_sv_init();
+tree_sv_set_update(t, sv_sum);
+tree_sv_set_value_free(t, sv_free);
+sv_freed = 0;
+for (int i = 0; i < 30; i++) {
+  CHECK(tree_sv_insert(t, i % 3, (val_t){.n = 1, .w = 0.5}) == 0);
+}
+CHECK(tree_sv_size(t) == 3);
+r = tree_sv_retrieve(t, 1);
+CHECK(r.value.n == 10 && r.value.w == 5.0);
+CHECK(sv_freed == 0);                  // update is in charge of any memory
+tree_sv_destroy(&t);
+CHECK(sv_freed == 3);
 
 END_TEST

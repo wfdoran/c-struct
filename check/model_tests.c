@@ -13,7 +13,9 @@
 
 #define data_t int
 #define prefix mtree
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -21,7 +23,9 @@
 #define data_t int
 #define prefix mtreel
 #define data_less(x, y) ((x) < (y))
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -113,8 +117,8 @@ static int run_tree_model(uint32_t seed) {
     uint32_t op = get_rand() % 8;
 
     if (op < 3) {
-      CHECK(tree_mtree_insert(ta, k, NULL) == 0);
-      CHECK(tree_mtreel_insert(tb, k, NULL) == 0);
+      CHECK(tree_mtree_insert(ta, k, 0) == 0);
+      CHECK(tree_mtreel_insert(tb, k, 0) == 0);
       if (!present[k]) {
         present[k] = 1;
         n++;

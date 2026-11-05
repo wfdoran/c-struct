@@ -4,11 +4,13 @@
 
 #define data_t int32_t
 #define prefix int32
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
-void node_print(int32_t x, void *unused) {
+void node_print(int32_t x, int unused) {
   (void) unused;
   printf("%d", x);
 }
@@ -16,13 +18,13 @@ void node_print(int32_t x, void *unused) {
 int main(void) {
   tree_int32_t *t = tree_int32_init();
 
-  tree_int32_insert(t, 4, NULL);
-  tree_int32_insert(t, 2, NULL);
-  tree_int32_insert(t, 6, NULL);
-  tree_int32_insert(t, 1, NULL);
-  tree_int32_insert(t, 3, NULL);
-  tree_int32_insert(t, 5, NULL);
-  tree_int32_insert(t, 7, NULL);
+  tree_int32_insert(t, 4, 0);
+  tree_int32_insert(t, 2, 0);
+  tree_int32_insert(t, 6, 0);
+  tree_int32_insert(t, 1, 0);
+  tree_int32_insert(t, 3, 0);
+  tree_int32_insert(t, 5, 0);
+  tree_int32_insert(t, 7, 0);
 
   tree_int32_print(t, node_print);
 

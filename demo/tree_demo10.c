@@ -5,7 +5,9 @@
 
 #define data_t int32_t
 #define prefix int32
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -17,7 +19,7 @@ int main(void) {
 
   for (int i = 0; i < num_items; i++) {
     int32_t val = (rand() >> 3) & 0xffff;
-    tree_int32_insert(t, val, NULL);
+    tree_int32_insert(t, val, 0);
   }
   printf("Tree Size: %zu\n", tree_int32_size(t));
   printf("Tree Height: %d\n", tree_int32_height(t));
@@ -30,12 +32,12 @@ int main(void) {
 
   printf("From %d to %d\n", left, right);
 
-  tree_int32_insert(t, left - 1, NULL);
-  tree_int32_insert(t, left, NULL);
-  tree_int32_insert(t, left + 1, NULL);
-  tree_int32_insert(t, right - 1, NULL);
-  tree_int32_insert(t, right, NULL);
-  tree_int32_insert(t, right + 1, NULL);
+  tree_int32_insert(t, left - 1, 0);
+  tree_int32_insert(t, left, 0);
+  tree_int32_insert(t, left + 1, 0);
+  tree_int32_insert(t, right - 1, 0);
+  tree_int32_insert(t, right, 0);
+  tree_int32_insert(t, right + 1, 0);
 
   for (int32_t rc = tree_int32_first_from(t, left, &it, &key, NULL); rc == 0;
        rc = tree_int32_next(&it, &key, NULL)) {

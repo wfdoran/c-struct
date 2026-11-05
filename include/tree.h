@@ -15,6 +15,10 @@
 #error "data_t not defined"
 #endif
 
+#ifndef value_t
+#error "value_t not defined"
+#endif
+
 #ifndef prefix
 #error "prefix not defined"
 #endif
@@ -34,7 +38,7 @@
 
 typedef struct NODE {
   data_t key;
-  void *value;
+  value_t value;
   size_t size;
   int height;
   struct NODE *left;
@@ -45,13 +49,13 @@ typedef struct NODE {
 typedef struct {
   struct NODE *root;
   int (*comp)(data_t *, data_t *);
-  void *(*update)(void *, void *);
-  void (*value_free)(void *);
+  value_t (*update)(value_t, value_t);
+  void (*value_free)(value_t);
 } TREE;
 
 typedef struct {
   data_t key;
-  void *value;
+  value_t value;
   bool found;
 } KEYVAL;
 
@@ -117,7 +121,7 @@ GLUE3(tree_, prefix, _set_comp)(TREE *a, int (*comp)(data_t *, data_t *)) {
 }
 
 /* int32_t tree_prefix_set_update(tree_prefix_t *a,
-                                  void *(*update) (void *, void *));
+                                  value_t (*update) (value_t, value_t));
 
    Attaches an update function.  When inserting, if a node with the
    key value already exists, this function is used to update the value
@@ -125,18 +129,17 @@ GLUE3(tree_, prefix, _set_comp)(TREE *a, int (*comp)(data_t *, data_t *)) {
 
         new_value = update(current_value, passed_value);
 
-    Any memory management must be done by update().  update is also
-    used when initializing a node.
-
-        new_value = update(NULL, passed_value)
+    Any memory management must be done by update().  When the key is new,
+    update is not called: the node gets passed_value as it is.
 
     return value:
       -1 => error (a is NULL; nothing is changed)
        0 => ok
 */
 
-static inline int32_t
-GLUE3(tree_, prefix, _set_update)(TREE *a, void *(*update)(void *, void *) ) {
+static inline int32_t GLUE3(tree_, prefix,
+                            _set_update)(TREE *a,
+                                         value_t (*update)(value_t, value_t)) {
   if (a == NULL) {
     return -1;
   }
@@ -145,7 +148,7 @@ GLUE3(tree_, prefix, _set_update)(TREE *a, void *(*update)(void *, void *) ) {
 }
 
 /* int32_t tree_prefix_set_value_free(tree_prefix_t *a,
-                                      void (*value_free)(void *));
+                                      void (*value_free)(value_t));
 
     Attaches a free functions for values in each node.  This is used
     in two places:
@@ -172,7 +175,7 @@ GLUE3(tree_, prefix, _set_update)(TREE *a, void *(*update)(void *, void *) ) {
 */
 
 static inline int32_t
-GLUE3(tree_, prefix, _set_value_free)(TREE *a, void (*value_free)(void *)) {
+GLUE3(tree_, prefix, _set_value_free)(TREE *a, void (*value_free)(value_t)) {
   if (a == NULL) {
     return -1;
   }
@@ -184,14 +187,14 @@ GLUE3(tree_, prefix, _set_value_free)(TREE *a, void (*value_free)(void *)) {
 /*                         destructor                                      */
 /* ----------------------------------------------------------------------- */
 
-/* tree_prefix_node_destroy(NODE *n, void (*free)(void *));
+/* tree_prefix_node_destroy(NODE *n, void (*value_free)(value_t));
 
    Resets to default values and frees a node and all of its children.
-   If the user has provided a function for cleaning up the value
-   void*, that is applied as well.
+   If the user has provided a function for cleaning up the value_t,
+   that is applied as well.
 */
 CS_PRIVATE static inline void
-GLUE3(tree_, prefix, _node_destroy)(NODE *n, void (*value_free)(void *)) {
+GLUE3(tree_, prefix, _node_destroy)(NODE *n, void (*value_free)(value_t)) {
   if (n == NULL) {
     return;
   }
@@ -235,7 +238,8 @@ static inline void GLUE3(tree_, prefix, _destroy)(TREE **a_ptr) {
 
 /* NODE* tree_prefix_init_node(data_t key);
 
-   Allocates and fills in initial values for a node.
+   Allocates and fills in initial values for a node.  The value is left
+   undefined; the caller sets it.
 */
 
 CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _init_node)(data_t key) {
@@ -244,7 +248,6 @@ CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _init_node)(data_t key) {
     return NULL;
   }
   n->key = key;
-  n->value = NULL;
   n->size = 1;
   n->height = 1;
   n->left = NULL;
@@ -377,7 +380,7 @@ CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _balance)(NODE *n) {
   return n;
 }
 
-/* tree_prefix_insert_node(TREE *a, NODE *n, data_t key, void *value,
+/* tree_prefix_insert_node(TREE *a, NODE *n, data_t key, value_t value,
                            int32_t *rc, bool *added)
 
    Inserts a key/value at node n in the tree.
@@ -387,7 +390,7 @@ CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _balance)(NODE *n) {
  * already existed no size or height changed, so the ancestors are not
  * re-balanced. */
 CS_PRIVATE static inline NODE *
-GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value,
+GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, value_t value,
                                    int32_t *rc, bool *added) {
   if (n == NULL) {
     NODE *rv = GLUE3(tree_, prefix, _init_node)(key);
@@ -395,11 +398,7 @@ GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value,
       *rc = -1;
       return NULL;
     }
-    if (a->update == NULL) {
-      rv->value = value;
-    } else {
-      rv->value = a->update(rv->value, value);
-    }
+    rv->value = value;
     *added = true;
     return rv;
   }
@@ -441,7 +440,7 @@ GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value,
   return n;
 }
 
-/* int32_t tree_prefix_insert(tree_prefix_t *a, data_t key, void *value)
+/* int32_t tree_prefix_insert(tree_prefix_t *a, data_t key, value_t value)
 
    Inserts a key/value pair into the tree.  The only unclear part is
    what to do if this key already exists in the tree.
@@ -457,7 +456,8 @@ GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value,
 
             value_free(old_value)
 
-       is done.  So value must not be the pointer already stored for key.
+       is done.  So value must not be the pointer already stored for key (when
+       value_t is a pointer).
 
    return value:
      -1 => error (a is NULL, no comp function has been set, or out of
@@ -466,7 +466,7 @@ GLUE3(tree_, prefix, _insert_node)(TREE *a, NODE *n, data_t key, void *value,
 */
 
 static inline int32_t GLUE3(tree_, prefix, _insert)(TREE *a, data_t key,
-                                                    void *value) {
+                                                    value_t value) {
   if (a == NULL || !CS_HAVE_CMP(a->comp)) {
     return -1;
   }
@@ -608,7 +608,7 @@ GLUE3(tree_, prefix, _delete_node)(int (*comp)(data_t *, data_t *), NODE *n,
 
 static inline KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
   if (a == NULL || !CS_HAVE_CMP(a->comp)) {
-    KEYVAL rv = {.key = key, .value = NULL, .found = false};
+    KEYVAL rv = {.key = key, .found = false};
     return rv;
   }
   NODE *n = NULL;
@@ -618,7 +618,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
   }
 
   if (n == NULL) {
-    KEYVAL rv = {.key = key, .value = NULL, .found = false};
+    KEYVAL rv = {.key = key, .found = false};
     return rv;
   }
 
@@ -634,14 +634,14 @@ static inline KEYVAL GLUE3(tree_, prefix, _delete)(TREE *a, data_t key) {
 static inline KEYVAL GLUE3(tree_, prefix, _retrieve)(const TREE *a,
                                                      data_t key) {
   if (a == NULL) {
-    KEYVAL rv = {.key = key, .value = NULL, .found = false};
+    KEYVAL rv = {.key = key, .found = false};
     return rv;
   }
   NODE *n = a->root;
 
   while (true) {
     if (n == NULL) {
-      KEYVAL rv = {.key = key, .value = NULL, .found = false};
+      KEYVAL rv = {.key = key, .found = false};
       return rv;
     }
 
@@ -663,7 +663,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve)(const TREE *a,
 
 static inline KEYVAL GLUE3(tree_, prefix, _delete_min)(TREE *a) {
   if (a == NULL || a->root == NULL) {
-    KEYVAL rv = {.value = NULL, .found = false};
+    KEYVAL rv = {.found = false};
     return rv;
   }
 
@@ -685,7 +685,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _delete_min)(TREE *a) {
 */
 static inline KEYVAL GLUE3(tree_, prefix, _delete_max)(TREE *a) {
   if (a == NULL || a->root == NULL) {
-    KEYVAL rv = {.value = NULL, .found = false};
+    KEYVAL rv = {.found = false};
     return rv;
   }
 
@@ -708,7 +708,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve_min)(const TREE *a) {
   NODE *n = a == NULL ? NULL : a->root;
 
   if (n == NULL) {
-    KEYVAL rv = {.value = NULL, .found = false};
+    KEYVAL rv = {.found = false};
     return rv;
   }
 
@@ -728,7 +728,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve_max)(const TREE *a) {
   NODE *n = a == NULL ? NULL : a->root;
 
   if (n == NULL) {
-    KEYVAL rv = {.value = NULL, .found = false};
+    KEYVAL rv = {.found = false};
     return rv;
   }
 
@@ -876,13 +876,13 @@ static inline int GLUE3(tree_, prefix, _height)(const TREE *a) {
    The tree must not be changed during a walk.
 */
 
-/* int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, void **value);
+/* int32_t tree_prefix_next(titer_prefix_t *it, data_t *key, value_t *value);
 
    Returns the entry at the iterator and steps the iterator to the next one in
    key order.  Returns 1 (no entry) if it is NULL.
 */
 static inline int32_t GLUE3(tree_, prefix, _next)(TITER *it, data_t *key,
-                                                  void **value) {
+                                                  value_t *value) {
   if (it == NULL) {
     return 1;
   }
@@ -916,12 +916,13 @@ static inline int32_t GLUE3(tree_, prefix, _next)(TITER *it, data_t *key,
 }
 
 /* int32_t tree_prefix_first(const tree_prefix_t *a, titer_prefix_t *it, data_t
-   *key, void **value);
+   *key, value_t *value);
 
    Starts a walk at the smallest key.
 */
 static inline int32_t GLUE3(tree_, prefix, _first)(const TREE *a, TITER *it,
-                                                   data_t *key, void **value) {
+                                                   data_t *key,
+                                                   value_t *value) {
   if (it == NULL) {
     return 1;
   }
@@ -936,14 +937,14 @@ static inline int32_t GLUE3(tree_, prefix, _first)(const TREE *a, TITER *it,
 }
 
 /* int32_t tree_prefix_first_from(const tree_prefix_t *a, data_t from,
-   titer_prefix_t *it, data_t *key, void **value);
+   titer_prefix_t *it, data_t *key, value_t *value);
 
    Starts a walk at the first node with a key greater than or equal to from, and
    returns 1 if there is none.
 */
 static inline int32_t GLUE3(tree_, prefix,
                             _first_from)(const TREE *a, data_t from, TITER *it,
-                                         data_t *key, void **value) {
+                                         data_t *key, value_t *value) {
   if (it == NULL) {
     return 1;
   }
@@ -982,16 +983,16 @@ CS_PRIVATE static inline NODE *GLUE3(tree_, prefix, _post_descent)(NODE *n) {
   }
 }
 
-/* int32_t tree_prefix_post_next(titer_prefix_t *it, data_t *key, void **value);
-   int32_t tree_prefix_post_first(const tree_prefix_t *a, titer_prefix_t *it,
-   data_t *key, void **value);
+/* int32_t tree_prefix_post_next(titer_prefix_t *it, data_t *key, value_t
+   *value); int32_t tree_prefix_post_first(const tree_prefix_t *a,
+   titer_prefix_t *it, data_t *key, value_t *value);
 
    The same, but a post-order walk: every node comes after its children, ending
    with the root. This is the order to use to free or destroy things node by
    node.
 */
 static inline int32_t GLUE3(tree_, prefix, _post_next)(TITER *it, data_t *key,
-                                                       void **value) {
+                                                       value_t *value) {
   if (it == NULL) {
     return 1;
   }
@@ -1017,7 +1018,7 @@ static inline int32_t GLUE3(tree_, prefix, _post_next)(TITER *it, data_t *key,
 
 static inline int32_t GLUE3(tree_, prefix, _post_first)(const TREE *a,
                                                         TITER *it, data_t *key,
-                                                        void **value) {
+                                                        value_t *value) {
   if (it == NULL) {
     return 1;
   }
@@ -1031,7 +1032,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _get_rank)(const TREE *a,
                                                      size_t rank) {
   NODE *n = a == NULL ? NULL : a->root;
   if (n == NULL || rank >= n->size) {
-    KEYVAL rv = {.value = NULL, .found = false};
+    KEYVAL rv = {.found = false};
     return rv;
   }
 
@@ -1053,7 +1054,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _get_rank)(const TREE *a,
 }
 
 CS_PRIVATE static inline void
-GLUE3(tree_, prefix, _print_node)(void (*node_print)(data_t, void *), NODE *n,
+GLUE3(tree_, prefix, _print_node)(void (*node_print)(data_t, value_t), NODE *n,
                                   int depth, uint64_t mask) {
   if (n == NULL) {
     return;
@@ -1094,7 +1095,7 @@ GLUE3(tree_, prefix, _print_node)(void (*node_print)(data_t, void *), NODE *n,
 
 static inline int32_t GLUE3(tree_, prefix,
                             _print)(const TREE *a,
-                                    void (*node_print)(data_t, void *)) {
+                                    void (*node_print)(data_t, value_t)) {
   if (a == NULL) {
     return -1;
   }

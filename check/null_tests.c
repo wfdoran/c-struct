@@ -11,7 +11,9 @@
 #define data_t int
 #define prefix int
 #include <array.h>
+#define value_t int
 #include <tree.h>
+#undef value_t
 #include <pqueue.h>
 #include <option.h>
 #undef data_t
@@ -49,7 +51,7 @@ static int comp_hkey(int a, int b) {
 static int update_hv(int a, int b) {
   return a + b;
 }
-static void *update_tree(void *a, void *b) {
+static int update_tree(int a, int b) {
   (void) a;
   return b;
 }
@@ -117,11 +119,11 @@ END_TEST
 START_TEST(null_test3)
 // tree
 CHECK(tree_int_set_update(NULL, update_tree) == -1);
-CHECK(tree_int_set_value_free(NULL, free) == -1);
+CHECK(tree_int_set_value_free(NULL, NULL) == -1);
 CHECK(tree_int_print(NULL, NULL) == -1);
 titer_int_t tit;
 int tk;
-void *tv;
+int tv;
 CHECK(tree_int_next(NULL, &tk, &tv) == 1);
 CHECK(tree_int_first(NULL, NULL, &tk, &tv) == 1);
 CHECK(tree_int_first(NULL, &tit, &tk, &tv) == 1);

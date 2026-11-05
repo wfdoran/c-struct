@@ -12,7 +12,9 @@ typedef struct {
 #define data_t point_t
 #define prefix point
 #define data_less(a, b) ((a).x < (b).x || ((a).x == (b).x && (a).y < (b).y))
+#define value_t int
 #include <tree.h>
+#undef value_t
 #undef prefix
 #undef data_t
 
@@ -21,7 +23,7 @@ int main(void) {
 
   for (int i = 0; i < 12; i++) {
     point_t p = {.x = (i * 5) % 4, .y = (i * 7) % 5};
-    tree_point_insert(t, p, NULL);
+    tree_point_insert(t, p, 0);
   }
   printf("points: %zu\n", tree_point_size(t));
 
