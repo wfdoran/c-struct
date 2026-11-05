@@ -38,9 +38,9 @@
 
 typedef struct NODE {
   data_t key;
+  int height; /* next to the key: fills the padding after a small key */
   value_t value;
   size_t size;
-  int height;
   struct NODE *left;
   struct NODE *right;
   struct NODE *parent;
