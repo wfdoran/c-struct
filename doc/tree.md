@@ -1,9 +1,9 @@
 # Binary Tree
 
-An ordered map from keys of type `data_t` to values of type `value_t`, kept balanced as
-an AVL tree.  Insert, delete and retrieve take O(log n) time, and the tree also
-answers rank questions ("how many keys are less than this one", "which key has
-rank k").
+An ordered map from keys of type `data_t` to values of type `value_t`,
+kept balanced as an AVL tree.  Insert, delete and retrieve take O(log
+n) time, and the tree also answers rank questions ("how many keys are
+less than this one", "which key has rank k").
 
 ```c
 #define data_t key_type
@@ -28,10 +28,11 @@ typedef struct {
 } key_prefix_value_t;
 ```
 
-`found` is `false` when nothing matched, and in that case `key` and `value`
-should be ignored (`value` is then all zero bytes).  In the descriptions below, `prefix` stands for whatever
-label you chose.  Every function is `static inline`, so the header can be
-included from as many `.c` files as you like.
+`found` is `false` when nothing matched, and in that case `key` and
+`value` should be ignored (`value` is then all zero bytes).  In the
+descriptions below, `prefix` stands for whatever label you chose.
+Every function is `static inline`, so the header can be included from
+as many `.c` files as you like.
 
 ## Setup
 
@@ -68,31 +69,39 @@ the node gets `passed_value`.  Any memory management is up to `update`.  Returns
 
 ### `int32_t tree_prefix_set_value_free(tree_prefix_t *t, void (*value_free)(value_t))`
 
-Sets a function which frees a value.  By default no function is set and values
-are never freed.  When one is set it is used when `tree_prefix_insert` replaces
-the value of an existing key (if no update function is set), and by
-`tree_prefix_destroy` for every remaining value.  The most common use is to pass
-the system `free()` when the values were allocated with `malloc()`.  Returns 0, or
--1 if `t` is `NULL`.
+Sets a function which frees a value.  By default no function is set
+and values are never freed.  When one is set it is used when
+`tree_prefix_insert` replaces the value of an existing key (if no
+update function is set), and by `tree_prefix_destroy` for every
+remaining value.  The most common use is to pass the system `free()`
+when the values were allocated with `malloc()`.  Returns 0, or -1 if
+`t` is `NULL`.
 
 ### Ownership of values
 
-When a value free function is set, the tree owns the values stored in it:
+When `value_t` is a reference types such as `void*` or `int*`, and a
+free function is set, the tree owns the values stored in it:
 
-* `tree_prefix_insert` hands `value` to the tree.  After the call, do not free
-  it.
-* The `retrieve` functions, `get_rank` and the walks lend the value: the pointer
-  stays valid until that key's value is replaced, the key is deleted, or the
-  tree is destroyed.  Do not free it, and do not pass it to
-  `tree_prefix_insert` again.
-* The `delete` functions hand the value back: it is returned without being
-  freed, and the caller owns it again.
+* `tree_prefix_insert` hands `value` to the tree.  After the call, do
+  not free it.
+  
+* The `retrieve` functions, `get_rank` and the walks lend the value:
+  the pointer stays valid until that key's value is replaced, the key
+  is deleted, or the tree is destroyed.  Do not free it, and do not
+  pass it to `tree_prefix_insert` again.
+  
+* The `delete` functions hand the value back: it is returned without
+  being freed, and the caller owns it again.
 
-In particular, inserting the pointer already stored for a key, without an
-update function, frees that value and leaves the tree holding a dangling
-pointer.  To change a value in place, modify it through the pointer from
-`tree_prefix_retrieve` instead.  If an update function is set, it can be called
-with the same pointer as both arguments, and it must handle that case.
+In particular, inserting the pointer already stored for a key, without
+an update function, frees that value and leaves the tree holding a
+dangling pointer.  To change a value in place, modify it through the
+pointer from `tree_prefix_retrieve` instead.  If an update function is
+set, it can be called with the same pointer as both arguments, and it
+must handle that case.
+
+When `value_t` is a value type such as `int8_t` or `double`, the value
+is just copied.  There is no concept of ownership with such types. 
 
 ## Insert, Delete, Retrieve
 
