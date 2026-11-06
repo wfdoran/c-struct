@@ -785,7 +785,13 @@ static inline ssize_t GLUE3(array_, prefix, _index)(const TYPE *a, data_t v) {
 #define ARRAY_STR(x) ARRAY_STR_HELPER(x)
 
 /* Format 1: header, this byte, the prefix, sizes, CRC-32 of the entries, then
-   the entries.  Files from before the version byte are refused. */
+   the entries.  Files from before the version byte are refused.
+
+   The file is not portable between machines: the two sizes are written as a
+   native size_t and the entries as the raw bytes of data_t, so the file can
+   only be read by a program with the same size_t and data_t representation
+   (size, byte order, layout).  The checksum is written portably, as is the
+   prefix. */
 #define ARRAY_FORMAT_VERSION 1
 
 /* The prefix is a C identifier: refuse a longer name before allocating for

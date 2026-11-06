@@ -666,7 +666,7 @@ static inline KEYVAL GLUE3(tree_, prefix, _retrieve)(const TREE *a,
 static inline KEYVAL GLUE3(tree_, prefix, _delete_min)(TREE *a) {
   if (a == NULL || a->root == NULL) {
     KEYVAL rv = {.found = false};
-q    return rv;
+    return rv;
   }
 
   NODE *n = NULL;

@@ -275,9 +275,12 @@ Rearranges the whole array into a heap in O(n) time.  Returns 0, or -1 if `a` is
 
 Writes the array to a file.  Returns 0, or -1 if an argument is `NULL`, the file
 could not be written, or a write failed.  The file holds the entries as raw
-bytes of `data_t`, so it can only be read back by a program with the same
-`data_t` representation (byte order, size and layout); for pointer types the
-values are meaningless.
+bytes of `data_t`, and the sizes in the header as a native `size_t`, so it can
+only be read back by a program with the same `size_t` and `data_t`
+representation (byte order, size and layout).  The file is not portable
+between different architectures (for example 32 and 64 bit, or little and big
+endian); `array_prefix_deserialize` returns `NULL` for such a file.  For
+pointer types the values are meaningless.
 
 **Padding.**  The entries are written exactly as they are in memory.  If
 `data_t` is a struct with padding (unused bytes the compiler puts between
