@@ -214,6 +214,9 @@ pool_demo1: pool_demo1.c
 ppool_demo1: ppool_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) ppool_demo1.c -o ppool_demo1 -lpthread
 
+lru_demo1: lru_demo1.c
+	$(CC) $(CFLAGS) $(INCLUDE) lru_demo1.c -o lru_demo1
+
 clean:
 	rm -rf array_demo1
 	rm -rf array_demo2
@@ -286,5 +289,6 @@ clean:
 	rm -rf interval_demo8
 	rm -rf pool_demo1
 	rm -rf ppool_demo1
+	rm -rf lru_demo1
 	rm -rf *~
 
