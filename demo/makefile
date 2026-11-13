@@ -220,6 +220,9 @@ lru_demo1: lru_demo1.c
 lru_demo2: lru_demo2.c
 	$(CC) $(CFLAGS) $(INCLUDE) lru_demo2.c -o lru_demo2
 
+lru_demo3: lru_demo3.c
+	$(CC) $(CFLAGS) $(INCLUDE) lru_demo3.c -o lru_demo3
+
 clean:
 	rm -rf array_demo1
 	rm -rf array_demo2
@@ -294,5 +297,6 @@ clean:
 	rm -rf ppool_demo1
 	rm -rf lru_demo1
 	rm -rf lru_demo2
+	rm -rf lru_demo3
 	rm -rf *~
 

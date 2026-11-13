@@ -80,6 +80,7 @@ pool_demo1
 ppool_demo1
 lru_demo1
 lru_demo2
+lru_demo3
 REPORT*.md
 PROMPT.md
 QUESTIONS.md
