@@ -56,7 +56,9 @@ lru_sqrt_destroy(&lru);
 ```
 
 The cache is not safe to use from several threads at once.  Note that this
-includes `get`, which changes the order of the entries.
+includes `get`, which changes the order of the entries.  The one exception is
+`peek`, which changes nothing: several threads may `peek` at the same time, as
+long as no other function runs on the cache meanwhile.
 
 ## Basic Operations
 
@@ -96,6 +98,16 @@ assert(lru == NULL);
 
 Without an evict function, the keys and values are not freed.
 
+### `int32_t lru_prefix_clear(lru_prefix_t *lru)`
+
+Removes every entry from the cache.  The evict function (if set) is called on
+each, from the most to the least recently used, just as `destroy` does.  The
+cache keeps its capacity and the functions which were set, and can be used
+again; the memory is kept too, as nothing was allocated per entry.  Since the
+cache is empty afterwards, `lru_prefix_set_hash` can be called again.
+
+Returns 0, or -1 if `lru` is `NULL`.
+
 ### `int32_t lru_prefix_put(lru_prefix_t *lru, hkey_t key, value_t value)`
 
 Inserts a key/value pair as the most recently used entry.  This is a shallow
@@ -134,6 +146,28 @@ later `put` may evict the entry and the evict function may free it (see
 Returns 1 if the key is present, 0 if it is not, and -1 on error (`lru` is
 `NULL`, there is no hash function, or the clone function failed).  If the clone
 function fails, the cache is unchanged.
+
+### `int32_t lru_prefix_peek(const lru_prefix_t *lru, hkey_t key, value_t *value)`
+
+Looks up a key like `lru_prefix_get`, but does not count as a use: the order of
+the entries is not changed, so peeking at an entry does not save it from being
+evicted.  This is the lookup to use when checking on the cache (for statistics
+or debugging) should not affect what it keeps.
+
+`*value` is set the same way as by `get`, with the clone function if one was
+set, and `value` may be `NULL`.  The return values are the same as for `get`.
+
+## Accessors
+
+### `size_t lru_prefix_size(const lru_prefix_t *lru)`
+
+Returns the number of entries in the cache, or 0 if `lru` is `NULL`.  Once the
+cache has filled up it stays full, apart from `clear`.
+
+### `size_t lru_prefix_capacity(const lru_prefix_t *lru)`
+
+Returns the most entries the cache can hold, the `capacity` given to `init`, or
+0 if `lru` is `NULL`.
 
 ## Specializing
 
@@ -202,10 +236,10 @@ the cache should own, the functions above work together:
 |---------------------------------------|-------------------------------------------------|
 | `put` of a new key                    | the cache takes the key and the value           |
 | `put` of a key already present        | the cache takes the value; the old value goes to `update`; the key passed in stays with the caller |
-| `get` with a clone function           | the caller owns what `clone` gives it           |
-| `get` without a clone function        | the caller borrows the value until the next `put` or `destroy` |
-| an entry is removed to make room      | its key and value go to `evict`                 |
-| `destroy`                             | every key and value left goes to `evict`        |
+| `get` or `peek` with a clone function    | the caller owns what `clone` gives it        |
+| `get` or `peek` without a clone function | the caller borrows the value until the next `put`, `clear` or `destroy` |
+| an entry is removed to make room         | its key and value go to `evict`              |
+| `clear` or `destroy`                     | every key and value left goes to `evict`     |
 
 For example, a cache from `int` to strings which it owns frees them in
 `evict`, copies them in `clone`, and frees the replaced one in `update`:
@@ -289,8 +323,9 @@ The cache is a hash table with separate chaining combined with a doubly linked
 list of the entries in the order they were used.  Each entry is a node which
 lives in both: `get` finds the node through the hash table and moves it to the
 front of the list, and when the cache is full `put` takes the node at the back
-of the list, unlinks it from both, and reuses it for the new key.  Every
-operation takes constant time on average.
+of the list, unlinks it from both, and reuses it for the new key.  `put`,
+`get` and `peek` take constant time on average; `clear` and `destroy` visit
+every entry.
 
 All of the nodes are allocated at once by `init`, as one array of `capacity`
 nodes, along with the hash table.  Nothing is allocated or freed after that
@@ -305,8 +340,9 @@ particular the integer and floating point hashes in `hash.h` are simple.  The
 stored hash is compared before the keys, so the compare function is only called
 when the hashes match.
 
-There is not yet a way to remove a single entry or to empty the cache without
-destroying it.
+`clear` calls `evict` on each entry and then empties the hash table, which
+takes time in proportion to the capacity.  There is not yet a way to remove a
+single entry.
 
 ## Compiled in hash and equality
 

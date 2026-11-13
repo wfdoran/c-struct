@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "cs_private.h"
 #include "hash.h"
 #include "comp.h"
@@ -242,6 +243,51 @@ static inline int32_t GLUE3(lru_, prefix,
   return 0;
 }
 
+/* size_t lru_prefix_size(const lru_prefix_t *lru);
+
+   Returns the number of entries in the cache, or 0 if lru is NULL.
+*/
+static inline size_t GLUE3(lru_, prefix, _size)(const LRU_CACHE *lru) {
+  return lru == NULL ? 0 : (size_t) lru->num_used;
+}
+
+/* size_t lru_prefix_capacity(const lru_prefix_t *lru);
+
+   Returns the most entries the cache can hold (the capacity given to
+   init), or 0 if lru is NULL.
+*/
+static inline size_t GLUE3(lru_, prefix, _capacity)(const LRU_CACHE *lru) {
+  return lru == NULL ? 0 : (size_t) lru->alloc_size;
+}
+
+/* int32_t lru_prefix_clear(lru_prefix_t *lru);
+
+   Removes every entry from the cache, running evict (if set) on each,
+   from most to least recently used.  The cache keeps its capacity and
+   its functions, and can be used again.
+
+   Return Value:
+    0 => success
+    -1 => error (lru is NULL)
+*/
+static inline int32_t GLUE3(lru_, prefix, _clear)(LRU_CACHE *lru) {
+  if (lru == NULL) {
+    return -1;
+  }
+  if (lru->evict != NULL) {
+    for (LRU_NODE *n = lru->head; n != NULL; n = n->next) {
+      lru->evict(n->key, n->value);
+    }
+  }
+  /* all-bits-zero is a NULL pointer */
+  memset(lru->htable, 0,
+         ((size_t) 1 << lru->log2_hash_size) * sizeof(LRU_NODE *));
+  lru->head = NULL;
+  lru->tail = NULL;
+  lru->num_used = 0;
+  return 0;
+}
+
 /* void lru_prefix_destroy(lru_prefix_t **lru_ptr);
 
    Runs evict (if set) on every entry in the cache, from most to least
@@ -253,11 +299,7 @@ static inline void GLUE3(lru_, prefix, _destroy)(LRU_CACHE **lru_ptr) {
     return;
   }
   LRU_CACHE *lru = *lru_ptr;
-  if (lru->evict != NULL) {
-    for (LRU_NODE *n = lru->head; n != NULL; n = n->next) {
-      lru->evict(n->key, n->value);
-    }
-  }
+  GLUE3(lru_, prefix, _clear)(lru); /* runs evict on the entries */
   free(lru->htable);
   free(lru->alloc);
   free(lru);
@@ -381,6 +423,25 @@ static inline int32_t GLUE3(lru_, prefix, _put)(LRU_CACHE *lru, hkey_t key,
   return 0;
 }
 
+/* int32_t lru_prefix_value_out(const lru_prefix_t *lru, const LRU_NODE *n,
+                                value_t *value);
+
+   Sets *value (if value is not NULL) from the value of n: with clone if
+   one was set, otherwise a plain copy.  Returns 0, or -1 if clone failed.
+*/
+CS_PRIVATE static inline int32_t
+GLUE3(lru_, prefix, _value_out)(const LRU_CACHE *lru, const LRU_NODE *n,
+                                value_t *value) {
+  if (value == NULL) {
+    return 0;
+  }
+  if (lru->clone != NULL) {
+    return lru->clone(n->value, value) == 0 ? 0 : -1;
+  }
+  *value = n->value;
+  return 0;
+}
+
 /* int32_t lru_prefix_get(lru_prefix_t *lru, hkey_t key, value_t *value);
 
    Looks up key and, if found, makes it the most recently used entry.  value
@@ -391,7 +452,8 @@ static inline int32_t GLUE3(lru_, prefix, _put)(LRU_CACHE *lru, hkey_t key,
    unchanged.
 
    Since get changes the order of the entries, it is not safe to call at the
-   same time as any other function on the same cache, including get.
+   same time as any other function on the same cache, including get.  See
+   lru_prefix_peek for a lookup which leaves the order alone.
 
    Return Value:
     1 => key in table, *value set
@@ -408,17 +470,40 @@ static inline int32_t GLUE3(lru_, prefix, _get)(LRU_CACHE *lru, hkey_t key,
   if (n == NULL) {
     return 0;
   }
-  if (value != NULL) {
-    if (lru->clone != NULL) {
-      if (lru->clone(n->value, value) != 0) {
-        return -1;
-      }
-    } else {
-      *value = n->value;
-    }
+  if (GLUE3(lru_, prefix, _value_out)(lru, n, value) != 0) {
+    return -1;
   }
   GLUE3(lru_, prefix, _move_to_front)(lru, n);
   return 1;
+}
+
+/* int32_t lru_prefix_peek(const lru_prefix_t *lru, hkey_t key,
+                           value_t *value);
+
+   Looks up key like lru_prefix_get, but does not count as a use: the
+   order of the entries, and so which entry is evicted next, is not
+   changed.  *value is set the same way, with clone if one was set.
+
+   Since peek does not change the cache, several peeks may run at the
+   same time, as long as nothing else runs on the cache (and clone, if
+   set, is safe to call from several threads).
+
+   Return Value:
+    1 => key in table, *value set
+    0 => key not in table
+    -1 => an error (lru is NULL, no hash function, or clone failed)
+*/
+static inline int32_t GLUE3(lru_, prefix, _peek)(const LRU_CACHE *lru,
+                                                 hkey_t key, value_t *value) {
+  if (lru == NULL || !CS_HAVE_HASH(lru->hash_func)) {
+    return -1;
+  }
+  const uint64_t hash = hash_mix64(CS_HASH(lru->hash_func, key));
+  const LRU_NODE *n = GLUE3(lru_, prefix, _find)(lru, key, hash);
+  if (n == NULL) {
+    return 0;
+  }
+  return GLUE3(lru_, prefix, _value_out)(lru, n, value) == 0 ? 1 : -1;
 }
 
 #undef LRU_NODE

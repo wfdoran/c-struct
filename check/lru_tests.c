@@ -108,7 +108,16 @@ static int lru_model(int64_t capacity, long keys, int iters, uint32_t seed) {
       }
     }
 
-    if (get_rand() % 2 == 0) {
+    uint32_t op = get_rand() % 3;
+    if (op == 2) {
+      // peek: found like get, but the order stays as it is
+      int out = -1;
+      CHECK(lru_ll_peek(c, k, &out) == (pos >= 0 ? 1 : 0));
+      if (pos >= 0) {
+        CHECK(out == values[pos]);
+      }
+      pos = -1;
+    } else if (op == 0) {
       evict_count = 0;
       CHECK(lru_ll_put(c, k, v) == (pos >= 0 ? 1 : 0));
       if (pos >= 0) {
@@ -124,21 +133,23 @@ static int lru_model(int64_t capacity, long keys, int iters, uint32_t seed) {
       int out = -1;
       bool want = get_rand() % 4 != 0; // a NULL value also counts as a use
       CHECK(lru_ll_get(c, k, want ? &out : NULL) == (pos >= 0 ? 1 : 0));
-      if (pos < 0) {
-        continue;
+      if (pos >= 0) {
+        if (want) {
+          CHECK(out == values[pos]);
+        }
+        v = values[pos];
       }
-      if (want) {
-        CHECK(out == values[pos]);
+    }
+    // a use moves the key to the front of the model
+    if (pos >= 0) {
+      for (int64_t j = pos; j > 0; j--) {
+        order[j] = order[j - 1];
+        values[j] = values[j - 1];
       }
-      v = values[pos];
+      order[0] = k;
+      values[0] = v;
     }
-    // move the key to the front of the model
-    for (int64_t j = pos; j > 0; j--) {
-      order[j] = order[j - 1];
-      values[j] = values[j - 1];
-    }
-    order[0] = k;
-    values[0] = v;
+    CHECK(lru_ll_size(c) == (size_t) n);
 
     // the recency list, in both directions
     int64_t j = 0;
@@ -373,4 +384,75 @@ CHECK(lru_lp_get(c, p, &v) == 1 && v == 3);
 CHECK(lru_lp_set_hash(c, NULL) == -1);
 CHECK(lru_lp_get(c, p, &v) == 1);
 lru_lp_destroy(&c);
+END_TEST
+
+START_TEST(lru_test6)
+// size, capacity and peek
+lru_li_t *c = lru_li_init(3);
+CHECK(c != NULL);
+CHECK(lru_li_capacity(c) == 3);
+CHECK(lru_li_size(c) == 0);
+CHECK(lru_li_set_evict(c, evict_i) == 0);
+for (int i = 1; i <= 3; i++) {
+  CHECK(lru_li_put(c, i, 10 * i) == 0);
+  CHECK(lru_li_size(c) == (size_t) i);
+}
+CHECK(lru_li_put(c, 3, 31) == 1);
+CHECK(lru_li_size(c) == 3); // a repeated key adds nothing
+
+int v = -1;
+CHECK(lru_li_peek(c, 1, &v) == 1 && v == 10); // order still: 3 2 1
+CHECK(lru_li_peek(c, 1, NULL) == 1);
+CHECK(lru_li_peek(c, 9, &v) == 0);
+evict_count = 0;
+CHECK(lru_li_put(c, 4, 40) == 0); // 1 is still the least recently used
+CHECK(evict_count == 1 && evict_last == 1);
+CHECK(lru_li_size(c) == 3 && lru_li_capacity(c) == 3);
+
+// clear evicts every entry, most recent first, and the cache is usable again
+evict_count = 0;
+CHECK(lru_li_clear(c) == 0);
+CHECK(evict_count == 3 && evict_last == 2);
+CHECK(lru_li_size(c) == 0 && lru_li_capacity(c) == 3);
+for (int i = 1; i <= 4; i++) {
+  CHECK(lru_li_get(c, i, &v) == 0);
+  CHECK(lru_li_peek(c, i, &v) == 0);
+}
+CHECK(lru_li_clear(c) == 0); // an empty cache
+CHECK(evict_count == 3);
+for (int i = 0; i < 10; i++) {
+  CHECK(lru_li_put(c, i, i) == 0);
+}
+CHECK(lru_li_size(c) == 3);
+CHECK(lru_li_get(c, 9, &v) == 1 && v == 9);
+CHECK(lru_li_get(c, 6, &v) == 0);
+
+// the hash can be changed again once the cache is cleared
+CHECK(lru_li_set_hash(c, NULL) == -1);
+CHECK(lru_li_clear(c) == 0);
+CHECK(lru_li_set_hash(c, c->hash_func) == 0);
+lru_li_destroy(&c);
+
+// peek uses clone, and a failed clone is an error
+lru_ls_t *s = lru_ls_init(2);
+CHECK(s != NULL);
+CHECK(lru_ls_set_evict(s, ls_evict) == 0);
+CHECK(lru_ls_set_clone(s, ls_clone) == 0);
+CHECK(lru_ls_put(s, strdup("a"), strdup("A")) == 0);
+char *mine = NULL;
+CHECK(lru_ls_peek(s, "a", &mine) == 1);
+CHECK(mine != NULL && mine != s->head->value && strcmp(mine, "A") == 0);
+free(mine);
+ls_clone_fail = 1;
+CHECK(lru_ls_peek(s, "a", &mine) == -1);
+ls_clone_fail = 0;
+
+// clear hands the owned keys and values to evict
+ls_frees = 0;
+CHECK(lru_ls_clear(s) == 0);
+CHECK(ls_frees == 2 && lru_ls_size(s) == 0);
+lru_ls_destroy(&s);
+CHECK(ls_frees == 2);
+free(ls_evicted);
+ls_evicted = NULL;
 END_TEST
