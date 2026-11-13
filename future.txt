@@ -1,7 +1,5 @@
 Possible Future Additions
 
-* least recently used
-
 * blocking select for channels
 
 * locality-sensitive hashing

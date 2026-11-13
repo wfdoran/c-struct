@@ -48,15 +48,15 @@ typedef struct LRU_CACHE {
   uint64_t (*hash_func)(hkey_t);
   int (*comp)(hkey_t, hkey_t);
 
-  void (*evict)(hkey_t, value_t);   // optional method to clean up
-                                    // the key and value fields in
-                                    // LRU_NODE when it is cleared
-                                    // from the cache
+  void (*evict)(hkey_t, value_t); // optional method to clean up
+                                  // the key and value fields in
+                                  // LRU_NODE when it is cleared
+                                  // from the cache
 
-  value_t (*update)(value_t, value_t);  // optional method to update
-                                        // the value in a LRU_NODE
-                                        // during a put when that
-                                        // key exists.
+  value_t (*update)(value_t, value_t); // optional method to update
+                                       // the value in a LRU_NODE
+                                       // during a put when that
+                                       // key exists.
 
   int (*clone)(value_t, value_t *); // optional: if value_t is a
                                     // pointer type, this method
@@ -186,9 +186,9 @@ GLUE3(lru_, prefix, _set_comp)(LRU_CACHE *lru, int (*comp)(hkey_t, hkey_t)) {
     0 => success
     -1 => error (lru is NULL; nothing is changed)
 */
-static inline int32_t
-GLUE3(lru_, prefix, _set_update)(LRU_CACHE *lru,
-                                 value_t (*update)(value_t, value_t)) {
+static inline int32_t GLUE3(lru_, prefix,
+                            _set_update)(LRU_CACHE *lru,
+                                         value_t (*update)(value_t, value_t)) {
   if (lru == NULL) {
     return -1;
   }
@@ -210,9 +210,9 @@ GLUE3(lru_, prefix, _set_update)(LRU_CACHE *lru,
     0 => success
     -1 => error (lru is NULL; nothing is changed)
 */
-static inline int32_t
-GLUE3(lru_, prefix, _set_clone)(LRU_CACHE *lru,
-                                int (*clone)(value_t, value_t *)) {
+static inline int32_t GLUE3(lru_, prefix,
+                            _set_clone)(LRU_CACHE *lru,
+                                        int (*clone)(value_t, value_t *)) {
   if (lru == NULL) {
     return -1;
   }
@@ -232,8 +232,9 @@ GLUE3(lru_, prefix, _set_clone)(LRU_CACHE *lru,
     0 => success
     -1 => error (lru is NULL; nothing is changed)
 */
-static inline int32_t
-GLUE3(lru_, prefix, _set_evict)(LRU_CACHE *lru, void (*evict)(hkey_t, value_t)) {
+static inline int32_t GLUE3(lru_, prefix,
+                            _set_evict)(LRU_CACHE *lru,
+                                        void (*evict)(hkey_t, value_t)) {
   if (lru == NULL) {
     return -1;
   }
