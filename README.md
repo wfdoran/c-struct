@@ -60,6 +60,8 @@ pointers refer to, unless you give them a free function.
 * [Hash Table](doc/hash_table.md): open addressing hash map.
 * [Parallel Hash Table](doc/phash_table.md): thread safe hash map, with an
   atomic read-modify-write.
+* [LRU Cache](doc/lru_cache.md): fixed size map which evicts the least recently
+  used entry, with hooks for owned or reference counted values.
 * [Binary Tree](doc/tree.md): balanced (AVL) ordered map with rank queries and
   walks.
 * [Priority Queue](doc/pqueue.md): binary heap of key and value pairs.
