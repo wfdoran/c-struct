@@ -61,6 +61,16 @@ typedef struct {
 #undef value_t
 #undef hkey_t
 
+#define hkey_t rec_t
+#define value_t int
+#define prefix hrec
+#define hkey_hash(r) ((uint64_t) (uint32_t) (r).k * UINT64_C(0x9E3779B97F4A7C15))
+#define hkey_equal(a, b) ((a).k == (b).k)
+#include <lru_cache.h>
+#undef prefix
+#undef value_t
+#undef hkey_t
+
 // no pointer to a comparison is set anywhere below: the hooks are enough
 
 START_TEST(hook_test1)
@@ -207,5 +217,28 @@ CHECK(hash_hrec_get(c, r1, NULL) == 1);
 hash_hrec_destroy(&c);
 hash_hrec_destroy(&h);
 phash_hrec_destroy(&p);
+
+END_TEST
+
+START_TEST(hook_test4)
+
+// LRU cache: the hash and equality look at k only
+lru_hrec_t *c = lru_hrec_init(100);
+CHECK(c != NULL);
+for (int i = 0; i < 300; i++) {
+  rec_t r = {.k = i, .tag = 100 + i};
+  CHECK(lru_hrec_put(c, r, i) == 0);
+}
+for (int i = 0; i < 300; i++) {
+  rec_t r = {.k = i, .tag = -i}; // another tag: still the same key
+  int v = -1;
+  CHECK(lru_hrec_get(c, r, &v) == (i >= 200)); // the last 100 put are kept
+  if (i >= 200) {
+    CHECK(v == i);
+  }
+}
+rec_t r1 = {.k = 250, .tag = 0};
+CHECK(lru_hrec_put(c, r1, -1) == 1);
+lru_hrec_destroy(&c);
 
 END_TEST

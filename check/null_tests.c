@@ -42,6 +42,14 @@
 #undef value_t
 #undef prefix
 
+#define hkey_t int
+#define value_t int
+#define prefix li
+#include <lru_cache.h>
+#undef hkey_t
+#undef value_t
+#undef prefix
+
 static int comp_int_p(int *a, int *b) {
   return *a - *b;
 }
@@ -159,4 +167,26 @@ CHECK(llist_int_insert_after(l, NULL, 1) == -1);
 CHECK(llist_int_add_node(NULL, NULL) == -1);
 CHECK(llist_int_add_node(l, NULL) == -1);
 llist_int_destroy(&l);
+END_TEST
+
+START_TEST(null_test4)
+// LRU cache
+int v;
+CHECK(lru_li_put(NULL, 1, 1) == -1);
+CHECK(lru_li_get(NULL, 1, &v) == -1);
+CHECK(lru_li_get(NULL, 1, NULL) == -1);
+CHECK(lru_li_set_hash(NULL, NULL) == -1);
+CHECK(lru_li_set_comp(NULL, comp_hkey) == -1);
+CHECK(lru_li_set_update(NULL, update_hv) == -1);
+CHECK(lru_li_set_clone(NULL, NULL) == -1);
+CHECK(lru_li_set_evict(NULL, NULL) == -1);
+lru_li_destroy(NULL);
+lru_li_t *c = lru_li_init(4);
+CHECK(c != NULL);
+CHECK(lru_li_set_comp(c, comp_hkey) == 0);
+CHECK(lru_li_set_update(c, update_hv) == 0);
+CHECK(lru_li_get(c, 1, NULL) == 0);
+lru_li_destroy(&c);
+CHECK(c == NULL);
+lru_li_destroy(&c);
 END_TEST

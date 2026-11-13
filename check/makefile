@@ -5,7 +5,7 @@ WERROR =
 CFLAGS = -O2 -std=gnu11 -g -Wall -Wextra -fopenmp $(WERROR)
 INCLUDE = -I../include -I./
 
-TESTS = assert array linked_list tree chan hash_table phash_table pqueue option serialize comp any interval link hook model pool ppool macro null
+TESTS = assert array linked_list tree chan hash_table phash_table pqueue option serialize comp any interval link hook model pool ppool macro null lru
 SRC = $(addsuffix _tests.c, $(TESTS))
 OBJS = $(addsuffix _tests.o, $(TESTS))
 
