@@ -314,8 +314,9 @@ GLUE3(lru_, prefix, _move_to_front)(LRU_CACHE *lru, LRU_NODE *n) {
    key passed in is not stored, and still belongs to the caller.
 
    Return Value:
-    1 => ok, key already in lru (update if given combined them)
-    0 => ok, new key
+    1 => ok, the key was already in the cache and its value was replaced
+         (or combined with the new value by the update function)
+    0 => ok, the key was new and has been inserted
     -1 => error (lru is NULL or has no hash function; nothing is changed)
 */
 static inline int32_t GLUE3(lru_, prefix, _put)(LRU_CACHE *lru, hkey_t key,
