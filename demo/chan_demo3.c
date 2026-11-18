@@ -63,10 +63,12 @@ int main(void) {
     }
   }
 
-  int64_t total;
-  chan_int64_recv(ch3, &total);
+  int64_t total = 0;
+  if (chan_int64_recv(ch3, &total) != CHAN_SUCCESS) {
+    printf("no total was received\n");
+  }
   printf("%ld\n", total);
-  printf("%ld\n", n * (n - 1) * (2 * n - 1) / 6);
+  printf("%ld\n", n * (n + 1) * (2 * n + 1) / 6);
 
   chan_int64_destroy(&ch1);
   chan_int64_destroy(&ch2);
