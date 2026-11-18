@@ -753,3 +753,186 @@ CHECK(calls > 0);
 CHECK(bad == 0);
 
 END_TEST
+
+// Every function sets the rounding modes it needs and puts the caller's back, so its result must
+// not depend on the mode the caller has set.  Each function is called in all four modes; the
+// result must be the same, bit for bit, as in round to nearest, the caller's mode must be the same
+// after the call, and the result must contain the exact value at the ends of the arguments.
+#define IV_NFN 26
+
+// the results of every function for the arguments in v, called in the current rounding mode;
+// mode_kept[k] is false if function k left the rounding mode changed
+static void interval_all_functions(const interval_t *v, int64_t big, interval_t *r,
+                                   bool *mode_kept) {
+  const int mode = fegetround();
+  // v[0], v[1], v[2]: any sign; v[3]: positive; v[4]: a divisor which may contain 0
+  interval_t many[5] = {v[0], v[1], v[2], v[3], v[4]};
+  int k = 0;
+#define CALL(expr)                                                                          \
+  do {                                                                                      \
+    r[k] = (expr);                                                                          \
+    mode_kept[k] = fegetround() == mode;                                                    \
+    k++;                                                                                    \
+  } while (0)
+  CALL(interval_add(v[0], v[1]));
+  CALL(interval_sub(v[0], v[1]));
+  CALL(interval_mul(v[0], v[1]));
+  CALL(interval_div(v[0], v[1]));
+  CALL(interval_div(v[0], v[4]));
+  CALL(interval_fma(v[0], v[1], v[2]));
+  CALL(interval_fmax(v[0], v[1]));
+  CALL(interval_fmin(v[0], v[1]));
+  CALL(interval_neg(v[0]));
+  CALL(interval_fabs(v[0]));
+  CALL(interval_floor(v[0]));
+  CALL(interval_ceil(v[0]));
+  CALL(interval_exp(v[0]));
+  CALL(interval_erf(v[0]));
+  CALL(interval_sin(v[0]));
+  CALL(interval_cos(v[0]));
+  CALL(interval_sqrt(v[3]));
+  CALL(interval_log(v[3]));
+  CALL(interval_pow_uint(v[0], 3));
+  CALL(interval_pow_uint(v[0], 4));
+  CALL(interval_pow_int(v[3], -3));
+  CALL(interval_pow_real(v[3], 0.7));
+  CALL(interval_pow_dbl(v[3], v[2]));
+  CALL(interval_add_many(5, many));
+  CALL(interval_from_double(v[0].lo));
+  CALL(interval_from_int64(big));
+#undef CALL
+}
+
+// x is inside r, for an exact value x which is not a NaN
+static bool interval_holds(interval_t r, long double x) {
+  return r.valid && r.lo <= x && x <= r.hi;
+}
+
+START_TEST(interval_test16)
+
+NEEDS_WIDE_LONG_DOUBLE
+
+const int modes[] = {FE_TONEAREST, FE_UPWARD, FE_DOWNWARD, FE_TOWARDZERO};
+const char *mode_names[] = {"nearest", "upward", "downward", "toward zero"};
+const char *fn_names[IV_NFN] = {
+    "add",        "sub",        "mul",        "div",       "div (by 0)", "fma",
+    "fmax",       "fmin",       "neg",        "fabs",      "floor",      "ceil",
+    "exp",        "erf",        "sin",        "cos",       "sqrt",       "log",
+    "pow_uint 3", "pow_uint 4", "pow_int -3", "pow_real",  "pow_dbl",    "add_many",
+    "from_double", "from_int64"};
+long differs[IV_NFN][4] = {{0}};
+long mode_changed[IV_NFN][4] = {{0}};
+long misses[IV_NFN] = {0};
+const int save = fegetround();
+
+seed_rand(16);
+for (int i = 0; i < 3000; i++) {
+  interval_t v[5] = {random_interval(10, false), random_interval(10, false),
+                     random_interval(2, false), random_interval(50, true),
+                     random_interval(10, false)};
+  if (i % 4 == 0) {
+    v[4].lo = 0.0; // a divisor with 0 at an end
+  }
+  // an integer which a double may not hold exactly (up to 2^62)
+  const int64_t big = (int64_t) (((uint64_t) get_rand() << 30) ^ get_rand()) - (INT64_C(1) << 61);
+  interval_t r[4][IV_NFN];
+  bool kept[4][IV_NFN];
+  for (int m = 0; m < 4; m++) {
+    fesetround(modes[m]);
+    interval_all_functions(v, big, r[m], kept[m]);
+    fesetround(save);
+  }
+
+  for (int f = 0; f < IV_NFN; f++) {
+    for (int m = 0; m < 4; m++) {
+      mode_changed[f][m] += !kept[m][f];
+      differs[f][m] += !(r[m][f].valid == r[0][f].valid &&
+                         (!r[0][f].valid || (same_double(r[m][f].lo, r[0][f].lo) &&
+                                             same_double(r[m][f].hi, r[0][f].hi))));
+    }
+  }
+
+  // the exact values at the ends of the arguments, in long double
+  const interval_t *n = r[0];
+  int bad[IV_NFN] = {0};
+  for (int j = 0; j <= 1; j++) {
+    long double x = j == 0 ? v[0].lo : v[0].hi;
+    long double y = j == 0 ? v[1].hi : v[1].lo;
+    long double z = j == 0 ? v[2].lo : v[2].hi;
+    long double p = j == 0 ? v[3].lo : v[3].hi;
+    long double d = j == 0 ? v[4].hi : v[4].lo;
+    bad[0] |= !interval_holds(n[0], x + y);
+    bad[1] |= !interval_holds(n[1], x - y);
+    bad[2] |= !interval_holds(n[2], x * y);
+    if (y != 0) {
+      bad[3] |= !interval_holds(n[3], x / y);
+    }
+    if (d != 0) {
+      bad[4] |= !interval_holds(n[4], x / d);
+    }
+    bad[5] |= !interval_holds(n[5], x * y + z);
+    bad[6] |= !interval_holds(n[6], x > y ? x : y);
+    bad[7] |= !interval_holds(n[7], x < y ? x : y);
+    bad[8] |= !interval_holds(n[8], -x);
+    bad[9] |= !interval_holds(n[9], fabsl(x));
+    bad[10] |= !interval_holds(n[10], floorl(x));
+    bad[11] |= !interval_holds(n[11], ceill(x));
+    bad[12] |= !interval_holds(n[12], expl(x));
+    bad[13] |= !interval_holds(n[13], erfl(x));
+    bad[14] |= !interval_holds(n[14], sinl(x));
+    bad[15] |= !interval_holds(n[15], cosl(x));
+    bad[16] |= !interval_holds(n[16], sqrtl(p));
+    bad[17] |= !interval_holds(n[17], logl(p));
+    bad[18] |= !interval_holds(n[18], x * x * x);
+    bad[19] |= !interval_holds(n[19], x * x * x * x);
+    bad[20] |= !interval_holds(n[20], 1 / (p * p * p));
+    bad[21] |= !interval_holds(n[21], powl(p, 0.7L));
+    bad[22] |= !interval_holds(n[22], powl(p, z));
+  }
+  long double lo = 0, hi = 0;
+  for (int k = 0; k < 5; k++) {
+    lo += v[k].lo;
+    hi += v[k].hi;
+  }
+  bad[23] |= !(n[23].valid && n[23].lo <= lo && hi <= n[23].hi);
+  bad[24] |= !interval_holds(n[24], v[0].lo);
+  bad[25] |= !interval_holds(n[25], (long double) big);
+  for (int f = 0; f < IV_NFN; f++) {
+    misses[f] += bad[f];
+  }
+}
+
+int failed = 0;
+for (int f = 0; f < IV_NFN; f++) {
+  if (misses[f] != 0) {
+    printf("interval_%s: %ld of 3000 results miss the exact value\n", fn_names[f], misses[f]);
+    failed = 1;
+  }
+  for (int m = 1; m < 4; m++) {
+    if (differs[f][m] != 0) {
+      printf("interval_%s in rounding mode %s: %ld of 3000 results differ from round to nearest\n",
+             fn_names[f], mode_names[m], differs[f][m]);
+      failed = 1;
+    }
+  }
+  for (int m = 0; m < 4; m++) {
+    if (mode_changed[f][m] != 0) {
+      printf("interval_%s in rounding mode %s: the mode was changed %ld times\n", fn_names[f],
+             mode_names[m], mode_changed[f][m]);
+      failed = 1;
+    }
+  }
+}
+CHECK(!failed);
+
+// the check the demos run at startup works in every mode
+for (int m = 0; m < 4; m++) {
+  fesetround(modes[m]);
+  bool honored = interval_rounding_is_honored();
+  bool kept = fegetround() == modes[m];
+  fesetround(save);
+  CHECK(honored && kept);
+}
+
+END_TEST
+#undef IV_NFN
