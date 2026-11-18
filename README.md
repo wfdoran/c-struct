@@ -34,8 +34,8 @@ gcc -std=gnu11 -I include example.c -o example
 The headers are `static inline`, so they can be included from any number of `.c`
 files, and a type can be instantiated several times with different labels.
 `-std=gnu11` is used throughout; the code also needs POSIX (`ssize_t`,
-pthreads).  The thread safe hash table and the thread safe pool need
-`-pthread`.
+pthreads).  The thread safe hash table, the thread safe pool and an LRU cache
+with a lock need `-pthread`.
 
 Conventions: functions are named `container_prefix_operation`.  Functions which
 can fail return `int32_t` with 0 for success and -1 for an error; lookups return
@@ -61,7 +61,8 @@ pointers refer to, unless you give them a free function.
 * [Parallel Hash Table](doc/phash_table.md): thread safe hash map, with an
   atomic read-modify-write.
 * [LRU Cache](doc/lru_cache.md): fixed size map which evicts the least recently
-  used entry, with hooks for owned or reference counted values.
+  used entry, with hooks for owned or reference counted values, and an
+  optional lock for sharing it between threads.
 * [Binary Tree](doc/tree.md): balanced (AVL) ordered map with rank queries and
   walks.
 * [Priority Queue](doc/pqueue.md): binary heap of key and value pairs.

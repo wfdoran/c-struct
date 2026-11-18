@@ -1,4 +1,5 @@
 #include <check.h>
+#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -84,10 +85,14 @@ static int sum_i(int previous, int current) {
 
 // A model test: the cache against a list of the keys, most recently used
 // first.  After every operation the recency list and the hash chains of the
-// cache are checked against the model.
-static int lru_model(int64_t capacity, long keys, int iters, uint32_t seed) {
+// cache are checked against the model.  With locked, the cache has a lock,
+// which must not change what it does.
+static int lru_model(int64_t capacity, long keys, int iters, uint32_t seed, bool locked) {
   lru_ll_t *c = lru_ll_init(capacity);
   CHECK(c != NULL);
+  if (locked) {
+    CHECK(lru_ll_add_lock(c) == 0);
+  }
   CHECK(lru_ll_set_hash(c, hash_class) == 0);
   CHECK(lru_ll_set_comp(c, comp_l) == 0);
   CHECK(lru_ll_set_evict(c, evict_l) == 0);
@@ -253,10 +258,14 @@ START_TEST(lru_test3)
 // the model test, for small capacities with few and many keys, and a larger one
 for (int64_t capacity = 1; capacity <= 9; capacity++) {
   for (long keys = 1; keys <= 3 * capacity + 2; keys += 3) {
-    CHECK(lru_model(capacity, keys, 5000, (uint32_t) (capacity * 100 + keys)) == 0);
+    CHECK(lru_model(capacity, keys, 5000, (uint32_t) (capacity * 100 + keys), false) == 0);
   }
 }
-CHECK(lru_model(64, 100, 100000, 7) == 0);
+CHECK(lru_model(64, 100, 100000, 7, false) == 0);
+// the same with a lock
+CHECK(lru_model(1, 4, 5000, 1, true) == 0);
+CHECK(lru_model(5, 17, 5000, 2, true) == 0);
+CHECK(lru_model(64, 100, 100000, 7, true) == 0);
 END_TEST
 
 // Keys and values owned by the cache.  The counts check that every string is
@@ -455,4 +464,136 @@ lru_ls_destroy(&s);
 CHECK(ls_frees == 2);
 free(ls_evicted);
 ls_evicted = NULL;
+END_TEST
+
+START_TEST(lru_test7)
+// add_lock: once per cache, and destroy frees the lock (checked by ASan)
+CHECK(lru_li_add_lock(NULL) == -1);
+lru_li_t *c = lru_li_init(4);
+CHECK(c != NULL && c->lock == NULL);
+CHECK(lru_li_add_lock(c) == 0 && c->lock != NULL);
+pthread_mutex_t *first = c->lock;
+CHECK(lru_li_add_lock(c) == -1 && c->lock == first); // a second lock is refused
+
+// every function works with the lock, and none leaves it held: a held lock
+// would make the next call deadlock
+int v = -1;
+CHECK(lru_li_set_hash(c, c->hash_func) == 0);
+CHECK(lru_li_set_comp(c, NULL) == 0);
+CHECK(lru_li_set_update(c, sum_i) == 0);
+CHECK(lru_li_set_clone(c, NULL) == 0);
+CHECK(lru_li_set_evict(c, evict_i) == 0);
+CHECK(lru_li_put(c, 1, 10) == 0);
+CHECK(lru_li_put(c, 1, 5) == 1);
+CHECK(lru_li_set_hash(c, c->hash_func) == -1); // refused: the cache has entries
+CHECK(lru_li_get(c, 1, &v) == 1 && v == 15);
+CHECK(lru_li_get(c, 2, &v) == 0);
+CHECK(lru_li_peek(c, 1, &v) == 1 && v == 15);
+CHECK(lru_li_size(c) == 1 && lru_li_capacity(c) == 4);
+evict_count = 0;
+CHECK(lru_li_clear(c) == 0 && evict_count == 1);
+CHECK(pthread_mutex_trylock(c->lock) == 0); // free after all of the above
+CHECK(pthread_mutex_unlock(c->lock) == 0);
+CHECK(lru_li_put(c, 2, 20) == 0);
+evict_count = 0;
+lru_li_destroy(&c);
+CHECK(c == NULL && evict_count == 1);
+END_TEST
+
+// Threads share one locked cache.  The evict function counts without atomics:
+// it runs with the lock held, so ThreadSanitizer would report a missing lock.
+static long mt_evicts = 0;
+static void mt_evict(int k, int v) {
+  (void) k;
+  (void) v;
+  mt_evicts++;
+}
+
+typedef struct {
+  lru_li_t *cache;
+  uint32_t seed;
+  long inserts; // puts of a key which was not in the cache
+  long errors;  // results which cannot be right
+} mt_arg_t;
+
+// a generator per thread: get_rand has one global state
+static uint32_t mt_rand(uint32_t *x) {
+  *x ^= *x << 13;
+  *x ^= *x >> 17;
+  *x ^= *x << 5;
+  return *x;
+}
+
+static void *mt_worker(void *p) {
+  mt_arg_t *a = p;
+  uint32_t x = a->seed;
+  for (int i = 0; i < 50000; i++) {
+    int k = (int) (mt_rand(&x) % 200);
+    int v = -1;
+    int rc;
+    switch (mt_rand(&x) % 8) {
+    case 0:
+    case 1:
+    case 2:
+      rc = lru_li_put(a->cache, k, k * 10);
+      a->inserts += rc == 0;
+      a->errors += rc < 0;
+      break;
+    case 3:
+    case 4:
+    case 5:
+      rc = lru_li_get(a->cache, k, &v);
+      a->errors += rc < 0 || (rc == 1 && v != k * 10);
+      break;
+    case 6:
+      rc = lru_li_peek(a->cache, k, &v);
+      a->errors += rc < 0 || (rc == 1 && v != k * 10);
+      break;
+    default:
+      if (i % 5000 == 7) {
+        a->errors += lru_li_clear(a->cache) != 0;
+      } else {
+        a->errors += lru_li_size(a->cache) > 64;
+      }
+    }
+  }
+  return NULL;
+}
+
+START_TEST(lru_test8)
+// Every put of a new key is either still in the cache or was evicted (by a
+// put which needed room, or by clear), so at the end the inserts equal the
+// evictions plus the size; and the lists are intact.
+enum { NTHREADS = 8 };
+lru_li_t *c = lru_li_init(64);
+CHECK(c != NULL);
+CHECK(lru_li_add_lock(c) == 0);
+CHECK(lru_li_set_evict(c, mt_evict) == 0);
+mt_evicts = 0;
+
+pthread_t tid[NTHREADS];
+mt_arg_t args[NTHREADS];
+for (int t = 0; t < NTHREADS; t++) {
+  args[t] = (mt_arg_t){.cache = c, .seed = 2463534242u + (uint32_t) t * 7919u};
+  CHECK(pthread_create(&tid[t], NULL, mt_worker, &args[t]) == 0);
+}
+long inserts = 0;
+for (int t = 0; t < NTHREADS; t++) {
+  CHECK(pthread_join(tid[t], NULL) == 0);
+  CHECK(args[t].errors == 0);
+  inserts += args[t].inserts;
+}
+
+size_t n = lru_li_size(c);
+CHECK(n <= 64);
+CHECK(inserts == mt_evicts + (long) n);
+size_t j = 0;
+lru_node_li_t *prev = NULL;
+for (lru_node_li_t *x = c->head; x != NULL; prev = x, x = x->next, j++) {
+  CHECK(j < n && x->prev == prev && x->value == x->key * 10);
+}
+CHECK(j == n && c->tail == prev);
+
+lru_li_destroy(&c);
+CHECK(inserts == mt_evicts);
 END_TEST

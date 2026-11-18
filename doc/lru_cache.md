@@ -55,10 +55,12 @@ assert(rc == 0);
 lru_sqrt_destroy(&lru);
 ```
 
-The cache is not safe to use from several threads at once.  Note that this
-includes `get`, which changes the order of the entries.  The one exception is
-`peek`, which changes nothing: several threads may `peek` at the same time, as
-long as no other function runs on the cache meanwhile.
+By default the cache is not safe to use from several threads at once.  Note
+that this includes `get`, which changes the order of the entries.  The one
+exception is `peek`, which changes nothing: several threads may `peek` at the
+same time, as long as no other function runs on the cache meanwhile.  To share
+a cache between threads, give it a lock with `lru_prefix_add_lock()` (see
+[Threads](#threads)).
 
 ## Basic Operations
 
@@ -225,6 +227,44 @@ leaves the cache: the least recently used entry when `put` needs room for a new
 key, and every entry left at `destroy`.  It is not called when `put` replaces
 the value of an existing key; that is the job of the update function.  Returns
 0, or -1 if `lru` is `NULL`.
+
+## Threads
+
+### `int32_t lru_prefix_add_lock(lru_prefix_t *lru)`
+
+Gives the cache a mutex, so that several threads can use it.  From then on
+every function except `destroy` and `capacity` holds the lock while it runs,
+so calls from different threads run one at a time; this includes `peek`.  A
+cache without a lock, the default, pays nothing for locking.
+
+```c
+lru_sqrt_t *lru = lru_sqrt_init(1000);
+if (lru == NULL || lru_sqrt_add_lock(lru) != 0) {
+  /* out of memory */
+}
+/* ... start the threads, which call put, get, peek, ... */
+/* ... join them ... */
+lru_sqrt_destroy(&lru); // also frees the lock
+```
+
+The rules:
+
+* Call `add_lock` once, from one thread, before the cache is shared.  A second
+  call is refused.
+* `destroy` frees the lock.  It is not locked itself: call it from one thread,
+  after the others have finished with the cache.
+* The hash, compare, update, clone and evict functions run with the lock held,
+  so they must not call any function on the same cache, which would deadlock.
+  A long-running evict or clone holds up every other thread.
+* With the default `get`, a pointer value is only borrowed until the next
+  `put` (see [Ownership](#ownership-of-keys-and-values)), and that `put` can now
+  come from another thread at any moment.  Shared pointer values need a clone
+  function, which copies the value or takes a reference while the lock is held.
+
+A program which uses the lock is linked with `-pthread`.
+
+Returns 0, or -1 if `lru` is `NULL`, already has a lock, or the mutex could not
+be allocated or initialized; the cache is unchanged then.
 
 ## Ownership of keys and values
 

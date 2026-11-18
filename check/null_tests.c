@@ -184,6 +184,7 @@ lru_li_destroy(NULL);
 CHECK(lru_li_size(NULL) == 0);
 CHECK(lru_li_capacity(NULL) == 0);
 CHECK(lru_li_clear(NULL) == -1);
+CHECK(lru_li_add_lock(NULL) == -1);
 CHECK(lru_li_peek(NULL, 1, &v) == -1);
 CHECK(lru_li_peek(NULL, 1, NULL) == -1);
 lru_li_t *c = lru_li_init(4);
