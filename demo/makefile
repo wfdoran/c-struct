@@ -1,7 +1,25 @@
+# make all                 build every demo
+# make all WERROR=-Werror  the same, with warnings as errors (as CI does)
+# make array_demo1         build one demo
+
 CC = gcc
 #CFLAGS = -O2 -std=gnu11 -g -Wall -fsanitize=address -fsanitize=leak
-CFLAGS = -O2 -std=gnu11 -g -Wall
+CFLAGS = -O2 -std=gnu11 -g -Wall -Wextra $(WERROR)
 INCLUDE = -I../include
+
+DEMOS = $(basename $(wildcard *.c))
+
+.PHONY: all clean
+
+all: $(DEMOS)
+
+# every demo is rebuilt when a header changes
+$(DEMOS): $(wildcard ../include/*.h)
+
+# a demo without a rule of its own below; make's built-in rule would also
+# compile the headers listed above
+%: %.c
+	$(CC) $(CFLAGS) $(INCLUDE) $< -o $@ -lpthread -lm
 
 hash_demo1: hash_demo1.c
 	$(CC) $(CFLAGS) $(INCLUDE) hash_demo1.c -o hash_demo1

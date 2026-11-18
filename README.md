@@ -114,11 +114,12 @@ cd check && make && ./unit_tests     # unit tests for every container
 cd check && make doc-check            # the code examples of these docs compile
 ```
 
-`.github/workflows/ci.yml` does the same build and test run, with gcc and with
-clang, on every push and pull request.
-
 ```
 cd demo && make array_demo1          # small example programs, one per feature
+cd demo && make all                  # every demo
 ```
+
+`.github/workflows/ci.yml` does the same build and test run, and builds every
+demo with `-Werror`, with gcc and with clang, on every push and pull request.
 
 `future.txt` lists ideas for later.

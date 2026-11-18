@@ -34,6 +34,11 @@ jobs:
         working-directory: check
         run: make doc-check CC=${{ matrix.cc }}
 
+      # every demo must compile without warnings
+      - name: Build the demos
+        working-directory: demo
+        run: make all CC=${{ matrix.cc }} WERROR=-Werror
+
   # AddressSanitizer and UBSan; the other sanitizer targets are not run (see
   # the comment on test-tsan in check/makefile)
   sanitizers:

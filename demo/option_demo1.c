@@ -9,13 +9,10 @@
 void option_int_print(option_int_t x) {
   int value;
 
-  switch (option_int_get(x, &value)) {
-  case true:
+  if (option_int_get(x, &value)) {
     printf("%d\n", value);
-    break;
-  case false:
+  } else {
     printf("empty\n");
-    break;
   }
 }
 
